@@ -2,8 +2,11 @@
 <!--
   TRANG VỎ — đặt trên GitHub Pages để che banner
   "This application was created by a Google Apps Script user".
-  Cách dùng: đổi tên file này thành index.html khi đưa lên GitHub,
-  và thay DÁN_LINK_EXEC_CỦA_BẠN_VÀO_ĐÂY bằng link /exec thật.
+  Đổi tên thành index.html khi đưa lên GitHub.
+
+  SỬA LỖI: env(safe-area-inset-*) KHÔNG hoạt động bên trong iframe
+  (luôn trả 0, vì iframe không phải tài liệu gốc). Vì vậy phần chừa chỗ cho
+  thanh trạng thái iPhone phải do TRANG VỎ này lo, không phải do app bên trong.
 -->
 <html lang="vi">
 <head>
@@ -12,30 +15,45 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Chi Tiêu">
-<meta name="theme-color" content="#080c14">
+<meta name="theme-color" content="#f4f7fc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#080c14" media="(prefers-color-scheme: dark)">
 <title>Ghi Chi Tiêu</title>
 <style>
   :root{
     /* Chiều cao banner Google cần cắt.
        Banner xuống 2 dòng trên máy hẹp → tăng lên 64px nếu vẫn thấy mép. */
     --cut: 46px;
-    /* Màu viền an toàn quanh iframe (vùng tai thỏ, home indicator).
-       Đổi thành #f4f7fc nếu bạn chủ yếu dùng Light mode. */
-    --shell-bg: #080c14;
+    /* Màu viền quanh iframe (thanh trạng thái, vùng home indicator).
+       Tự theo cài đặt sáng/tối của iPhone — app bên trong cũng mặc định như vậy.
+       Trang vỏ khác origin nên không đọc được lựa chọn theme đã lưu trong app;
+       nếu bạn luôn ghim 1 chế độ, sửa cứng giá trị dưới đây cho khớp. */
+    --shell-bg: #f4f7fc;
   }
+  @media (prefers-color-scheme: dark){
+    :root{ --shell-bg:#080c14; }
+  }
+
   html,body{margin:0;padding:0;background:var(--shell-bg);overflow:hidden;}
+
   /* 100dvh = chiều cao thực tế còn lại, tự trừ thanh địa chỉ Safari.
      Dùng 100% hoặc 100vh sẽ tràn ~80px trên iOS khi chưa Add to Home Screen. */
   #shell{
     position:fixed;inset:0;height:100dvh;
-    display:flex;flex-direction:column;background:var(--shell-bg);
+    display:flex;flex-direction:column;
+    background:var(--shell-bg);
+    /* Chừa chỗ cho thanh trạng thái và home indicator — iframe bên trong
+       không tự làm được việc này. Thiếu dòng này thì đồng hồ, sóng, pin
+       của iPhone sẽ đè lên nội dung app. */
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
   }
+
   /* Khung cắt: iframe bị đẩy lên -var(--cut) nên banner nằm ngoài vùng nhìn thấy */
   #port{flex:1;position:relative;overflow:hidden;}
   #port iframe{
     position:absolute;top:calc(var(--cut) * -1);left:0;
     width:100%;height:calc(100% + var(--cut));
-    border:0;display:block;
+    border:0;display:block;background:var(--shell-bg);
   }
 </style>
 </head>
