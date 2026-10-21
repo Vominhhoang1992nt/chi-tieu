@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!--
+  TRANG VỎ — đặt trên GitHub Pages để che banner
+  "This application was created by a Google Apps Script user".
+  Cách dùng: đổi tên file này thành index.html khi đưa lên GitHub,
+  và thay DÁN_LINK_EXEC_CỦA_BẠN_VÀO_ĐÂY bằng link /exec thật.
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chi Tiêu">
+<meta name="theme-color" content="#080c14">
+<title>Ghi Chi Tiêu</title>
+<style>
+  :root{
+    /* Chiều cao banner Google cần cắt.
+       Banner xuống 2 dòng trên máy hẹp → tăng lên 64px nếu vẫn thấy mép. */
+    --cut: 46px;
+    /* Màu viền an toàn quanh iframe (vùng tai thỏ, home indicator).
+       Đổi thành #f4f7fc nếu bạn chủ yếu dùng Light mode. */
+    --shell-bg: #080c14;
+  }
+  html,body{margin:0;padding:0;background:var(--shell-bg);overflow:hidden;}
+  /* 100dvh = chiều cao thực tế còn lại, tự trừ thanh địa chỉ Safari.
+     Dùng 100% hoặc 100vh sẽ tràn ~80px trên iOS khi chưa Add to Home Screen. */
+  #shell{
+    position:fixed;inset:0;height:100dvh;
+    display:flex;flex-direction:column;background:var(--shell-bg);
+  }
+  /* Khung cắt: iframe bị đẩy lên -var(--cut) nên banner nằm ngoài vùng nhìn thấy */
+  #port{flex:1;position:relative;overflow:hidden;}
+  #port iframe{
+    position:absolute;top:calc(var(--cut) * -1);left:0;
+    width:100%;height:calc(100% + var(--cut));
+    border:0;display:block;
+  }
+</style>
+</head>
+<body>
+  <div id="shell">
+    <div id="port">
+      <iframe id="app"
+              src="https://script.google.com/macros/s/AKfycbzs3BdcQrK0TgIw4XWGinCJCL1NCR0Rf8M1eYfOowcS41Wz6w7GLSl_jOnznWg01Lbk/exec"
+              allow="clipboard-write"></iframe>
+    </div>
+  </div>
+</body>
+</html>
