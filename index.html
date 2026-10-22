@@ -14,10 +14,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Chi Tiêu">
+<meta name="apple-mobile-web-app-title" content="Ví Chi Tiêu">
 <meta name="theme-color" content="#f4f7fc" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#080c14" media="(prefers-color-scheme: dark)">
-<title>Ghi Chi Tiêu</title>
+<title>Ví Chi Tiêu</title>
+
+<!-- ===== BIỂU TƯỢNG MÀN HÌNH CHÍNH =====
+     iOS chỉ đọc apple-touch-icon trên TRANG ĐƯỢC THÊM VÀO MÀN HÌNH, tức là
+     chính trang vỏ này — không phải trang Apps Script bên trong iframe.
+     Đường dẫn để TƯƠNG ĐỐI (không có dấu / đầu) vì site nằm ở /chi-tieu/.
+     iOS KHÔNG hỗ trợ SVG cho apple-touch-icon, bắt buộc phải là PNG.
+     Ảnh tràn viền, không tự bo góc — iOS tự cắt theo mặt nạ squircle. -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icon-120.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
   :root{
     /* Chiều cao banner Google cần cắt.
@@ -60,10 +74,29 @@
 <body>
   <div id="shell">
     <div id="port">
-      <iframe id="app"
-              src="https://script.google.com/macros/s/AKfycbzs3BdcQrK0TgIw4XWGinCJCL1NCR0Rf8M1eYfOowcS41Wz6w7GLSl_jOnznWg01Lbk/exec"
-              allow="clipboard-write"></iframe>
+      <!-- src được gán bằng JS để kèm mốc thời gian t0, xem script bên dưới -->
+      <iframe id="app" allow="clipboard-write"></iframe>
     </div>
   </div>
+
+<script>
+/* ĐO TỐC ĐỘ THẬT:
+   Người dùng bấm vào biểu tượng ở màn hình chính → trình duyệt tải trang này
+   → trang này nhúng iframe → Google dựng sandbox → app mới chạy. Bản thân app
+   không thấy được 3 chặng đầu, nên nó luôn báo nhanh hơn cảm nhận thật.
+   Ở đây đính mốc t0 (thời điểm trang vỏ bắt đầu) vào URL. Bên trong, app đọc
+   lại bằng google.script.url.getLocation() — cùng một thiết bị, cùng một đồng
+   hồ, nên hiệu số là thời gian chờ THẬT tính từ lúc mở app. */
+(function () {
+  var EXEC = 'https://script.google.com/macros/s/AKfycbzs3BdcQrK0TgIw4XWGinCJCL1NCR0Rf8M1eYfOowcS41Wz6w7GLSl_jOnznWg01Lbk/exec';
+  var nav = 0;
+  try {
+    // Mốc sớm nhất trình duyệt biết: lúc bắt đầu điều hướng tới trang vỏ
+    var e = performance.getEntriesByType('navigation')[0];
+    nav = e ? Math.round(performance.timeOrigin + e.startTime) : Date.now();
+  } catch (err) { nav = Date.now(); }
+  document.getElementById('app').src = EXEC + '?t0=' + nav;
+})();
+</script>
 </body>
 </html>
