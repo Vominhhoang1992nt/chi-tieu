@@ -1,102 +1,3702 @@
 <!DOCTYPE html>
-<!--
-  TRANG VỎ — đặt trên GitHub Pages để che banner
-  "This application was created by a Google Apps Script user".
-  Đổi tên thành index.html khi đưa lên GitHub.
-
-  SỬA LỖI: env(safe-area-inset-*) KHÔNG hoạt động bên trong iframe
-  (luôn trả 0, vì iframe không phải tài liệu gốc). Vì vậy phần chừa chỗ cho
-  thanh trạng thái iPhone phải do TRANG VỎ này lo, không phải do app bên trong.
--->
 <html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ví Chi Tiêu</title>
+<!-- Chạy toàn màn hình khi thêm vào màn hình chính -->
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ví Chi Tiêu">
-<meta name="theme-color" content="#f4f7fc" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#080c14" media="(prefers-color-scheme: dark)">
-<title>Ví Chi Tiêu</title>
-
-<!-- ===== BIỂU TƯỢNG MÀN HÌNH CHÍNH =====
-     iOS chỉ đọc apple-touch-icon trên TRANG ĐƯỢC THÊM VÀO MÀN HÌNH, tức là
-     chính trang vỏ này — không phải trang Apps Script bên trong iframe.
-     Đường dẫn để TƯƠNG ĐỐI (không có dấu / đầu) vì site nằm ở /chi-tieu/.
-     iOS KHÔNG hỗ trợ SVG cho apple-touch-icon, bắt buộc phải là PNG.
-     Ảnh tràn viền, không tự bo góc — iOS tự cắt theo mặt nạ squircle. -->
+<meta name="theme-color" content="#f4f6fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0e16" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
-<link rel="apple-touch-icon" sizes="120x120" href="icon-120.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="manifest" href="manifest.webmanifest">
+<!-- Nối sẵn tới máy chủ ngay khi trang bắt đầu tải: DNS + TLS xong trước,
+     lời gọi getBootstrap sau đó đỡ được vài trăm ms -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <style>
+  /* ============================================================
+     HỆ MÀU — fintech có màu (hướng Revolut / Monzo)
+     Giữ phần "chuyên nghiệp": chữ số tabular, khoảng cách bội số 4,
+     viền mảnh 1px. Nhưng ĐƯA MÀU TRỞ LẠI:
+       · Hero là thẻ gradient đậm, chữ trắng — điểm neo thị giác
+       · Mỗi KPI một tông màu riêng
+       · Giao dịch có ô vuông màu theo loại chi phí
+     ============================================================ */
   :root{
-    /* Chiều cao banner Google cần cắt.
-       Banner xuống 2 dòng trên máy hẹp → tăng lên 64px nếu vẫn thấy mép. */
-    --cut: 46px;
-    /* Màu viền quanh iframe (thanh trạng thái, vùng home indicator).
-       Tự theo cài đặt sáng/tối của iPhone — app bên trong cũng mặc định như vậy.
-       Trang vỏ khác origin nên không đọc được lựa chọn theme đã lưu trong app;
-       nếu bạn luôn ghim 1 chế độ, sửa cứng giá trị dưới đây cho khớp. */
-    --shell-bg: #f4f7fc;
+    --bg:#f4f6fb;
+    --surface:#ffffff;
+    --surface-2:#eef1f7;
+    --line:#e3e8f0;
+    --line-soft:#edf0f6;
+    --txt:#0c111d;
+    --mut:#5d6b82;
+    --dim:#94a0b4;
+
+    --acc:#2563eb;
+    --acc-dk:#1d4ed8;
+    --acc-weak:#e8efff;
+    --acc-text:#1d4ed8;
+    --cmp-full:#bfd0f7;   /* cột "cả tháng" — phải thấy rõ, không phải bóng */
+
+    /* Gradient thương hiệu — dùng cho hero, nút chính, cột biểu đồ */
+    --h1:#4f46e5;  --h2:#2563eb;
+    --hero-shadow:rgba(79,70,229,.30);
+
+    --ok:#067647;   --ok-weak:#e7f6ee;
+    --warn:#b54708; --warn-weak:#fdf3e8;
+    --err:#d92d20;
+    --track:#e8ecf4;
+
+    /* 4 tông cho 4 thẻ KPI */
+    --t1-bg:#eef2ff; --t1-fg:#3538cd;
+    --t2-bg:#f6f2ff; --t2-fg:#6941c6;
+    --t3-bg:#fff6ed; --t3-fg:#b54708;
+    --t4-bg:#ecfdf3; --t4-fg:#067647;
+
+    --shadow:0 1px 2px rgba(16,24,40,.06);
+    --shadow-md:0 4px 12px rgba(16,24,40,.08);
+    --shadow-lg:0 8px 22px rgba(37,99,235,.28);
+    --cat:#2563eb;
+    --bar:96px;     /* chiều cao thanh Ghi */
+    --kb:0px;       /* chiều cao bàn phím, JS cập nhật qua visualViewport */
   }
-  @media (prefers-color-scheme: dark){
-    :root{ --shell-bg:#080c14; }
+  [data-theme="dark"]{
+    --bg:#0a0d14;
+    --surface:#141821;
+    --surface-2:#1c212c;
+    --cmp-full:#2e3a56;
+    --line:#262d3a;
+    --line-soft:#1f2531;
+    --txt:#f2f4f7;
+    --mut:#9aa6ba;
+    --dim:#6b7688;
+
+    --acc:#6490ff;
+    --acc-dk:#3f6fe0;
+    --acc-weak:#17213a;
+    --acc-text:#9dbcff;
+
+    --h1:#6366f1;  --h2:#3b6ff0;
+    --hero-shadow:rgba(0,0,0,.55);
+
+    --ok:#47cd89;   --ok-weak:#102419;
+    --warn:#f5a524; --warn-weak:#2a1f10;
+    --err:#f97066;
+    --track:#222936;
+
+    --t1-bg:#161e36; --t1-fg:#9dbcff;
+    --t2-bg:#1e1a36; --t2-fg:#c0a6f9;
+    --t3-bg:#2b2011; --t3-fg:#fdb022;
+    --t4-bg:#102a1c; --t4-fg:#5ddba1;
+
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 4px 14px rgba(0,0,0,.45);
+    --shadow-lg:0 8px 22px rgba(0,0,0,.6);
   }
 
-  html,body{margin:0;padding:0;background:var(--shell-bg);overflow:hidden;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--txt);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    /* Chữ số rộng bằng nhau → cột tiền thẳng hàng. Bắt buộc với app tài chính. */
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:'tnum' 1;
+    transition:background-color .2s, color .2s;
+  }
+  .wrap{
+    width:100%;max-width:620px;margin:0 auto;
+    padding:calc(12px + env(safe-area-inset-top)) 16px
+            calc(var(--bar) + 16px + env(safe-area-inset-bottom));
+  }
+  .hide{display:none !important;}
 
-  /* 100dvh = chiều cao thực tế còn lại, tự trừ thanh địa chỉ Safari.
-     Dùng 100% hoặc 100vh sẽ tràn ~80px trên iOS khi chưa Add to Home Screen. */
-  #shell{
-    position:fixed;inset:0;height:100dvh;
-    display:flex;flex-direction:column;
-    background:var(--shell-bg);
-    /* Chừa chỗ cho thanh trạng thái và home indicator — iframe bên trong
-       không tự làm được việc này. Thiếu dòng này thì đồng hồ, sóng, pin
-       của iPhone sẽ đè lên nội dung app. */
-    padding-top:env(safe-area-inset-top);
-    padding-bottom:env(safe-area-inset-bottom);
+  /* ===================== HERO (thẻ gradient) ===================== */
+  .hero{
+    background:linear-gradient(135deg, var(--h1) 0%, var(--h2) 100%);
+    border-radius:18px;padding:16px;margin-bottom:12px;color:#fff;
+    box-shadow:0 8px 22px var(--hero-shadow);
+    -webkit-user-select:none;user-select:none;
+  }
+  .hero-top{display:flex;justify-content:space-between;align-items:center;
+            gap:8px;margin-bottom:14px;}
+  .hero-right{display:flex;align-items:center;gap:6px;}
+  .sheet-pick{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,.18);border-radius:9px;padding:0 4px 0 10px;
+  }
+  .sheet-pick span{font-size:11px;color:rgba(255,255,255,.75);font-weight:650;
+                   letter-spacing:.2px;text-transform:uppercase;}
+  .sheet-pick select{
+    background-color:transparent;border:none;color:#fff;font-size:14px;
+    font-weight:700;padding:7px 18px 7px 2px;width:auto;border-radius:0;
+    background-image:none;box-shadow:none;
+  }
+  .sheet-pick select:focus{outline:none;box-shadow:none;}
+  .net{font-size:11px;padding:5px 9px;border-radius:8px;font-weight:650;
+       white-space:nowrap;background:rgba(255,255,255,.18);color:#fff;}
+  .net.off{background:rgba(255,255,255,.28);}
+  .theme-btn{
+    background:rgba(255,255,255,.18);border:none;color:#fff;
+    border-radius:9px;width:32px;height:30px;font-size:14px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
   }
 
-  /* Khung cắt: iframe bị đẩy lên -var(--cut) nên banner nằm ngoài vùng nhìn thấy */
-  #port{flex:1;position:relative;overflow:hidden;}
-  #port iframe{
-    position:absolute;top:calc(var(--cut) * -1);left:0;
-    width:100%;height:calc(100% + var(--cut));
-    border:0;display:block;background:var(--shell-bg);
+  .hero-lbl{font-size:12.5px;color:rgba(255,255,255,.78);font-weight:550;}
+  .hero-amt{
+    font-size:38px;font-weight:750;letter-spacing:-.025em;line-height:1.1;
+    color:#fff;margin-top:2px;transition:opacity .15s;white-space:nowrap;
+  }
+  .hero-amt.pending{opacity:.55;}
+  .hero-stats{
+    display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12.5px;
+    color:rgba(255,255,255,.8);
+    margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.22);
+  }
+  .hero-stats b{color:#fff;font-weight:700;}
+  .hero-stats .sepdot{color:rgba(255,255,255,.45);}
+  .hero-stats .warnx{color:#ffd79a;font-weight:700;}
+
+  /* ===================== TABS ===================== */
+  .tabs{
+    display:flex;gap:3px;background:var(--surface);border:1px solid var(--line);
+    border-radius:13px;padding:4px;margin-bottom:12px;box-shadow:var(--shadow);
+    -webkit-user-select:none;user-select:none;
+  }
+  .tabs div{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+    padding:9px 2px;border-radius:9px;
+    font-size:13.5px;font-weight:650;color:var(--mut);cursor:pointer;transition:.15s;
+  }
+  .tabs div.sel{
+    background:linear-gradient(135deg, var(--h1), var(--h2));
+    color:#fff;box-shadow:0 3px 10px var(--hero-shadow);
+  }
+  .tabs div:active{transform:scale(.96);}
+  /* Emoji của tab: mờ khi chưa chọn, lắc một cái khi vừa được chọn */
+  .ti{font-size:14.5px;line-height:1;filter:grayscale(.55);opacity:.7;
+      transition:filter .2s,opacity .2s;display:inline-block;}
+  .tabs div.sel .ti{filter:none;opacity:1;animation:wiggle .55s ease;}
+  @keyframes wiggle{
+    0%{transform:rotate(0) scale(1);}
+    25%{transform:rotate(-16deg) scale(1.25);}
+    55%{transform:rotate(13deg) scale(1.18);}
+    80%{transform:rotate(-6deg) scale(1.05);}
+    100%{transform:rotate(0) scale(1);}
+  }
+
+  /* ===================== CARD ===================== */
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:16px;margin-bottom:12px;box-shadow:var(--shadow);
+  }
+  .head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .head.sb{justify-content:space-between;}
+  .head b{font-size:13px;color:var(--txt);font-weight:700;letter-spacing:-.01em;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--cat);flex:0 0 auto;}
+  .lbl{display:block;font-size:12.5px;color:var(--mut);margin:0 0 6px;font-weight:600;
+       -webkit-user-select:none;user-select:none;}
+
+  input,select{
+    width:100%;background-color:var(--surface);border:1.5px solid var(--line);
+    color:var(--txt);border-radius:12px;padding:12.5px 12px;font-size:16px;
+    font-family:inherit;font-variant-numeric:tabular-nums;
+    appearance:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s;
+  }
+  select{
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a0b4' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+  }
+  /* QUAN TRỌNG: popup chọn của iOS/Android luôn nền trắng.
+     Không ép màu ở đây thì option thừa hưởng màu chữ của select → chữ trắng nền trắng. */
+  select option{color:#0c111d;background-color:#ffffff;font-size:16px;}
+  input:focus,select:focus{outline:none;border-color:var(--acc);
+                           box-shadow:0 0 0 3px var(--acc-weak);}
+  input.search{padding:11px 12px;font-size:15px;}
+  .row2 input,.row2 select{padding:11.5px 10px;font-size:15px;}
+  .row2 select{background-position:right 9px center;padding-right:28px;}
+  /* Ô loại chi phí mang màu của chính loại đó */
+  select.cat-edge{border-color:var(--cat);}
+
+  /* ---- Ô số tiền ---- */
+  .amt-box{
+    display:flex;align-items:baseline;gap:6px;padding:12px 14px;
+    border:1.5px solid var(--acc-weak);border-radius:14px;background:var(--acc-weak);
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .amt-box:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-weak);}
+  .amt-in{
+    flex:1;min-width:0;background:transparent;border:none;padding:0;border-radius:0;
+    font-size:33px;font-weight:750;letter-spacing:-.02em;text-align:right;
+    color:var(--acc-text);
+  }
+  .amt-in:focus{box-shadow:none;}
+  .amt-in::placeholder{color:var(--acc-text);opacity:.4;font-weight:700;}
+  .amt-cur{font-size:17px;font-weight:700;color:var(--acc-text);opacity:.65;}
+  .amt-chips{display:flex;gap:6px;margin-top:10px;}
+  .amt-chips .chip{flex:1;text-align:center;padding:9px 2px;font-size:13.5px;}
+
+  .scroll-row{display:flex;gap:6px;margin-top:10px;overflow-x:auto;
+              padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .scroll-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto;background:var(--surface-2);border:1.5px solid transparent;
+    border-radius:10px;padding:9px 13px;font-size:13.5px;font-weight:650;
+    color:var(--txt);cursor:pointer;white-space:nowrap;
+    -webkit-user-select:none;user-select:none;transition:.12s;
+  }
+  .chip:active{background:var(--acc);color:#fff;}
+  .chip.sel{background:var(--acc-weak);color:var(--acc-text);
+            border-color:var(--acc);font-weight:700;}
+  .chip.sm{padding:7px 11px;font-size:12.5px;}
+
+  /* ---- Segmented ---- */
+  .seg{display:flex;gap:3px;background:var(--surface-2);border-radius:12px;padding:3px;}
+  .seg div{
+    flex:1;text-align:center;border-radius:9px;padding:10px 3px;
+    font-size:13px;font-weight:650;cursor:pointer;color:var(--mut);
+    -webkit-user-select:none;user-select:none;transition:.15s;white-space:nowrap;
+  }
+  .seg div.sel{background:var(--acc);color:#fff;box-shadow:var(--shadow-md);}
+  .seg.scope{margin-bottom:12px;background:var(--surface);
+             border:1px solid var(--line);box-shadow:var(--shadow);}
+  .seg.scope div{padding:11px 3px;font-size:13.5px;}
+  .seg.scope div.sel{background:linear-gradient(135deg,var(--h1),var(--h2));}
+
+  .mini-seg{display:flex;gap:2px;background:var(--surface-2);border-radius:9px;padding:2px;}
+  .mini-seg div{
+    padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:700;
+    color:var(--mut);cursor:pointer;-webkit-user-select:none;user-select:none;
+  }
+  .mini-seg div.sel{background:var(--acc);color:#fff;}
+
+  .mb{margin-bottom:12px;}
+  .row{display:flex;gap:8px;}.row>*{flex:1;min-width:0;}
+
+  /* ===================== GIAO DỊCH ===================== */
+  .day-head{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:14px 0 7px;border-bottom:1.5px solid var(--line-soft);
+    -webkit-user-select:none;user-select:none;
+  }
+  .day-head:first-child{padding-top:0;}
+  .day-d{font-size:12.5px;font-weight:700;color:var(--txt);}
+  .day-w{font-size:11px;color:var(--dim);font-weight:600;margin-left:5px;}
+  .day-t{font-size:12.5px;font-weight:700;color:var(--acc-text);white-space:nowrap;}
+
+  .tx{display:flex;align-items:center;gap:11px;padding:10px 0;
+      border-bottom:1px solid var(--line-soft);}
+  .tx:last-child{border-bottom:none;}
+  .tx.fresh{animation:pop .5s ease;}
+  @keyframes pop{from{background:var(--acc-weak);} to{background:transparent;}}
+  /* Ô vuông màu theo loại chi phí — thay cho chấm tròn nhỏ, nhìn giàu hơn hẳn */
+  .tx-ava{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
+          display:flex;align-items:center;justify-content:center;
+          font-size:14px;font-weight:750;}
+  .tx-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  .tx-main{flex:1;min-width:0;}
+  .tx-t{font-size:14.5px;font-weight:650;white-space:nowrap;
+        overflow:hidden;text-overflow:ellipsis;}
+  .tx-s{font-size:12px;color:var(--dim);white-space:nowrap;
+        overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+  .tx-a{font-size:14.5px;font-weight:700;white-space:nowrap;}
+  .icon-btn{background:none;border:none;color:var(--dim);font-size:17px;
+            padding:4px 6px;cursor:pointer;line-height:1;}
+  .empty{font-size:13.5px;color:var(--dim);display:block;padding:6px 0;}
+
+  /* ===================== THỐNG KÊ ===================== */
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px;}
+  .kpi{border-radius:15px;padding:13px;border:none;}
+  /* Ô KPI bấm được — phải thấy rõ là chạm được, không thì chẳng ai chạm thử */
+  .kpi.tap{cursor:pointer;transition:transform .12s ease,filter .12s ease;}
+  .kpi.tap:active{transform:scale(.97);filter:brightness(.96);}
+  .kpi.k1{background:var(--t1-bg);} .kpi.k1 .kpi-v{color:var(--t1-fg);}
+  .kpi.k2{background:var(--t2-bg);} .kpi.k2 .kpi-v{color:var(--t2-fg);}
+  .kpi.k3{background:var(--t3-bg);} .kpi.k3 .kpi-v{color:var(--t3-fg);}
+  .kpi.k4{background:var(--t4-bg);} .kpi.k4 .kpi-v{color:var(--t4-fg);}
+  .kpi-l{font-size:10.5px;color:var(--mut);font-weight:700;
+         letter-spacing:.35px;text-transform:uppercase;opacity:.85;}
+  .kpi-v{font-size:19px;font-weight:750;letter-spacing:-.02em;margin-top:4px;}
+  .kpi-s{font-size:11px;color:var(--mut);margin-top:2px;font-weight:600;opacity:.8;}
+
+  .brow{margin-bottom:13px;}
+  .brow:last-child{margin-bottom:0;}
+  .brow-top{display:flex;justify-content:space-between;align-items:baseline;
+            gap:10px;margin-bottom:6px;}
+  .brow-n{display:flex;align-items:center;gap:7px;min-width:0;}
+  .brow-n span{font-size:13.5px;font-weight:650;white-space:nowrap;
+               overflow:hidden;text-overflow:ellipsis;}
+  .brow-v{font-size:13px;font-weight:700;white-space:nowrap;}
+  .brow-p{font-size:11.5px;color:var(--dim);font-weight:600;margin-left:6px;}
+  .brow-pct{font-size:12px;font-weight:750;margin-left:6px;}
+  .track{height:7px;border-radius:4px;background:var(--track);overflow:hidden;}
+  .fill{height:100%;border-radius:4px;transition:width .4s;}
+  .lead{font-size:12.5px;color:var(--mut);margin:-2px 0 13px;font-weight:600;}
+  .lead b{color:var(--txt);font-weight:750;}
+
+  /* ---- Biểu đồ cột ---- */
+  .chart-top{display:flex;justify-content:space-between;align-items:baseline;
+             font-size:11.5px;color:var(--mut);font-weight:600;margin-bottom:10px;}
+  .chart-top b{color:var(--txt);font-weight:750;}
+  .colchart{display:flex;align-items:flex-end;gap:2px;height:124px;}
+  .col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;
+       justify-content:flex-end;align-items:center;cursor:pointer;}
+  .col-bar{width:100%;max-width:16px;border-radius:3px 3px 0 0;min-height:3px;
+           background:linear-gradient(180deg, var(--h1), var(--h2));
+           transition:height .3s;}
+  .col-bar.zero{background:var(--track);}
+  .col.sel .col-bar{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--acc);}
+  .col-x{display:flex;gap:2px;margin-top:7px;}
+  .col-x div{flex:1;min-width:0;text-align:center;font-size:9px;color:var(--dim);
+             font-weight:650;overflow:hidden;white-space:nowrap;}
+  .col-x div.on{color:var(--acc-text);font-weight:750;}
+
+  /* ---- Chi tiết 1 ngày ---- */
+  .dayrow{
+    display:flex;align-items:center;gap:10px;padding:10px 0;
+    border-bottom:1px solid var(--line-soft);cursor:pointer;
+    -webkit-user-select:none;user-select:none;
+  }
+  .dayrow-d{font-size:12.5px;font-weight:700;width:46px;flex:0 0 auto;color:var(--txt);}
+  .dayrow-bar{flex:1;height:7px;border-radius:4px;background:var(--track);overflow:hidden;}
+  .dayrow-v{font-size:12.5px;font-weight:700;width:82px;text-align:right;flex:0 0 auto;}
+  .daydetail{padding:0 0 10px 0;border-bottom:1px solid var(--line-soft);}
+  .daydetail.boxed{margin-top:14px;padding:12px;border-radius:12px;
+                   background:var(--surface-2);border-bottom:none;}
+  .dd-head{font-size:12px;font-weight:750;color:var(--acc-text);margin-bottom:4px;}
+  .dd-head.sb{display:flex;justify-content:space-between;align-items:center;
+              gap:8px;margin-bottom:6px;}
+  .dd-tx{display:flex;gap:8px;align-items:flex-start;padding:7px 0;}
+  .dd-tx.indent{padding-left:46px;}
+  .dd-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:6px;}
+  .dd-main{flex:1;min-width:0;}
+  .dd-t{font-size:13.5px;font-weight:650;}
+  .dd-s{font-size:11.5px;color:var(--dim);margin-top:1px;}
+  .dd-a{font-size:13.5px;font-weight:700;white-space:nowrap;}
+
+  /* ===================== NÚT & THANH GHI ===================== */
+  .btn{
+    width:100%;border:none;border-radius:13px;padding:16px;font-size:16.5px;
+    font-weight:700;color:#fff;cursor:pointer;font-family:inherit;
+    background:linear-gradient(135deg, var(--h1) 0%, var(--h2) 100%);
+    -webkit-user-select:none;user-select:none;
+  }
+  .btn:disabled{opacity:.45;}
+
+  #bar{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:var(--bg);border-top:1px solid var(--line);
+    padding:12px 16px calc(10px + env(safe-area-inset-bottom));
+    transform:translateY(calc(var(--kb) * -1));
+    transition:transform .18s ease-out;
+  }
+  #bar .inner{max-width:620px;margin:0 auto;}
+  #saveBtn{display:flex;align-items:center;justify-content:center;gap:8px;
+           box-shadow:var(--shadow-lg);}
+  #saveSub{font-size:13px;font-weight:600;opacity:.85;
+           max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* ===================== TOAST ===================== */
+  #toast{
+    position:fixed;left:50%;
+    transform:translateX(-50%) translateY(calc(var(--kb) * -1));
+    bottom:calc(var(--bar) + 12px + env(safe-area-inset-bottom));
+    background:linear-gradient(135deg, var(--h1), var(--h2));color:#fff;
+    padding:12px 18px;border-radius:12px;font-size:14px;font-weight:650;
+    max-width:88%;text-align:center;z-index:99;opacity:0;pointer-events:none;
+    transition:opacity .22s;box-shadow:var(--shadow-lg);
+  }
+  #toast.show{opacity:1;}
+  #toast.err{background:var(--err);}
+  #toast .t-sub{display:block;font-size:12px;font-weight:600;
+                opacity:.82;margin-top:3px;}
+
+  /* Danh hiệu vui trong tab Thống kê */
+  /* ---- Hàng chờ duyệt từ email ngân hàng ---- */
+  .mailrow{display:flex;align-items:center;gap:10px;padding:10px 0;
+           border-bottom:1px solid var(--line-soft);}
+  .mailrow:last-child{border-bottom:none;}
+  .mail-main{flex:1;min-width:0;}
+  .mail-t{font-size:15px;font-weight:750;}
+  .mail-s{font-size:11.5px;color:var(--dim);margin-top:2px;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mail-g{display:inline-block;background:var(--acc-weak);color:var(--acc-text);
+          border-radius:6px;padding:1px 6px;font-weight:700;margin-left:4px;}
+  /* Cảnh báo trùng: cùng ngày, cùng số tiền đã có trong sheet */
+  .mail-dup{display:inline-block;background:var(--warn-weak);color:var(--warn);
+            border-radius:6px;padding:1px 6px;font-weight:700;margin-left:4px;}
+  .mail-use{
+    background:var(--acc);color:#fff;border:none;border-radius:9px;
+    padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;
+    font-family:inherit;flex:0 0 auto;
+  }
+  .mail-use:active{transform:scale(.95);}
+
+  /* ---- Công tắc bật/tắt quét email ---- */
+  .head-act{display:flex;align-items:center;gap:6px;}
+  .sw{
+    width:42px;height:25px;border-radius:999px;border:none;padding:0;
+    background:var(--track);position:relative;cursor:pointer;flex:0 0 auto;
+    transition:background .2s ease;
+  }
+  .sw.on{background:var(--acc);}
+  .sw-k{
+    position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 3px rgba(16,24,40,.3);
+    transition:transform .2s cubic-bezier(.3,1.4,.5,1);
+  }
+  .sw.on .sw-k{transform:translateX(17px);}
+  .sw-lbl{font-size:11.5px;font-weight:700;color:var(--dim);
+          transition:color .2s ease;}
+  .sw-lbl.on{color:var(--acc-text);}
+
+  /* Vùng chạm để mở chi tiết — phải thấy rõ là bấm được */
+  .mail-main{cursor:pointer;border-radius:10px;
+             transition:background .15s ease;}
+  .mail-main:active{background:var(--surface-2);}
+  .mail-more{font-size:11px;color:var(--acc-text);font-weight:700;
+             margin-left:5px;opacity:.8;}
+
+  /* ---- Nút ↻: phản hồi ngay khi chạm, xoay liên tục khi đang quét ---- */
+  .icon-btn{border-radius:9px;transition:background .15s ease,transform .1s ease;}
+  .icon-btn:active{background:var(--surface-2);transform:scale(.88);}
+  .icon-btn.busy{color:var(--acc);pointer-events:none;}
+  .icon-btn.busy .ib-g{display:inline-block;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Khung xương lúc đang quét — nhìn là biết máy đang làm việc */
+  .sk-row{display:flex;align-items:center;gap:10px;padding:11px 0;
+          border-bottom:1px solid var(--line-soft);}
+  .sk-row:last-child{border-bottom:none;}
+  .sk{background:linear-gradient(90deg,var(--surface-2) 25%,
+      var(--line-soft) 37%,var(--surface-2) 63%);
+      background-size:400% 100%;border-radius:6px;
+      animation:shimmer 1.3s ease infinite;}
+  .sk-a{height:14px;width:38%;}
+  .sk-b{height:10px;width:62%;margin-top:6px;}
+  .sk-c{height:32px;width:58px;flex:0 0 auto;border-radius:9px;}
+  @keyframes shimmer{from{background-position:100% 0;} to{background-position:0 0;}}
+  .scan-note{font-size:12px;color:var(--acc-text);font-weight:650;
+             padding:2px 0 8px;display:block;}
+
+  /* ---- Bảng chi tiết giao dịch (bottom sheet) ---- */
+  #mailBackdrop, #edBackdrop{
+    position:fixed;inset:0;background:rgba(12,17,29,.46);
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+    z-index:110;opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  #mailBackdrop.show, #edBackdrop.show{opacity:1;pointer-events:auto;}
+  #mailSheet, #edSheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:111;
+    background:var(--surface);border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 30px rgba(16,24,40,.22);
+    max-height:86vh;display:flex;flex-direction:column;
+    transform:translateY(102%);transition:transform .26s cubic-bezier(.22,1,.36,1);
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  }
+  #mailSheet.show, #edSheet.show{transform:translateY(0);}
+  /* Bảng sửa cao hơn vì có 6 ô nhập; phần thân tự cuộn */
+  #edSheet{max-height:92vh;}
+  #edSheet .lbl{margin-top:12px;}
+  #edSheet .amt-box{margin-bottom:0;}
+  #edSheet input[type=date], #edSheet select, #edSheet input[type=text]{
+    margin-bottom:0;
+  }
+  .tx-edit{color:var(--acc-text);font-weight:700;margin-left:6px;}
+  .ms-grip{width:38px;height:4px;border-radius:99px;background:var(--line);
+           margin:9px auto 2px;flex:0 0 auto;}
+  .ms-head{padding:6px 18px 10px;flex:0 0 auto;}
+  .ms-amt{font-size:27px;font-weight:800;letter-spacing:-.6px;
+          font-variant-numeric:tabular-nums;}
+  .ms-when{font-size:12.5px;color:var(--dim);margin-top:2px;font-weight:600;}
+  .ms-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 18px;}
+  .ms-r{display:flex;gap:12px;padding:9px 0;
+        border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+  .ms-r:last-child{border-bottom:none;}
+  .ms-k{flex:0 0 108px;color:var(--dim);font-weight:650;font-size:12.5px;}
+  .ms-v{flex:1;min-width:0;word-break:break-word;font-weight:600;}
+  .ms-warn{background:var(--warn-weak);color:var(--warn);border-radius:12px;
+           padding:11px 13px;font-size:12.5px;font-weight:650;line-height:1.5;
+           margin:4px 0 8px;}
+  .ms-sec{font-size:11.5px;font-weight:800;letter-spacing:.5px;
+          color:var(--dim);text-transform:uppercase;padding:14px 0 2px;}
+  .ms-raw{font-size:12px;line-height:1.55;color:var(--mut);
+          background:var(--surface-2);border-radius:12px;padding:11px 13px;
+          white-space:pre-wrap;word-break:break-word;margin-top:4px;}
+  .ms-link{background:none;border:none;color:var(--acc-text);font-weight:700;
+           font-size:13px;padding:10px 0;cursor:pointer;font-family:inherit;}
+  .ms-act{display:flex;gap:9px;padding:12px 18px 2px;flex:0 0 auto;
+          border-top:1px solid var(--line-soft);}
+  .ms-use{flex:1;background:linear-gradient(135deg,var(--h1),var(--h2));
+          color:#fff;border:none;border-radius:13px;padding:14px;
+          font-size:15px;font-weight:750;font-family:inherit;cursor:pointer;}
+  .ms-use:active{transform:scale(.98);}
+  .ms-skip{flex:0 0 auto;background:var(--surface-2);color:var(--mut);
+           border:none;border-radius:13px;padding:14px 17px;
+           font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
+
+  #toast{z-index:160;}
+  /* Toast có nút bấm (vd "Hoàn tác") — phải nhận được chạm */
+  #toast.act{pointer-events:auto;display:flex;align-items:center;gap:12px;
+             text-align:left;}
+  #toast .t-act{background:rgba(255,255,255,.22);border:none;color:#fff;
+    border-radius:9px;padding:7px 13px;font-size:13px;font-weight:800;
+    font-family:inherit;cursor:pointer;flex:0 0 auto;white-space:nowrap;}
+  #toast .t-act:active{background:rgba(255,255,255,.34);}
+
+  /* ---- Bảng chẩn đoán tốc độ ---- */
+  .pf-sec{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--dim);
+          text-transform:uppercase;padding:12px 0 4px;}
+  .pf-r{display:flex;gap:10px;padding:7px 0;align-items:baseline;
+        border-bottom:1px solid var(--line-soft);font-size:13px;}
+  .pf-r:last-of-type{border-bottom:none;}
+  .pf-head{font-size:11px;color:var(--dim);font-weight:700;border-bottom:none;
+           padding-bottom:2px;}
+  .pf-k{flex:1;min-width:0;font-weight:650;}
+  .pf-n{font-size:11px;color:var(--dim);font-weight:600;margin-left:4px;}
+  .pf-v{flex:0 0 auto;font-weight:750;font-variant-numeric:tabular-nums;
+        color:var(--acc-text);}
+  .pf-h{font-size:11.5px;color:var(--dim);line-height:1.5;padding:0 0 7px;}
+  .pf-big{background:var(--acc-weak);color:var(--acc-text);border-radius:12px;
+          padding:11px 13px;font-size:14px;font-weight:650;margin:10px 0 2px;}
+  .pf-big b{font-size:19px;font-variant-numeric:tabular-nums;}
+
+  /* Khôi phục các giao dịch đã bấm ✕ */
+  .mail-restore{display:block;width:100%;background:none;border:none;
+    color:var(--acc-text);font-family:inherit;font-size:12.5px;font-weight:700;
+    padding:10px 0 2px;cursor:pointer;text-align:left;}
+  .mail-restore:active{opacity:.6;}
+  /* Hai lựa chọn cho nhóm đã bỏ qua: lấy lại, hoặc dẹp hẳn cho khuất mắt */
+  .mail-foot{display:flex;align-items:center;gap:10px;}
+  .mail-foot .mail-restore{flex:1;width:auto;}
+  .mail-purge{flex:0 0 auto;background:var(--surface-2);border:none;
+    color:var(--mut);font-family:inherit;font-size:12px;font-weight:700;
+    border-radius:9px;padding:7px 11px;cursor:pointer;margin-top:8px;}
+  .mail-purge:active{opacity:.6;}
+
+  /* ---- Dải chọn ngày ---- */
+  .dstrip-lbl{font-size:11px;color:var(--dim);font-weight:650;
+              padding:13px 0 0;display:block;}
+  .dstrip{gap:7px;}
+  .dchip{
+    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:0;
+    /* 48px — trên mức 44pt tối thiểu của iOS, chạm là trúng */
+    min-width:48px;padding:7px 8px 6px;
+    background:var(--surface-2);border:1.5px solid transparent;
+    border-radius:12px;font-family:inherit;cursor:pointer;
+    transition:all .14s ease;
+  }
+  .dchip:active{transform:scale(.93);}
+  .dchip.on{background:var(--acc-weak);border-color:var(--acc);}
+  .dchip-d{font-size:15px;font-weight:800;color:var(--txt);line-height:1.15;
+           font-variant-numeric:tabular-nums;}
+  .dchip.on .dchip-d{color:var(--acc-text);}
+  .dchip-w{font-size:9.5px;font-weight:700;color:var(--dim);line-height:1.1;}
+  .dchip-a{font-size:9.5px;font-weight:700;color:var(--mut);line-height:1.3;
+           font-variant-numeric:tabular-nums;}
+  .dchip.on .dchip-w, .dchip.on .dchip-a{color:var(--acc-text);opacity:.85;}
+
+  /* Nút lùi/tiến trong tiêu đề khối chi tiết */
+  .dd-nav{display:flex;gap:4px;flex:0 0 auto;}
+  .dd-arrow{
+    width:30px;height:30px;border-radius:9px;border:none;cursor:pointer;
+    background:var(--surface);color:var(--acc-text);font-size:17px;
+    font-weight:800;font-family:inherit;line-height:1;padding:0;
+  }
+  .dd-arrow:active{transform:scale(.9);}
+  .dd-arrow:disabled{color:var(--dim);opacity:.4;cursor:default;}
+
+  /* ---- Phím tắt khoản mục ---- */
+  .sc{
+    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;
+    gap:1px;min-width:74px;padding:9px 11px 8px;
+    background:var(--surface-2);border:1.5px solid transparent;
+    border-radius:14px;font-family:inherit;cursor:pointer;
+    transition:all .14s ease;
+  }
+  .sc:active{transform:scale(.94);}
+  .sc.on{background:var(--acc-weak);border-color:var(--acc);}
+  .sc-e{font-size:19px;line-height:1.1;}
+  .sc-t{font-size:11.5px;font-weight:750;color:var(--mut);white-space:nowrap;}
+  .sc.on .sc-t{color:var(--acc-text);}
+  /* Số tiền hay chi — chữ nhỏ, chỉ là gợi ý, không được át tên phím tắt */
+  .sc-a{font-size:10px;font-weight:700;color:var(--dim);
+        font-variant-numeric:tabular-nums;}
+  .sc.on .sc-a{color:var(--acc-text);opacity:.85;}
+
+  /* ---- So với cùng kỳ tháng trước ---- */
+  .cmp-top{padding:2px 0 10px;}
+  .cmp-lbl{font-size:11.5px;color:var(--dim);font-weight:650;}
+  .cmp-big{font-size:25px;font-weight:800;letter-spacing:-.7px;margin-top:2px;
+           font-variant-numeric:tabular-nums;}
+  .cmp-delta{font-size:13px;font-weight:750;margin-top:5px;
+             font-variant-numeric:tabular-nums;}
+  .cmp-delta.bad{color:var(--err);}
+  .cmp-delta.good{color:var(--ok);}
+  .cmp-delta.flat{color:var(--dim);}
+  .cmp-vs{display:block;font-size:11.5px;font-weight:600;color:var(--dim);
+          margin-top:2px;}
+  .cmp-warn{font-size:11.5px;color:var(--warn);font-weight:650;margin-top:7px;
+            background:var(--warn-weak);border-radius:9px;padding:7px 10px;}
+  /* Cột đôi: cột nhạt = cả tháng, cột đậm = đến cùng kỳ, chồng lên nhau */
+  .c2wrap{margin-top:4px;}
+  .c2chart{display:flex;align-items:flex-end;gap:4px;}
+  .c2{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;
+      justify-content:flex-end;align-items:center;cursor:pointer;
+      position:relative;}
+  /* Đường gạch đứt đánh dấu tháng đang xem */
+  .c2.cur::before{content:'';position:absolute;top:0;bottom:0;left:50%;
+    border-left:1.5px dashed var(--acc);opacity:.5;}
+  /* Bong bóng số ghim ở ĐỈNH khung, không phải ngay trên đầu cột — để đường
+     gạch đứt chạy từ bong bóng xuống tận cột, giống mẫu */
+  .c2-tip{
+    position:absolute;top:0;left:50%;transform:translateX(-50%);
+    font-size:10.5px;font-weight:800;color:var(--acc-text);
+    background:var(--surface);border:1.5px solid var(--acc);
+    border-radius:7px;padding:2px 7px;white-space:nowrap;
+    font-variant-numeric:tabular-nums;z-index:1;
+  }
+  /* Hai cột xếp chồng: nhạt ở sau, đậm hẹp hơn nằm trước */
+  .c2-stack{position:relative;width:100%;max-width:28px;display:flex;
+            justify-content:center;align-items:flex-end;}
+  .c2-full{width:100%;border-radius:4px 4px 0 0;background:var(--cmp-full);
+           transition:height .3s;}
+  .c2-same{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+           width:52%;border-radius:3px 3px 0 0;
+           background:linear-gradient(180deg, var(--h1), var(--h2));
+           transition:height .3s;}
+  .c2-full.zero, .c2-same.zero{background:var(--track);}
+  .cmp-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+              font-size:11px;color:var(--dim);font-weight:650;padding-top:8px;}
+  .cmp-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;
+                margin-right:5px;vertical-align:-1px;}
+  .cmp-legend .lg-same{background:linear-gradient(180deg, var(--h1), var(--h2));}
+  .cmp-legend .lg-full{background:var(--cmp-full);}
+  .cmp-sec{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--dim);
+           text-transform:uppercase;padding:15px 0 6px;}
+  /* Hàng biến động: tên | thanh | số chênh. Thanh mọc từ GIỮA sang hai phía
+     để tăng và giảm phân biệt được ngay mà không cần đọc dấu. */
+  .mv{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px;}
+  .mv-n{flex:1;min-width:0;font-weight:650;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap;}
+  .mv-s{display:block;font-size:10.5px;color:var(--dim);font-weight:600;
+        font-variant-numeric:tabular-nums;}
+  .mv-bar{flex:0 0 72px;height:7px;background:var(--surface-2);border-radius:4px;
+          position:relative;overflow:hidden;}
+  .mv-bar i{position:absolute;top:0;height:100%;border-radius:4px;}
+  .mv-bar i.up{left:50%;background:var(--err);}
+  .mv-bar i.down{right:50%;background:var(--ok);}
+  .mv-d{flex:0 0 auto;font-size:12px;font-weight:750;
+        font-variant-numeric:tabular-nums;}
+  .mv-d.bad{color:var(--err);}
+  .mv-d.good{color:var(--ok);}
+
+  /* ---- Nhãn (tag) ---- */
+  .lbl-opt{font-weight:600;color:var(--dim);text-transform:none;letter-spacing:0;}
+  .tagpick{display:flex;flex-wrap:wrap;gap:7px;}
+  .tg-pick{
+    background:var(--surface-2);border:1.5px solid transparent;color:var(--mut);
+    border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;
+    font-family:inherit;cursor:pointer;transition:all .14s ease;
+  }
+  .tg-pick:active{transform:scale(.95);}
+  .tg-pick.on{background:var(--acc-weak);border-color:var(--acc);
+              color:var(--acc-text);}
+  /* Chip nhãn gắn sau ghi chú trong danh sách giao dịch */
+  .tg{display:inline-block;background:var(--acc-weak);color:var(--acc-text);
+      border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:700;
+      margin-left:5px;vertical-align:middle;}
+  .tg-why{font-size:11.5px;color:var(--acc-text);line-height:1.5;
+          background:var(--acc-weak);border-radius:9px;padding:7px 10px;
+          margin-top:8px;width:100%;font-weight:600;}
+  .tg-why b{font-weight:800;}
+  .tag-note{font-size:12px;color:var(--dim);line-height:1.6;padding:0 0 9px;}
+  .tag-note b{color:var(--acc-text);}
+  .tag-warn{color:var(--warn);font-weight:650;}
+
+  .badge-fun{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--acc-weak);color:var(--acc-text);
+    padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:750;
+    margin:0 0 11px;
+  }
+
+  /* ===================== LOCK / SPLASH ===================== */
+  /* Màn khóa chiếm trọn màn hình với gradient thương hiệu — giống màn mở khóa
+     của ví điện tử. Bàn phím số tự vẽ, không dùng bàn phím hệ thống, nên
+     bố cục không bị nhảy và chạm nhanh hơn. */
+  .lockwrap{
+    position:fixed;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:linear-gradient(160deg, var(--h1) 0%, var(--h2) 100%);
+    padding:calc(20px + env(safe-area-inset-top)) 24px
+            calc(24px + env(safe-area-inset-bottom));
+    -webkit-user-select:none;user-select:none;z-index:200;
+  }
+  .lock-inner{width:100%;max-width:330px;text-align:center;}
+
+  .brandmark{
+    width:88px;height:88px;margin:0 auto 16px;border-radius:26px;
+    background:rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 28px rgba(0,0,0,.2);
+  }
+  /* Tên viết hoa cần giãn chữ dương, nếu để letter-spacing âm sẽ bị dính chữ */
+  .brand-name{font-size:21px;font-weight:750;color:#fff;letter-spacing:.06em;}
+  .brand-sub{font-size:13px;color:rgba(255,255,255,.72);
+             font-weight:550;margin-top:3px;}
+
+  .pin-dots{display:flex;justify-content:center;gap:14px;margin:30px 0 8px;}
+  .pin-dots.shake{animation:shake .4s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-9px);} 40%{transform:translateX(9px);}
+    60%{transform:translateX(-6px);} 80%{transform:translateX(6px);}
+  }
+  .pd{width:13px;height:13px;border-radius:50%;
+      background:rgba(255,255,255,.26);transition:.18s;}
+  .pd.on{background:#fff;transform:scale(1.12);}
+
+  .pin-err{font-size:13px;color:#ffd0cc;font-weight:650;
+           min-height:20px;margin-bottom:8px;transition:color .2s;}
+  /* Cùng một dòng: bình thường là lời chào, khi sai PIN mới chuyển sang đỏ */
+  .pin-err.hint{color:rgba(255,255,255,.7);font-weight:600;}
+
+  /* ---- Linh vật: cái ví biết chớp mắt, nhắm mắt khi gõ PIN ---- */
+  /* Nhịp thở nhẹ — thứ làm nhân vật "sống" nhất mà tốn ít công nhất */
+  .mascot{animation:float 3.4s ease-in-out infinite;}
+  @keyframes float{
+    0%,100%{transform:translateY(0) rotate(0);}
+    50%{transform:translateY(-5px) rotate(-1.5deg);}
+  }
+
+  .mascot .eye{
+    transform-box:fill-box;transform-origin:center;
+    animation:blink 4.8s infinite;
+  }
+  /* Chớp mắt: 95% thời gian mở, chỉ nháy rất nhanh ở cuối chu kỳ */
+  @keyframes blink{
+    0%,93%,100%{transform:scaleY(1);}
+    96%{transform:scaleY(.08);}
+  }
+  .mascot.typing .eye{animation:none;transform:scaleY(.08);
+                      transition:transform .16s ease;}
+
+  .mascot .cheek{opacity:.5;transition:opacity .25s;}
+  .mascot.typing .cheek{opacity:.75;}
+
+  .mascot .m-smile,.mascot .m-sad,.mascot .eye-happy{transition:opacity .2s;}
+  .mascot .m-sad,.mascot .eye-happy{opacity:0;}
+
+  .mascot.sad .m-smile{opacity:0;}
+  .mascot.sad .m-sad{opacity:1;}
+  .mascot.sad{animation:tilt .5s;}
+  @keyframes tilt{
+    0%,100%{transform:rotate(0);}
+    25%{transform:rotate(-9deg);} 55%{transform:rotate(7deg);}
+    80%{transform:rotate(-3deg);}
+  }
+
+  /* Mở khóa đúng: mắt cong thành hai nét cười, ví nhảy lên */
+  .mascot.happy .eye{opacity:0;animation:none;}
+  .mascot.happy .eye-happy{opacity:1;}
+  .mascot.happy .cheek{opacity:.85;}
+  .mascot.happy{animation:hop .45s ease 2;}
+  @keyframes hop{
+    0%,100%{transform:translateY(0) scale(1);}
+    40%{transform:translateY(-12px) scale(1.06);}
+  }
+
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);
+          gap:14px;margin-top:10px;}
+  .key{
+    height:62px;border-radius:18px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.16);color:#fff;
+    font-size:25px;font-weight:650;font-family:inherit;
+    font-variant-numeric:tabular-nums;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .12s,transform .08s;
+  }
+  .key:active{background:rgba(255,255,255,.34);transform:scale(.95);}
+  .key.ghost{background:transparent;font-size:19px;
+             color:rgba(255,255,255,.8);}
+  .key.ghost:active{background:rgba(255,255,255,.14);}
+
+  .lock-foot{font-size:11.5px;color:rgba(255,255,255,.5);
+             margin-top:20px;font-weight:550;}
+
+  #splash{
+    position:fixed;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:12px;
+    background:linear-gradient(160deg, var(--h1) 0%, var(--h2) 100%);
+    color:rgba(255,255,255,.85);font-size:13.5px;font-weight:650;z-index:200;
   }
 </style>
 </head>
 <body>
-  <div id="shell">
-    <div id="port">
-      <!-- src được gán bằng JS để kèm mốc thời gian t0, xem script bên dưới -->
-      <iframe id="app" allow="clipboard-write"></iframe>
+
+<!-- ==================== MÀN HÌNH CHỜ ==================== -->
+<div id="splash">
+  <svg width="54" height="54" viewBox="0 0 48 48" fill="none">
+    <rect x="5" y="12" width="38" height="27" rx="7" fill="#fff" opacity=".22"/>
+    <rect x="5" y="19" width="38" height="5.5" fill="#fff" opacity=".5"/>
+    <rect x="30" y="29" width="9" height="5" rx="2.5" fill="#fff" opacity=".65"/>
+  </svg>
+  <div id="splashTxt">Đang tải…</div>
+</div>
+
+<!-- ==================== MÀN HÌNH PIN ==================== -->
+<div id="lock" class="lockwrap hide">
+  <div class="lock-inner">
+
+    <div class="brandmark mascot" id="mascot">
+      <!-- Cái ví có mặt: gõ PIN thì nhắm mắt lại, sai PIN thì xịu mặt -->
+      <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+        <!-- quai ví vắt lên trên -->
+        <path d="M16 18v-4a6 6 0 0 1 6-6h20"
+              stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".55"/>
+        <!-- thân ví -->
+        <rect x="7" y="17" width="50" height="38" rx="12" fill="#fff" opacity=".96"/>
+        <!-- khóa ví bên phải -->
+        <rect x="45" y="31" width="14" height="11" rx="5.5" fill="#5b7cff"/>
+        <circle cx="52" cy="36.5" r="2" fill="#fff" opacity=".85"/>
+        <!-- má hồng -->
+        <ellipse class="cheek" cx="15.5" cy="42" rx="3.6" ry="2.4" fill="#ff8fa3"/>
+        <ellipse class="cheek" cx="39" cy="42" rx="3.6" ry="2.4" fill="#ff8fa3"/>
+        <!-- mắt thường -->
+        <circle class="eye" cx="21" cy="34" r="3.7" fill="#36406e"/>
+        <circle class="eye" cx="33.5" cy="34" r="3.7" fill="#36406e"/>
+        <!-- mắt cười (hiện khi mở khóa đúng) -->
+        <path class="eye-happy" d="M17.4 35q3.6-4.4 7.2 0"
+              stroke="#36406e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path class="eye-happy" d="M29.9 35q3.6-4.4 7.2 0"
+              stroke="#36406e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <!-- miệng cười / miệng mếu -->
+        <path class="m-smile" d="M21.5 42.5q5.8 5.6 11.6 0"
+              stroke="#36406e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+        <path class="m-sad" d="M21.5 46q5.8-5.6 11.6 0"
+              stroke="#36406e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Đổi tên app ở 2 dòng này -->
+    <div class="brand-name">VÍ CHI TIÊU</div>
+    <div class="brand-sub">Quản lý tài chính cá nhân</div>
+
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="pin-err" id="pinErr"></div>
+
+    <div class="keypad" id="keypad"></div>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app" class="wrap hide">
+
+  <div class="hero">
+    <div class="hero-top">
+      <div class="sheet-pick">
+        <span>Tháng</span>
+        <select id="sheetSel" onchange="switchSheet()"></select>
+      </div>
+      <div class="hero-right">
+        <span class="net" id="netBadge">•</span>
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      </div>
+    </div>
+    <div class="hero-lbl">Chi tiêu hôm nay</div>
+    <div class="hero-amt" id="todayTotal">0 đ</div>
+    <div class="hero-stats" id="heroMeta"></div>
+  </div>
+
+  <div class="tabs">
+    <div id="tab-ghi" class="sel" onclick="switchTab('ghi')"><span class="ti">✏️</span>Ghi</div>
+    <div id="tab-su"  onclick="switchTab('su')"><span class="ti">🧾</span>Lịch sử</div>
+    <div id="tab-tk"  onclick="switchTab('tk')"><span class="ti">📊</span>Thống kê</div>
+  </div>
+
+  <!-- ---------- TAB GHI ---------- -->
+  <div id="pane-ghi">
+
+    <!-- Giao dịch bóc từ email ngân hàng — chỉ hiện khi có việc để làm -->
+    <div class="card hide" id="mailCard">
+      <div class="head sb">
+        <b>📬 Từ email ngân hàng</b>
+        <div class="head-act">
+          <button class="sw" id="mailSw" role="switch" aria-label="Bật/tắt quét email"
+                  onclick="toggleMailOn()"><span class="sw-k"></span></button>
+          <button class="icon-btn" id="mailBtn" aria-label="Quét hộp thư"
+                  onclick="scanMail(true)"><span class="ib-g">↻</span></button>
+        </div>
+      </div>
+      <div id="mailList"></div>
+    </div>
+
+    <div class="card hide" id="scCard">
+      <div class="head"><b>⚡ Phím tắt</b></div>
+      <div class="scroll-row" id="scRow"></div>
+    </div>
+
+    <div class="card">
+      <div class="head"><b>Số tiền</b></div>
+      <div class="amt-box">
+        <input id="amount" class="amt-in" type="text" inputmode="numeric"
+               placeholder="0" autocomplete="off" oninput="onAmountInput()">
+        <span class="amt-cur">đ</span>
+      </div>
+      <div class="amt-chips" id="quickAmt"></div>
+    </div>
+
+    <div class="card">
+      <div class="head"><span class="dot"></span><b>Chi tiết</b></div>
+      <div class="mb">
+        <label class="lbl">Loại chi phí</label>
+        <select id="hu" class="cat-edge" onchange="onHuChange()"></select>
+      </div>
+      <div class="mb">
+        <label class="lbl">Khoản mục</label>
+        <select id="item" onchange="onItemChange()"></select>
+      </div>
+      <div class="row mb row2">
+        <div>
+          <label class="lbl">Ngày</label>
+          <input id="date" type="date" onchange="S.dateTouched=true">
+        </div>
+        <div>
+          <label class="lbl">Loại tiền</label>
+          <div class="seg" id="moneySeg"></div>
+        </div>
+      </div>
+      <div>
+        <label class="lbl">Ghi chú</label>
+        <input id="note" type="text" placeholder="VD: Siêu thị Kingfood · gõ henho / cv / family"
+               autocomplete="off" oninput="onNoteInput()"
+               onfocus="scrollIntoViewSoft(this)">
+      </div>
+      <div>
+        <label class="lbl">Nhãn <span class="lbl-opt">không bắt buộc · chạm lần nữa để bỏ chọn</span></label>
+        <div class="tagpick" id="tagPick"></div>
+      </div>
     </div>
   </div>
 
+  <!-- ---------- TAB LỊCH SỬ ---------- -->
+  <div id="pane-su" class="hide">
+    <div class="card">
+      <input id="search" class="search" type="text" placeholder="Tìm ghi chú, khoản mục…"
+             autocomplete="off" oninput="renderHistory()">
+      <div class="scroll-row" id="huFilter"></div>
+    </div>
+    <div class="card">
+      <div class="head sb">
+        <b id="histCount">Giao dịch</b>
+        <div class="head-act">
+          <span class="sw-lbl" id="editLbl">Sửa</span>
+          <button class="sw" id="editSw" role="switch" aria-label="Bật/tắt sửa giao dịch"
+                  onclick="toggleEditOn()"><span class="sw-k"></span></button>
+          <button class="icon-btn" onclick="loadTx(true)">↻</button>
+        </div>
+      </div>
+      <div id="histBody"><span class="empty">Đang tải…</span></div>
+    </div>
+  </div>
+
+  <!-- ---------- TAB THỐNG KÊ ---------- -->
+  <div id="pane-tk" class="hide">
+
+    <div class="seg scope">
+      <div id="scope-month" class="sel" onclick="setScope('month')">Tháng này</div>
+      <div id="scope-year" onclick="setScope('year')">Cả năm</div>
+    </div>
+
+    <!-- ===== Phạm vi THÁNG ===== -->
+    <div id="tkMonth">
+      <div class="kpis" id="kpis"></div>
+      <div class="card">
+        <div class="head sb">
+          <b>So với cùng kỳ tháng trước</b>
+          <button class="icon-btn" onclick="loadCompare(true)"><span class="ib-g">↻</span></button>
+        </div>
+        <div id="statCmp"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head sb">
+          <b>Chi tiêu theo ngày</b>
+          <div class="mini-seg">
+            <div id="dv-chart" class="sel" onclick="setDayView('chart')">Cột</div>
+            <div id="dv-list" onclick="setDayView('list')">Danh sách</div>
+          </div>
+        </div>
+        <div id="statDay"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><b>Theo loại chi phí</b></div>
+        <div id="statHu"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><b>Top khoản mục</b></div>
+        <div id="statItem"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><b>Theo nhãn</b></div>
+        <div id="statTag"><span class="empty">Đang tải…</span></div>
+      </div>
+    </div>
+
+    <!-- Chẩn đoán tốc độ — gập lại mặc định, chỉ mở khi cần soi -->
+    <div class="card">
+      <div class="head sb" onclick="togglePerf()" style="cursor:pointer;">
+        <b>⏱ Tốc độ tải</b>
+        <span class="icon-btn" id="perfCaret">›</span>
+      </div>
+      <div id="perfBox" class="hide"></div>
+    </div>
+
+    <!-- ===== Phạm vi NĂM ===== -->
+    <div id="tkYear" class="hide">
+      <div class="card" id="yearPickCard">
+        <div class="head"><b>Chọn năm</b></div>
+        <div class="scroll-row" style="margin-top:0;" id="yearChips"></div>
+      </div>
+      <div class="kpis" id="yKpis"></div>
+      <div class="card">
+        <div class="head"><b>Chi tiêu theo tháng</b></div>
+        <div id="yMonth"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><b>Theo loại chi phí</b></div>
+        <div id="yHu"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><b>Top khoản mục cả năm</b></div>
+        <div id="yItem"><span class="empty">Đang tải…</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><b>Theo nhãn cả năm</b></div>
+        <div id="yTag"><span class="empty">Đang tải…</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ==================== THANH GHI DÍNH ĐÁY ==================== -->
+<div id="bar" class="hide">
+  <div class="inner">
+    <button class="btn" id="saveBtn" onclick="save()">
+      <span id="saveMain">Ghi chi tiêu</span>
+      <span id="saveSub"></span>
+    </button>
+  </div>
+</div>
+
+<!-- Chi tiết một giao dịch bóc từ email — chạm vào dòng để mở -->
+<div id="mailBackdrop" onclick="closeMailDetail()"></div>
+<div id="mailSheet" role="dialog" aria-modal="true" aria-label="Chi tiết giao dịch">
+  <div class="ms-grip"></div>
+  <div class="ms-head">
+    <div class="ms-amt" id="msAmt">0 đ</div>
+    <div class="ms-when" id="msWhen"></div>
+  </div>
+  <div class="ms-body" id="msBody"></div>
+  <div class="ms-act">
+    <button class="ms-use"  id="msUse"  onclick="useFromSheet()">Dùng giao dịch này</button>
+    <button class="ms-skip" onclick="skipFromSheet()">Bỏ qua</button>
+  </div>
+</div>
+
+<!-- Sửa giao dịch đã ghi — chạm vào một dòng ở tab Lịch sử để mở -->
+<div id="edBackdrop" onclick="closeEdit()"></div>
+<div id="edSheet" role="dialog" aria-modal="true" aria-label="Sửa giao dịch">
+  <div class="ms-grip"></div>
+  <div class="ms-head">
+    <div class="ms-amt">Sửa giao dịch</div>
+    <div class="ms-when" id="edWhen"></div>
+  </div>
+  <div class="ms-body">
+    <label class="lbl">Số tiền</label>
+    <div class="amt-box ed-amt">
+      <input id="edAmount" class="amt-in" type="text" inputmode="numeric"
+             placeholder="0" autocomplete="off" oninput="onEdAmountInput()">
+      <span class="amt-cur">đ</span>
+    </div>
+
+    <label class="lbl">Ngày</label>
+    <input id="edDate" type="date">
+
+    <label class="lbl">Loại chi phí</label>
+    <select id="edHu" onchange="renderEdItems()"></select>
+
+    <label class="lbl">Khoản mục</label>
+    <select id="edItem"></select>
+
+    <label class="lbl">Loại tiền</label>
+    <select id="edMoney"></select>
+
+    <label class="lbl">Ghi chú</label>
+    <input id="edNote" type="text" autocomplete="off" oninput="onEdNoteInput()">
+
+    <label class="lbl">Nhãn</label>
+    <div class="tagpick" id="edTagPick"></div>
+  </div>
+  <div class="ms-act">
+    <button class="ms-use" id="edSave" onclick="saveEdit()">Lưu thay đổi</button>
+    <button class="ms-skip" onclick="closeEdit()">Hủy</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
-/* ĐO TỐC ĐỘ THẬT:
-   Người dùng bấm vào biểu tượng ở màn hình chính → trình duyệt tải trang này
-   → trang này nhúng iframe → Google dựng sandbox → app mới chạy. Bản thân app
-   không thấy được 3 chặng đầu, nên nó luôn báo nhanh hơn cảm nhận thật.
-   Ở đây đính mốc t0 (thời điểm trang vỏ bắt đầu) vào URL. Bên trong, app đọc
-   lại bằng google.script.url.getLocation() — cùng một thiết bị, cùng một đồng
-   hồ, nên hiệu số là thời gian chờ THẬT tính từ lúc mở app. */
-(function () {
-  var EXEC = 'https://script.google.com/macros/s/AKfycbzs3BdcQrK0TgIw4XWGinCJCL1NCR0Rf8M1eYfOowcS41Wz6w7GLSl_jOnznWg01Lbk/exec';
-  var nav = 0;
+/* ===================== STATE ===================== */
+/* KHÔNG dùng scriptlet trong file này. Mọi đoạn <? ... ?> đều bị Apps Script
+   thực thi như JS lúc evaluate(), biến nào chưa gán vào template sẽ văng
+   "... is not defined". Thay vào đó client tự dò: gọi getBootstrap với PIN
+   rỗng, server từ chối thì mới hiện màn khóa. */
+const LS = { PIN:'fin_pin', QUEUE:'fin_queue', LAST:'fin_last',
+             SHEET:'fin_sheet', THEME:'fin_theme',
+             BOOT:'fin_boot',      // gói dữ liệu mở app lần trước
+             TX:'fin_tx',          // bảng giao dịch lần trước, theo sheet
+             MAILTS:'fin_mailts',  // lần quét mail gần nhất
+             LOADS:'fin_loads' };  // đếm số lần mở app — để kiểm tra bộ nhớ máy
+/* true  = LUÔN bắt gõ PIN mỗi lần mở app (an toàn hơn, và nhanh hơn vì bỏ
+           được một vòng gọi máy chủ vô ích).
+   false = nhớ PIN, mở app là vào thẳng.
+   Đổi một chữ ở đây là đổi hẳn cách đăng nhập. */
+const ALWAYS_ASK_PIN = true;
+const QUICK_AMOUNTS = [10000,20000,50000,100000,200000];
+
+/* Màu loại chi phí — dùng cho ô vuông giao dịch, chấm tròn và thanh biểu đồ.
+   Nền sáng cần tông đậm để đủ tương phản; nền tối cần tông sáng. */
+const CAT_COLORS = {
+  light: {
+    'CHÍ PHI BẮT BUỘC'      : '#dc6803',   // cam — chi bắt buộc
+    'CHI PHÍ BẮT BUỘC'      : '#dc6803',
+    'CHI PHÍ KHÔNG BẮT BUỘC': '#7839ee',   // tím — chi linh hoạt
+    'CHI PHÍ TỪ THIỆN'      : '#099250',   // xanh lá — từ thiện
+    'NỢ'                    : '#e31b54',   // hồng đậm — nợ
+    'TIẾT KIỆM & ĐẦU TƯ'    : '#0ba5ec',   // xanh ngọc — tích lũy
+    'TIẾT KIỆM ĐẦU TƯ'      : '#0ba5ec',
+    'THU NHẬP'              : '#2563eb'    // xanh dương — thu nhập
+  },
+  dark: {
+    'CHÍ PHI BẮT BUỘC'      : '#fdb022',
+    'CHI PHÍ BẮT BUỘC'      : '#fdb022',
+    'CHI PHÍ KHÔNG BẮT BUỘC': '#c0a6f9',
+    'CHI PHÍ TỪ THIỆN'      : '#5ddba1',
+    'NỢ'                    : '#fd6f8e',
+    'TIẾT KIỆM & ĐẦU TƯ'    : '#5cccf5',
+    'TIẾT KIỆM ĐẦU TƯ'      : '#5cccf5',
+    'THU NHẬP'              : '#84adff'
+  }
+};
+const CAT_FALLBACK = {
+  light: ['#2563eb','#dc6803','#7839ee','#099250','#0ba5ec','#e31b54','#ba24d5'],
+  dark:  ['#84adff','#fdb022','#c0a6f9','#5ddba1','#5cccf5','#fd6f8e','#e478fa']
+};
+
+/* ============================================================
+   CHẤT VUI — đặt ở nơi ÍT GẶP (trạng thái trống, danh hiệu) và ở
+   khoảnh khắc ghi xong. Luồng nhập liệu giữ nghiêm túc.
+   Đặt enabled:false là tắt toàn bộ, app về giọng trung tính.
+   ============================================================ */
+const FUN = {
+  enabled: true,
+
+  /* Lời khen sau khi ghi, chia theo mức tiền. Mỗi nhóm nhiều câu,
+     chọn ngẫu nhiên để không lặp lại nhàm. */
+  save: {
+    small: ['Ghi rồi nhé 👌', 'Nhỏ mà có võ 🙂', 'Gọn gàng 👍', 'Vào sổ xong ✅'],
+    mid:   ['Đã ghi 💸', 'Tiêu có kế hoạch nha 😎', 'Chuẩn bài 🎯', 'Ngon lành 🤝'],
+    big:   ['Chi mạnh tay ghê 😳', 'Ví vừa rung nhẹ 😅', 'Hôm nay sang chảnh 💅',
+            'Khoản này đáng nhớ đây 🫣']
+  },
+  SMALL_MAX: 50000,
+  MID_MAX: 300000,
+
+  /* Trạng thái trống — chỗ hay khô khan nhất, thêm chút duyên */
+  emptyToday:  ['Hôm nay ví vẫn nguyên vẹn 😌', 'Hôm nay chưa tiêu đồng nào 🎉',
+                'Ví đang nghỉ phép 🏖️'],
+  emptyTx:     'Chưa có giao dịch nào — ví đang được nghỉ 🏖️',
+  emptySearch: 'Không tìm thấy gì. Có khi chưa tiêu khoản này bao giờ 🤔',
+  emptyChart:  'Chưa có gì để vẽ biểu đồ 📊',
+  loading:     ['Đang mở ví…', 'Đang đếm tiền…', 'Đang lật sổ…', 'Đang gom hóa đơn…'],
+
+  /* Danh hiệu theo khoản mục tốn nhiều tiền nhất — khớp theo từ khóa */
+  titles: [
+    { k:['CAFE','CÀ PHÊ','TRÀ','SINH TỐ','NƯỚC'], t:'Tín đồ cà phê ☕' },
+    { k:['VÉ XE','XĂNG','GỬI XE','BẢO DƯỠNG'],    t:'Dân du mục 🛵' },
+    { k:['TẠP HÓA','SIÊU THỊ'],                   t:'Chúa tể siêu thị 🛒' },
+    { k:['ĂN TRƯA','ĂN TỐI','ĂN SÁNG','CƠM'],     t:'Thực thần 🍜' },
+    { k:['XEM PHIM','DATING','QUẦN ÁO','GIÀY','MỸ PHẨM'], t:'Người của công chúng 🎬' },
+    { k:['NỢ','TÍN DỤNG','MƯỢN TIỀN'],            t:'Chiến binh trả nợ 💪' },
+    { k:['TIẾT KIỆM','ĐẦU TƯ','VÀNG','CHỨNG KHOÁN','HỤI'], t:'Nhà đầu tư tương lai 📈' },
+    { k:['TỪ THIỆN','CÚNG DƯỜNG','VÉ SỐ'],        t:'Tấm lòng vàng 🤍' },
+    { k:['THUỐC'],                                t:'Giữ gìn sức khỏe 💊' },
+    { k:['GIÁO DỤC','HỌC TẬP','CÔNG CỤ'],         t:'Đầu tư cho bản thân 📚' },
+    { k:['THUÊ NHÀ','ĐIỆN THOẠI','GIẶT'],         t:'Người lớn đích thực 🏠' },
+    { k:['CẮT TÓC','CĂT TÓC'],                    t:'Chăm chút ngoại hình ✂️' }
+  ]
+};
+
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+/** Câu khen phù hợp với số tiền vừa ghi */
+function funSaveLine(amount){
+  if (!FUN.enabled) return '';
+  if (amount < FUN.SMALL_MAX) return pick(FUN.save.small);
+  if (amount < FUN.MID_MAX)   return pick(FUN.save.mid);
+  return pick(FUN.save.big);
+}
+
+/** Danh hiệu theo tên khoản mục, không khớp từ khóa nào thì thôi */
+function funTitle(itemName){
+  if (!FUN.enabled) return '';
+  const n = norm(itemName);
+  for (const g of FUN.titles) {
+    if (g.k.some(w => n.indexOf(w) >= 0)) return g.t;
+  }
+  return '';
+}
+
+let S = {
+  pin:'', hu:[], items:[], moneyTypes:[],
+  sheets:[], years:[], sheet:'', money:'',
+  todayTotal:0, monthTotal:0, txCount:0, daysLeft:0, sheetExists:true,
+  all:[], daysInMonth:0, txLoaded:false,
+  days:[], dayByNum:{},                       // dữ liệu biểu đồ ngày
+  mail:[], mailLoading:false, mailScanned:false, mailErr:'', pendingOrder:'',
+  mailOpen:-1, mailRaw:null,                  // dòng đang mở ở bảng chi tiết
+  skipped:0,                                  // số giao dịch từng bấm ✕ bỏ qua
+  tags:[], pickTags:[],                       // danh sách nhãn & nhãn đang chọn
+  mailOn:true, mailDidScan:false,             // công tắc & đã quét lần nào chưa
+  edit:null, editTags:[],                     // giao dịch đang sửa
+  editOn:false,                               // quyền sửa (mặc định TẮT)
+  cmp:null, cmpLoading:false,                 // dữ liệu so cùng kỳ
+  shortcuts:[], scActive:'',                  // phím tắt khoản mục
+  topDayKey:'',                               // ngày chi cao nhất tháng
+  tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
+  editTagTouched:false,
+  scope:'month', dayView:'chart',             // phạm vi thống kê & kiểu biểu đồ
+  year:0, yearData:null, yearLoading:false,
+  tab:'ghi', filterHu:'', openDay:'', theme:'light', busy:false, freshRow:0,
+  dateTouched:false                           // người dùng đã tự đổi ngày chưa
+};
+
+
+/* ===== ĐỊA CHỈ MÁY CHỦ =====
+   Đổi link ở đây mỗi khi tạo deploy MỚI (không phải New version của deploy cũ).
+   Token chỉ để lọc lời gọi vu vơ — nó nằm công khai trong trang này, ai xem
+   mã nguồn cũng thấy. Cổng thật là PIN, được kiểm ở MỌI hàm phía máy chủ, và
+   đã có khoá chống dò 5 lần sai / 15 phút. */
+const EXEC_URL  = 'https://script.google.com/macros/s/AKfycbzs3BdcQrK0TgIw4XWGinCJCL1NCR0Rf8M1eYfOowcS41Wz6w7GLSl_jOnznWg01Lbk/exec';
+const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
+
+/* ===================== NHÃN (TAG) =====================
+   Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
+   "Hẹn hò" là một HOẠT ĐỘNG, không phải một loại chi phí: một buổi hẹn gồm
+   cà phê + vé phim + vé xe, ba khoản mục khác nhau. Nên nhãn gắn vào TỪNG
+   GIAO DỊCH, không gắn vào khoản mục — vì không phải ly cà phê nào cũng là
+   đi hẹn.
+   Lưu ngay trong ô GHI CHÚ dưới dạng #thẻ, không thêm cột vào sheet. */
+
+/* Phải bắt đầu bằng CHỮ CÁI: ghi chú hay có "#1234" là số hoá đơn hoặc mã
+   đơn hàng — không phải nhãn. Nhận cả số thì bảng thống kê đầy rác. */
+const TAG_RE = /#([A-Za-z][A-Za-z0-9_]{1,19})/g;
+
+/** Tách ghi chú thành phần chữ và danh sách thẻ */
+function parseTags(note){
+  const tags = [];
+  let m;
+  TAG_RE.lastIndex = 0;
+  while ((m = TAG_RE.exec(String(note || '')))) {
+    const t = m[1].toLowerCase();
+    if (tags.indexOf(t) < 0) tags.push(t);
+  }
+  const clean = String(note || '').replace(TAG_RE, '').replace(/\s+/g, ' ').trim();
+  return { clean: clean, tags: tags };
+}
+
+/** Thông tin hiển thị của một thẻ; thẻ lạ (gõ tay trên sheet) vẫn hiện được */
+function tagInfo(t){
+  const f = (S.tags || []).filter(x => x.tag === t)[0];
+  return f || { tag: t, label: t, emoji: '🏷' };
+}
+
+function tagChipsHtml(tags){
+  if (!tags.length) return '';
+  return tags.map(t => {
+    const i = tagInfo(t);
+    return `<span class="tg">${esc(i.emoji)} ${esc(i.label)}</span>`;
+  }).join('');
+}
+
+/** Hàng chip chọn nhãn trên form Ghi */
+function renderTagPick(){
+  const box = document.getElementById('tagPick');
+  if (!box) return;
+  const chips = (S.tags || []).map(t => {
+    const on = S.pickTags.indexOf(t.tag) >= 0;
+    return `<button type="button" class="tg-pick${on ? ' on' : ''}"
+              onclick="toggleTag('${esc(t.tag)}')">${esc(t.emoji)} ${esc(t.label)}</button>`;
+  }).join('');
+
+  /* Nói rõ vì sao nhãn tự bật. Không có dòng này thì người dùng thấy chip
+     sáng lên mà không hiểu tại sao — tệ hơn là không tự bật. */
+  let why = '';
+  if (S.autoWhy && S.pickTags.length) {
+    const lbl = tagInfo(S.pickTags[0]).label;
+    why = S.autoWhy.why === 'note'
+      ? `<div class="tg-why">Tự gắn <b>${esc(lbl)}</b> vì ghi chú có chữ
+           "<b>${esc(S.autoWhy.key)}</b>". Chạm để bỏ.</div>`
+      : `<div class="tg-why">Tự gắn <b>${esc(lbl)}</b> vì khoản mục này luôn
+           thuộc nhãn đó. Chạm để bỏ.</div>`;
+  }
+  box.innerHTML = chips + why;
+}
+
+/**
+ * Chọn nhãn — MỖI GIAO DỊCH CHỈ MỘT NHÃN.
+ * Chạm vào nhãn đang chọn thì bỏ chọn; chạm nhãn khác thì thay thế chứ không
+ * cộng thêm. Giữ S.pickTags dạng mảng (tối đa 1 phần tử) để phần lưu và thống
+ * kê không phải sửa gì nếu sau này mở lại chế độ chọn nhiều.
+ */
+function toggleTag(t){
+  S.pickTags = (S.pickTags[0] === t) ? [] : [t];
+  S.tagTouched = true;        // ý bạn thắng phỏng đoán của máy
+  S.autoWhy = null;
+  if (navigator.vibrate) navigator.vibrate(6);
+  renderTagPick();
+}
+
+/**
+ * Bảng thống kê theo nhãn.
+ * Một giao dịch mang được nhiều nhãn, nên TỔNG CÁC NHÃN CÓ THỂ LỚN HƠN tổng
+ * chi. Đó là bản chất của phân loại cắt ngang chứ không phải lỗi cộng sai —
+ * phải nói thẳng ra, nếu không người đọc sẽ tưởng số liệu hỏng.
+ */
+function tagStatHtml(arr, total, untagged, scope){
+  if (!arr.length) {
+    return '<span class="empty">Chưa giao dịch nào được gắn nhãn. '
+         + 'Chọn nhãn ở tab Ghi, hoặc thêm #henho vào ghi chú ngay trên sheet.</span>';
+  }
+  const rows = arr.map(a => {
+    const i = tagInfo(a.tag);
+    return { name: i.emoji + ' ' + i.label, total: a.total, n: a.n };
+  });
+  const sumTags = arr.reduce((x, a) => x + a.total, 0);
+  const overlap = sumTags > total;
+  return `<div class="tag-note">Chiếm <b>${total ? Math.round(sumTags / total * 100) : 0}%</b>
+            chi tiêu ${esc(scope)}${untagged ? ' · chưa gắn nhãn ' + fmt(untagged) + ' đ' : ''}
+            ${overlap ? '<br><span class="tag-warn">Một giao dịch gắn nhiều nhãn nên tổng các nhãn lớn hơn tổng chi — không phải lỗi.</span>' : ''}
+          </div>`
+    + barRows(rows, total, 'max', true);
+}
+
+/* ===================== THEME ===================== */
+function initTheme(){
+  const saved = localStorage.getItem(LS.THEME);
+  if (saved === 'light' || saved === 'dark') S.theme = saved;
+  else S.theme = (window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  applyTheme();
+}
+
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', S.theme);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = S.theme === 'dark' ? '🌙' : '☀️';
+  applyCatColor();
+}
+
+function toggleTheme(){
+  S.theme = (S.theme === 'dark') ? 'light' : 'dark';
+  localStorage.setItem(LS.THEME, S.theme);
+  applyTheme();
+  // Vẽ lại các phần dùng màu inline theo loại chi phí
+  if (S.txLoaded) { renderHuFilter(); renderHistory(); renderStats(); }
+  if (S.yearData) renderYear();
+}
+
+/* ===================== BÀN PHÍM (iOS) ===================== */
+/* visualViewport cho biết phần màn hình còn nhìn thấy khi bàn phím mở.
+   Dùng để đẩy nút Ghi lên trên bàn phím thay vì bị che. */
+function initKeyboardWatch(){
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const sync = () => {
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty('--kb', kb + 'px');
+  };
+  vv.addEventListener('resize', sync);
+  vv.addEventListener('scroll', sync);
+  sync();
+}
+
+/** Cuộn ô đang gõ vào giữa màn hình, tránh bị bàn phím che */
+function scrollIntoViewSoft(el){
+  setTimeout(() => {
+    try { el.scrollIntoView({behavior:'smooth', block:'center'}); } catch(e){}
+  }, 280);
+}
+
+/* ===================== PIN ===================== */
+/* Nếu đổi độ dài PIN trong Code.gs thì sửa luôn số này — app tự gửi
+   khi gõ đủ số, không cần bấm nút. */
+const PIN_LEN = 6;
+let pinBuf = '';
+
+function renderKeypad(){
+  const keys = ['1','2','3','4','5','6','7','8','9','', '0','del'];
+  document.getElementById('keypad').innerHTML = keys.map(k => {
+    if (k === '')    return '<div></div>';
+    if (k === 'del') return '<button class="key ghost" onclick="pinDel()">⌫</button>';
+    return `<button class="key" onclick="pinPress('${k}')">${k}</button>`;
+  }).join('');
+  renderPinDots();
+  showHint();
+}
+
+function renderPinDots(){
+  const n = Math.max(PIN_LEN, pinBuf.length);
+  let h = '';
+  for (let i = 0; i < n; i++) h += `<span class="pd${i < pinBuf.length ? ' on' : ''}"></span>`;
+  document.getElementById('pinDots').innerHTML = h;
+  // Ví nhắm mắt khi đang có số trên màn — cho vui và cũng hợp lý: không nhìn trộm
+  const m = document.getElementById('mascot');
+  if (m) m.classList.toggle('typing', pinBuf.length > 0);
+}
+
+/** Lời chào đổi theo giờ, hiện ở dòng vốn để trống chờ báo lỗi */
+function greetLine(){
+  if (!FUN.enabled) return '';
+  const h = new Date().getHours();
+  if (h < 5)  return 'Khuya rồi, tiêu gì nữa đây 🌙';
+  if (h < 11) return 'Chào buổi sáng ☀️';
+  if (h < 14) return 'Trưa rồi, ăn gì chưa 🍜';
+  if (h < 18) return 'Chiều rồi, ví còn ổn chứ 🙂';
+  return 'Tối rồi, tổng kết ngày thôi 🌆';
+}
+
+function showHint(){
+  const e = document.getElementById('pinErr');
+  e.className = 'pin-err hint';
+  e.textContent = greetLine();
+}
+
+function pinPress(d){
+  if (pinBuf.length >= 8) return;
+  pinBuf += d;
+  renderPinDots();
+  showHint();
+  if (navigator.vibrate) navigator.vibrate(8);
+  if (pinBuf.length === PIN_LEN) setTimeout(submitPin, 140);
+}
+
+function pinDel(){
+  pinBuf = pinBuf.slice(0, -1);
+  renderPinDots();
+  showHint();
+}
+
+function resetPin(wrong){
+  pinBuf = '';
+  renderPinDots();
+  if (wrong) {
+    const d = document.getElementById('pinDots');
+    d.classList.add('shake');
+    setTimeout(() => d.classList.remove('shake'), 420);
+    const m = document.getElementById('mascot');
+    if (m) { m.classList.add('sad'); setTimeout(() => m.classList.remove('sad'), 1400); }
+    if (navigator.vibrate) navigator.vibrate([30,60,30]);
+  }
+}
+
+/* ===================== BOOT ===================== */
+/* Service worker: giữ sẵn bản thân file app trong máy. Từ lần mở thứ hai,
+   HTML lấy từ bộ nhớ máy, KHÔNG chạm mạng — đây là thứ kéo chặng "chạm icon
+   → màn hình PIN" từ 3 giây xuống còn vài trăm ms. Lỗi đăng ký thì bỏ qua,
+   app vẫn chạy bình thường, chỉ là không nhanh thêm. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+window.addEventListener('load', () => {
+  pmark('tải trang');
+  checkStore();
+  initTheme();
+  initKeyboardWatch();
+  updateNet();
+  if (FUN.enabled) {
+    const sp = document.getElementById('splashTxt');
+    if (sp) sp.textContent = pick(FUN.loading);
+  }
+  if (ALWAYS_ASK_PIN) {
+    /* Bắt buộc gõ PIN mỗi lần mở app.
+       Màn khóa hiện NGAY, KHÔNG gọi máy chủ trước.
+       Trước đây app gọi getBootstrap với PIN rỗng chỉ để xem có cần khóa hay
+       không — số đo cho thấy riêng phép thử vô ích đó tốn 1.007 ms, mà kết quả
+       thì đã biết trước: luôn luôn cần khóa. Bỏ nó đi là cắt trọn một vòng
+       mạng khỏi mỗi lần mở app. */
+    try { localStorage.removeItem(LS.PIN); localStorage.removeItem(LS.BOOT); }
+    catch (e) { /* không xoá được cũng không sao, dưới đây không đọc tới */ }
+    pmark('hiện màn khóa');
+    show('lock');
+    renderKeypad();
+    return;
+  }
+
+  /* Chế độ ghi nhớ PIN: vẽ ngay dữ liệu lần mở trước rồi làm mới ngầm. */
+  const savedPin = localStorage.getItem(LS.PIN) || '';
   try {
-    // Mốc sớm nhất trình duyệt biết: lúc bắt đầu điều hướng tới trang vỏ
-    var e = performance.getEntriesByType('navigation')[0];
-    nav = e ? Math.round(performance.timeOrigin + e.startTime) : Date.now();
-  } catch (err) { nav = Date.now(); }
-  document.getElementById('app').src = EXEC + '?t0=' + nav;
-})();
+    const boot = JSON.parse(localStorage.getItem(LS.BOOT) || 'null');
+    if (savedPin && boot && boot.ok) {
+      S.pin = savedPin;
+      show('app'); applyTheme(); renderQuickAmounts(); applyBootstrap(boot, true);
+      PERF.bootCache = true;
+      pmark('hiện giao diện');
+    }
+  } catch (e) { /* cache hỏng thì bỏ qua, chờ server */ }
+
+  tryEnter(savedPin);
+});
+window.addEventListener('online',  () => { updateNet(); flushQueue(); });
+window.addEventListener('offline', updateNet);
+
+/** Thử vào app với một PIN. Thất bại → hiện màn khóa. */
+function tryEnter(pin){
+  S.pin = pin;
+  api('getBootstrap', {pin:pin, sheetName:localStorage.getItem(LS.SHEET)||''})
+    .then(res => {
+      if (!res.ok) { pmark('hiện màn khóa'); show('lock'); renderKeypad(); return; }
+      if (pin) localStorage.setItem(LS.PIN, pin);
+      show('app'); applyTheme(); renderQuickAmounts(); applyBootstrap(res);
+    })
+    .catch(() => {
+      // Lần thử tự động lúc mở app: người dùng chưa gõ gì, không báo lỗi
+      // cho khỏi hoang mang. Lỗi chỉ hiện khi họ thực sự nhập PIN.
+      show('lock'); renderKeypad();
+    });
+}
+
+function show(id){
+  ['splash','lock','app'].forEach(x =>
+    document.getElementById(x).classList.toggle('hide', x!==id));
+  document.getElementById('bar').classList.toggle('hide', !(id==='app' && S.tab==='ghi'));
+}
+
+function submitPin(){
+  const v = pinBuf;
+  if (!v) return;
+  const err = document.getElementById('pinErr');
+  err.className = 'pin-err hint';
+  err.textContent = 'Đang mở khóa…';
+  S.pin = v;
+  api('getBootstrap', {pin:v, sheetName:localStorage.getItem(LS.SHEET)||''})
+    .then(res => {
+      if (!res.ok) {
+        err.className = 'pin-err';
+        err.textContent = 'Mã PIN không đúng';
+        resetPin(true); return;
+      }
+      // Chế độ bắt buộc gõ PIN: KHÔNG lưu PIN xuống máy, chỉ giữ trong bộ nhớ
+      // phiên làm việc. Đóng app là mất, đúng ý đồ bảo mật.
+      if (!ALWAYS_ASK_PIN) { try { localStorage.setItem(LS.PIN, v); } catch (e) {} }
+      err.textContent = '';
+      // Để ví kịp nhảy mừng rồi mới vào app
+      const m = document.getElementById('mascot');
+      if (m && FUN.enabled) {
+        m.classList.remove('typing'); m.classList.add('happy');
+        if (navigator.vibrate) navigator.vibrate(20);
+        setTimeout(() => {
+          m.classList.remove('happy');
+          show('app'); applyTheme(); renderQuickAmounts(); applyBootstrap(res);
+        }, 560);
+      } else {
+        show('app'); applyTheme(); renderQuickAmounts(); applyBootstrap(res);
+      }
+    })
+    .catch(() => {
+      err.className = 'pin-err';
+      err.textContent = 'Không kết nối được máy chủ';
+      resetPin(true);
+    });
+}
+
+/* ===================== API ===================== */
+/* ===================== ĐO TỐC ĐỘ =====================
+   Mọi con số đều là mili giây đo trên chính máy này. Chia thời gian chờ thành
+   các chặng tách bạch để biết tối ưu chỗ nào mới có tác dụng:
+     • vỏ+sandbox : từ lúc mở app đến khi mã của app bắt đầu chạy (GitHub Pages
+                    tải, Google dựng iframe sandbox) — app không cắt được
+     • tải trang  : tải + dựng xong tài liệu HTML của app
+     • hiện giao diện: đến lúc thấy dữ liệu đầu tiên (từ cache máy, nếu có)
+     • mỗi lời gọi: đi-về tổng cộng, trong đó bao nhiêu là máy chủ Google
+                    (server trả về trường ms), phần còn lại là MẠNG
+*/
+const PERF = {
+  /* Mốc 0 = lúc trình duyệt bắt đầu điều hướng tới trang này. Bản cũ phải
+     nhờ trang vỏ truyền sang qua ?t0= vì app nằm trong iframe; nay app LÀ
+     trang gốc nên đọc thẳng được. */
+  t0: (function(){
+    try {
+      const e = performance.getEntriesByType('navigation')[0];
+      return e ? Math.round(performance.timeOrigin + e.startTime) : Date.now();
+    } catch (err) { return Date.now(); }
+  })(),
+  start: Date.now(),     // mốc mã app bắt đầu chạy
+  marks: {},             // tên chặng → mili giây kể từ start
+  calls: [],             // lịch sử lời gọi máy chủ
+  loads: 0,              // app đã được mở bao nhiêu lần (đọc từ bộ nhớ máy)
+  store: '',             // bộ nhớ máy có dùng được không
+  bootCache: false       // lần mở này có vẽ ngay từ bộ nhớ máy không
+};
+function pmark(name){ if (!PERF.marks[name]) PERF.marks[name] = Date.now() - PERF.start; }
+
+/**
+ * Bộ nhớ máy (localStorage) có thật sự sống qua các lần mở app không?
+ * Câu hỏi này quyết định kiến trúc: app chạy trong iframe lồng 2 lớp, mà
+ * Safari trên iOS chặn/ngăn cách bộ nhớ của iframe khác tên miền. Nếu bộ nhớ
+ * không sống, thì TOÀN BỘ cơ chế "vẽ ngay từ cache" là vô nghĩa, PIN phải gõ
+ * lại mỗi lần, và email bị quét lại mỗi lần mở — chứ không phải mỗi 30 phút.
+ * Đếm số lần mở là phép thử rẻ nhất: luôn bằng 1 nghĩa là bộ nhớ bị xoá sạch.
+ */
+function checkStore(){
+  try {
+    const n = Number(localStorage.getItem(LS.LOADS) || 0) + 1;
+    localStorage.setItem(LS.LOADS, String(n));
+    PERF.loads = n;
+    PERF.store = (localStorage.getItem(LS.LOADS) === String(n)) ? 'ghi/đọc được' : 'ghi KHÔNG ăn';
+  } catch (e) {
+    PERF.store = 'BỊ CHẶN (' + e.name + ')';
+  }
+}
+
+function togglePerf(){
+  const b = document.getElementById('perfBox');
+  b.classList.toggle('hide');
+  document.getElementById('perfCaret').textContent = b.classList.contains('hide') ? '›' : '⌄';
+  renderPerf();
+}
+
+/** Vẽ bảng chẩn đoán. Gọi được bất cứ lúc nào, tự bỏ qua nếu đang gập. */
+function renderPerf(){
+  const box = document.getElementById('perfBox');
+  if (!box || box.classList.contains('hide')) return;
+
+  const row = (k, v, hint) =>
+    `<div class="pf-r"><div class="pf-k">${esc(k)}</div>
+     <div class="pf-v">${esc(v)}</div></div>` +
+    (hint ? `<div class="pf-h">${esc(hint)}</div>` : '');
+
+  let html = '<div class="pf-sec">Mở app</div>';
+
+  if (PERF.t0) {
+    const shell = PERF.start - PERF.t0;
+    html += row('Vỏ + sandbox', shell + ' ms',
+      'GitHub Pages tải + Google dựng iframe. App không rút ngắn được chặng này.');
+  } else {
+    html += `<div class="pf-h">Không đo được chặng "vỏ + sandbox" — đang mở
+             thẳng /exec, hoặc trang vỏ trên GitHub Pages chưa cập nhật.</div>`;
+  }
+
+  const order = ['tải trang','hiện màn khóa','hiện giao diện','số liệu thật'];
+  const hints = {
+    'tải trang':'Tải + dựng xong tài liệu HTML của app.',
+    'hiện màn khóa':'Phải gõ PIN — thời gian sau mốc này là NGƯỜI gõ, không phải máy chậm.',
+    'hiện giao diện':'Lúc bạn THẤY số liệu đầu tiên.',
+    'số liệu thật':'Lúc số liệu mới từ Google Sheet về.'
+  };
+  order.forEach(k => {
+    if (PERF.marks[k] == null) return;
+    const abs = PERF.t0 ? (PERF.start - PERF.t0 + PERF.marks[k]) : PERF.marks[k];
+    html += row(k.charAt(0).toUpperCase() + k.slice(1),
+                abs + ' ms' + (PERF.t0 ? '' : ' (từ lúc app chạy)'), hints[k]);
+  });
+
+  if (PERF.t0 && PERF.marks['hiện giao diện'] != null) {
+    const felt = PERF.start - PERF.t0 + PERF.marks['hiện giao diện'];
+    html += `<div class="pf-big">Thời gian chờ thật: <b>${(felt/1000).toFixed(2)}s</b></div>`;
+  }
+
+  /* Gộp theo từng hàm: lần gọi gần nhất + trung bình, tách máy chủ với mạng.
+     Đây là chỗ chỉ ra nên tối ưu máy chủ hay nên giảm số lần gọi. */
+  html += '<div class="pf-sec">Lời gọi máy chủ</div>';
+  if (!PERF.calls.length) {
+    html += '<div class="pf-h">Chưa có lời gọi nào.</div>';
+  } else {
+    const g = {};
+    PERF.calls.forEach(c => {
+      const o = g[c.m] = g[c.m] || { n:0, sum:0, srv:0, srvN:0, last:c, cached:0 };
+      o.n++; o.sum += c.total;
+      if (c.srv != null) { o.srv += c.srv; o.srvN++; }
+      if (c.cached) o.cached++;
+      o.last = c;
+    });
+    html += `<div class="pf-r pf-head"><div class="pf-k">Hàm</div>
+             <div class="pf-v">lần cuối · TB · máy chủ</div></div>`;
+    Object.keys(g).forEach(k => {
+      const o = g[k];
+      const srvTxt = o.srvN ? Math.round(o.srv / o.srvN) + ' ms' : '—';
+      html += `<div class="pf-r"><div class="pf-k">${esc(k)}
+                 <span class="pf-n">×${o.n}${o.cached ? ', ' + o.cached + ' cache' : ''}</span></div>
+               <div class="pf-v">${o.last.total} · ${Math.round(o.sum/o.n)} · ${srvTxt}</div></div>`;
+    });
+
+    // Mạng = đi-về trừ thời gian máy chủ tự báo
+    const withSrv = PERF.calls.filter(c => c.srv != null);
+    if (withSrv.length) {
+      const net = Math.round(withSrv.reduce((a,c) => a + (c.total - c.srv), 0) / withSrv.length);
+      html += row('Mạng (trung bình)', net + ' ms',
+        net > 900 ? 'Mạng đang là nút thắt — giảm SỐ LẦN gọi sẽ ăn hơn là tối ưu máy chủ.'
+                  : 'Mạng ổn. Nếu còn chậm thì nút thắt nằm ở máy chủ hoặc ở chặng vỏ + sandbox.');
+    }
+  }
+
+  /* Mục quyết định: bộ nhớ máy có sống qua các lần mở app không. Nếu không
+     thì mọi cơ chế cache phía máy đều vô hiệu và đó mới là vấn đề thật. */
+  html += '<div class="pf-sec">Bộ nhớ máy</div>';
+  html += row('Số lần mở app', String(PERF.loads),
+    PERF.loads <= 1
+      ? 'Bằng 1 — bộ nhớ máy KHÔNG sống qua các lần mở. Mọi cache phía máy vô hiệu: PIN phải gõ lại, email quét lại mỗi lần mở.'
+      : 'Lớn hơn 1 — bộ nhớ máy sống bình thường.');
+  html += row('Trạng thái', PERF.store || '—');
+  html += row('Vẽ ngay từ cache', PERF.bootCache ? 'có' : 'không (đúng thiết kế)',
+    PERF.bootCache ? '' : 'Vì đã bật bắt buộc gõ PIN: không thể hiện số liệu '
+      + 'trước khi xác thực. Đây là đánh đổi có chủ đích, không phải lỗi.');
+  const have = [];
+  try {
+    if (localStorage.getItem(LS.PIN)) have.push('PIN');
+    if (localStorage.getItem(LS.BOOT)) have.push('mở app');
+    if (localStorage.getItem(LS.TX)) have.push('giao dịch');
+    if (localStorage.getItem(LS.MAILTS)) have.push('mốc quét mail');
+  } catch (e) {}
+  html += row('Đang lưu được', have.length ? have.join(', ') : 'không có gì');
+
+  /* Tên miền của khung chạy app. Apps Script dựng HTML trong iframe tại
+     googleusercontent.com, và phần đầu tên miền có thể ĐỔI giữa các lần mở —
+     mỗi tên miền là một kho bộ nhớ riêng, nên bộ nhớ "ghi/đọc được" mà vẫn
+     không sống qua lần mở sau. In ra đây để đối chiếu giữa 2 lần đo thay vì
+     suy đoán. */
+  let org = '';
+  try { org = String(location.origin || ''); } catch (e) { org = '(không đọc được)'; }
+  html += row('Khung chạy app', org.replace(/^https?:\/\//, ''),
+    'So tên miền này giữa 2 lần mở app: KHÁC nhau nghĩa là mỗi lần mở là một '
+    + 'kho bộ nhớ mới — đó mới là lý do "số lần mở app" luôn bằng 1.');
+
+  html += `<button class="mail-restore" onclick="copyPerf()">⧉ Sao chép số liệu</button>`;
+  box.innerHTML = html;
+}
+
+/** Chép số liệu ra clipboard để gửi đi phân tích */
+function copyPerf(){
+  const lines = ['=== TỐC ĐỘ VÍ CHI TIÊU ==='];
+  lines.push('số lần mở app: ' + PERF.loads + ' | bộ nhớ máy: ' + PERF.store
+             + ' | vẽ ngay từ cache: ' + (PERF.bootCache ? 'có' : 'KHÔNG'));
+  if (PERF.t0) lines.push('vỏ + sandbox: ' + (PERF.start - PERF.t0) + ' ms');
+  Object.keys(PERF.marks).forEach(k => {
+    const abs = PERF.t0 ? (PERF.start - PERF.t0 + PERF.marks[k]) : PERF.marks[k];
+    lines.push(k + ': ' + abs + ' ms');
+  });
+  try { lines.push('khung chạy: ' + String(location.origin || '')); } catch (e) {}
+  PERF.calls.forEach(c => lines.push(
+    c.m + ': ' + c.total + ' ms (máy chủ ' + (c.srv == null ? '?' : c.srv) + ' ms'
+    + (c.cached ? ', cache' : '') + (c.err ? ', LỖI' : '') + ')'));
+  const txt = lines.join('\n');
+  try {
+    navigator.clipboard.writeText(txt);
+    toast('Đã sao chép — dán vào tin nhắn để gửi đi');
+  } catch (e) {
+    prompt('Chép đoạn này:', txt);
+  }
+}
+
+/* ===== KẾT NỐI MÁY CHỦ =====
+   Bản này chạy THẲNG trên GitHub Pages, không còn nằm trong iframe của Apps
+   Script, nên google.script.run không tồn tại. Phải gọi qua mạng như API
+   thường.
+
+   Đã đo thật trên iPhone TRƯỚC khi viết: fetch GET 1895ms, JSONP 1833ms,
+   POST text/plain 1539ms — cả ba đều qua được hàng rào CORS.
+
+   Chia hai đường:
+     ĐỌC → GET, tham số nằm trên URL.
+     GHI → POST với Content-Type **text/plain**. Bắt buộc text/plain vì nó là
+           "simple request" nên trình duyệt KHÔNG gửi preflight OPTIONS, mà
+           Apps Script không trả lời được OPTIONS. Đổi sang application/json
+           là hỏng ngay lập tức. */
+const API_WRITE = {
+  addExpense:1, addExpenseBatch:1, updateExpense:1, deleteExpense:1,
+  markMailDone:1, undoMailSkip:1, restoreSkippedMail:1, purgeSkippedMail:1,
+  setMailEnabled:1, setEditEnabled:1
+};
+
+function api(method, payload){
+  const t = Date.now();
+  const body = { api: method, token: API_TOKEN, payload: payload || {} };
+
+  const req = API_WRITE[method]
+    ? fetch(EXEC_URL, { method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(body) })
+    : fetch(EXEC_URL + '?api=' + encodeURIComponent(method)
+        + '&token=' + encodeURIComponent(API_TOKEN)
+        + '&payload=' + encodeURIComponent(JSON.stringify(payload || {})));
+
+  return req.then(r => r.text()).then(txt => {
+    let res;
+    try { res = JSON.parse(txt); }
+    catch (e) {
+      /* Không phải JSON thì gần như chắc chắn là trang đăng nhập Google —
+         tức deploy đang đặt sai quyền. Nói thẳng ra, thay vì để người dùng
+         nhận lỗi "Unexpected token <" chẳng hiểu gì. */
+      throw new Error('Máy chủ trả về không phải JSON — kiểm tra deploy đã '
+                    + 'đặt "Who has access = Anyone" chưa.');
+    }
+    PERF.calls.push({ m:method, total:Date.now()-t,
+      srv:(res && typeof res.ms === 'number') ? res.ms : null,
+      cached: !!(res && res.cached) });
+    if (PERF.calls.length > 40) PERF.calls.shift();
+    renderPerf();
+    return res;
+  }).catch(err => {
+    PERF.calls.push({ m:method, total:Date.now()-t, srv:null, err:true });
+    renderPerf();
+    throw err;
+  });
+}
+
+function reload(){
+  api('getBootstrap', {pin:S.pin, sheetName:S.sheet || localStorage.getItem(LS.SHEET) || ''})
+    .then(res => {
+      if (!res.ok) { toast(res.message, 'err'); return; }
+      applyBootstrap(res);
+      flushQueue();
+    })
+    .catch(() => { toast('Offline — dữ liệu hiển thị có thể cũ', 'err'); updateNet(); });
+}
+
+/** Tải toàn bộ giao dịch của sheet (dùng chung cho Lịch sử + Thống kê tháng) */
+/**
+ * Tải bảng giao dịch của sheet đang chọn.
+ * Áp dụng đúng cách làm đã dùng cho màn hình mở app: VẼ NGAY bằng dữ liệu lần
+ * trước lưu trong máy, rồi mới gọi server làm mới ngầm. Nhờ vậy sang tab Lịch
+ * sử / Thống kê là thấy nội dung luôn, thay vì nhìn chữ "Đang tải…" vài giây.
+ */
+/** Ghi lại bảng giao dịch vào bộ nhớ máy, để lần sau vẽ ngay không phải chờ */
+function saveTxCache(){
+  if (!S.txLoaded) return;
+  try {
+    localStorage.setItem(LS.TX, JSON.stringify({
+      sheet: S.sheet, daysInMonth: S.daysInMonth, rows: S.all
+    }));
+  } catch (e) { /* hết dung lượng — bỏ qua */ }
+}
+
+function loadTx(force){
+  if (S.txLoaded && !force) return;
+
+  // 1) Vẽ ngay từ bộ nhớ máy — chỉ dùng nếu đúng sheet đang xem
+  if (!S.txLoaded) {
+    try {
+      const c = JSON.parse(localStorage.getItem(LS.TX) || 'null');
+      if (c && c.sheet === S.sheet && c.rows) {
+        S.all = c.rows;
+        S.daysInMonth = c.daysInMonth || 0;
+        renderHuFilter(); renderHistory(); renderStats();
+      }
+    } catch (e) { /* cache hỏng thì bỏ qua, chờ server */ }
+  }
+
+  // 2) Gọi server làm mới
+  api('getTransactions', {pin:S.pin, sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.all = res.rows || [];
+      S.daysInMonth = res.daysInMonth || 0;
+      S.txLoaded = true;
+      saveTxCache();
+      renderHuFilter(); renderHistory(); renderStats();
+      renderShortcuts();   // giờ mới có lịch sử để gợi ý số tiền
+    })
+    .catch(() => toast('Không tải được giao dịch','err'));
+}
+
+/** Tổng hợp cả năm — nặng hơn nên chỉ gọi khi mở phạm vi Năm */
+function loadYear(force){
+  if (S.yearLoading) return;
+  if (S.yearData && S.yearData.year === S.year && !force) return;
+  S.yearLoading = true;
+  api('getYearSummary', {pin:S.pin, year:S.year})
+    .then(res => {
+      S.yearLoading = false;
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.yearData = res;
+      S.year = res.year;
+      S.years = res.years || S.years;
+      renderYear();
+    })
+    .catch(() => { S.yearLoading = false; toast('Không tải được dữ liệu năm','err'); });
+}
+
+function switchSheet(){
+  S.sheet = document.getElementById('sheetSel').value;
+  localStorage.setItem(LS.SHEET, S.sheet);
+  S.txLoaded = false; S.openDay = ''; S.all = []; S.cmp = null;
+  reload();
+  if (S.tab !== 'ghi') { loadTx(true); if (S.tab === 'tk') loadCompare(true); }
+}
+
+/** fromCache = đang vẽ bằng dữ liệu cũ, chưa xác nhận với server */
+function applyBootstrap(res, fromCache){
+  pmark('hiện giao diện');
+  if (!fromCache) {
+    pmark('số liệu thật');
+    try { localStorage.setItem(LS.BOOT, JSON.stringify(res)); } catch (e) {}
+  }
+  S.hu = res.hu; S.items = res.items; S.moneyTypes = res.moneyTypes;
+  S.tags = res.tags || S.tags; renderTagPick();
+  S.shortcuts = res.shortcuts || S.shortcuts; renderShortcuts();
+  S.tagRules = res.tagRules || S.tagRules;
+  if (typeof res.mailOn === 'boolean') S.mailOn = res.mailOn;
+  if (typeof res.editOn === 'boolean') S.editOn = res.editOn;
+  S.sheets = res.sheets || []; S.sheet = res.activeSheet || '';
+  S.years = res.years || [];
+  S.todayTotal = res.todayTotal || 0; S.monthTotal = res.monthTotal || 0;
+  S.txCount = res.txCount || 0; S.daysLeft = res.daysLeft || 0;
+  S.sheetExists = !!res.sheetExists;
+  if (S.sheet) localStorage.setItem(LS.SHEET, S.sheet);
+  if (!S.year) {
+    const p = parseSheet(S.sheet);
+    S.year = p ? p.year : (S.years.length ? S.years[S.years.length-1] : 0);
+  }
+
+  renderHero();
+
+  const ssel = document.getElementById('sheetSel');
+  // value giữ nguyên tên sheet gốc, chỉ phần chữ hiện ra là đổi
+  ssel.innerHTML = S.sheets.length
+    ? S.sheets.map(n => `<option value="${esc(n)}">${esc(prettySheet(n))}</option>`).join('')
+    : '<option value="">(không có)</option>';
+  if (S.sheet) ssel.value = S.sheet;
+
+  fillSelect('hu', S.hu.map(h => ({v:h.v, t:h.t})));
+  const last = JSON.parse(localStorage.getItem(LS.LAST) || '{}');
+  if (last.hu && S.hu.some(h => h.v === last.hu)) document.getElementById('hu').value = last.hu;
+  renderItems();
+  if (last.item) {
+    const el = document.getElementById('item');
+    if ([...el.options].some(o => o.value === last.item)) el.value = last.item;
+  }
+
+  S.money = (last.money && S.moneyTypes.indexOf(last.money) >= 0) ? last.money : S.moneyTypes[0];
+  renderMoneySeg();
+  // Không ghi đè nếu người dùng đã tự đổi ngày — tránh lần làm mới ngầm
+  // xóa mất thao tác của họ
+  if (!S.dateTouched) document.getElementById('date').value = res.defaultDate || res.todayISO;
+
+  applyCatColor(); syncSaveBar(); updateNet();
+
+  /* KHÔNG tự quét email nữa — chỉ quét khi bạn bấm ↻.
+     Số đo cho thấy một lượt quét nguội tốn 5.964 ms phía máy chủ. Apps Script
+     xử lý tuần tự từng lời gọi của một người dùng, nên lượt quét chạy ngầm đó
+     còn làm lệnh Ghi phải xếp hàng sau nó. Bỏ tự quét là bỏ luôn cả hai cái
+     giá đó khỏi mỗi lần mở app. */
+  if (!fromCache && !S.mailScanned) {
+    S.mailScanned = true;
+    renderMail();
+  }
+
+  /* Tải trước bảng giao dịch cho tab Lịch sử / Thống kê.
+     Số đo cho thấy phía máy chủ chỉ tốn 44ms khi đã có cache, nên phần lớn
+     thời gian một lời gọi là MẠNG. Vậy thì gọi sẵn lúc rảnh sẽ hơn là bắt
+     người dùng chờ đúng lúc họ chạm vào tab. Chạy sau cùng để không tranh
+     lượt với lời gọi mở app. */
+  if (!fromCache && !S.txLoaded) setTimeout(() => loadTx(false), 2200);
+}
+
+/* ============ GIAO DỊCH TỪ EMAIL NGÂN HÀNG ============ */
+function scanMail(force){
+  if (S.mailLoading) return;
+  S.mailLoading = true;
+  S.mailErr = '';
+  /* Phản hồi tức thì khi chạm ↻: rung nhẹ (máy nào hỗ trợ) + nút đổi màu và
+     xoay. Không có cái này thì người dùng không biết đã bấm trúng chưa, vì
+     lượt quét đầu tiên có thể mất vài giây. */
+  if (force) { try { navigator.vibrate && navigator.vibrate(12); } catch(e){} }
+  closeMailDetail();                  // danh sách sắp đổi → số thứ tự cũ hết đúng
+  renderMail();                       // hiện khung xương "Đang quét…"
+  api('scanBankEmails', {pin:S.pin, force: !!force})
+    .then(res => {
+      S.mailLoading = false;
+      if (!res.ok) {
+        // Hay gặp nhất: chưa cấp quyền Gmail. Phải hiện lỗi ra, đừng im lặng.
+        S.mailErr = res.message || 'Không đọc được email';
+        S.mail = []; renderMail();
+        if (force) toast(S.mailErr, 'err');
+        return;
+      }
+      S.mail = res.items || [];
+      S.mailDidScan = true;
+      S.skipped = Number(res.skipped || 0);
+      try { localStorage.setItem(LS.MAILTS, String(Date.now())); } catch (e) {}
+      renderMail();
+      if (force) toast(S.mail.length ? ('Tìm thấy ' + S.mail.length + ' giao dịch')
+                                     : 'Không có giao dịch mới');
+    })
+    .catch(() => {
+      S.mailLoading = false;
+      S.mailErr = 'Không gọi được máy chủ';
+      S.mail = []; renderMail();
+      if (force) toast(S.mailErr, 'err');
+    });
+}
+
+/** Đồng bộ trạng thái nút ↻ với S.mailLoading — gọi từ renderMail nên mọi
+    nhánh kết thúc (xong / lỗi / rớt mạng) đều tự tắt hiệu ứng xoay */
+function setMailBtnBusy(on){
+  const b = document.getElementById('mailBtn');
+  if (!b) return;
+  b.classList.toggle('busy', !!on);
+  b.setAttribute('aria-busy', on ? 'true' : 'false');
+}
+
+/** Bật/tắt quét email. Trạng thái do máy chủ giữ nên nhớ được lâu dài. */
+function toggleMailOn(){
+  const next = !S.mailOn;
+  S.mailOn = next;              // đổi giao diện ngay, không chờ máy chủ
+  /* CỐ Ý không xoá S.mail khi tắt. Tắt là để ẨN thông tin trước mắt người
+     khác, không phải để bỏ kết quả vừa quét — bật lại phải thấy nguyên danh
+     sách cũ, khỏi phải quét lại một lượt gần 6 giây. */
+  renderMail();
+  if (navigator.vibrate) navigator.vibrate(8);
+  api('setMailEnabled', {pin:S.pin, on:next})
+    .then(res => {
+      if (!res || !res.ok) {     // máy chủ từ chối → trả giao diện về như cũ
+        S.mailOn = !next; renderMail();
+        toast((res && res.message) || 'Không đổi được cài đặt','err');
+        return;
+      }
+      toast(res.message);
+    })
+    .catch(() => { S.mailOn = !next; renderMail();
+                   toast('Không gọi được máy chủ','err'); });
+}
+
+function renderMail(){
+  // Thẻ luôn hiện sau lần quét đầu, kể cả khi trống — để còn chỗ bấm ↻
+  document.getElementById('mailCard').classList.remove('hide');
+  const box = document.getElementById('mailList');
+  setMailBtnBusy(S.mailLoading);
+
+  // Công tắc
+  const sw = document.getElementById('mailSw');
+  if (sw) { sw.classList.toggle('on', S.mailOn);
+            sw.setAttribute('aria-checked', S.mailOn ? 'true' : 'false'); }
+  document.getElementById('mailBtn').classList.toggle('hide', !S.mailOn);
+
+  if (!S.mailOn) {
+    box.innerHTML = '<span class="empty">Đang tắt — bật công tắc để đọc biên lai '
+                  + 'từ email ngân hàng.</span>';
+    return;
+  }
+
+  if (S.mailLoading) {
+    // Khung xương 3 dòng: thấy ngay là app đang chạy, không phải bị treo
+    box.innerHTML = '<span class="scan-note">Đang đọc hộp thư ngân hàng…</span>'
+      + [0,1,2].map(() => `<div class="sk-row">
+          <div class="mail-main"><div class="sk sk-a"></div><div class="sk sk-b"></div></div>
+          <div class="sk sk-c"></div>
+        </div>`).join('');
+    return;
+  }
+  if (S.mailErr) {
+    box.innerHTML = '<span class="empty">⚠️ ' + esc(S.mailErr) + '</span>'; return;
+  }
+  /* Lối ra cho trường hợp lỡ tay bấm ✕ — chỉ hiện khi thực sự có thứ để lấy
+     lại, và nói rõ số lượng để bạn biết mình sắp lôi về bao nhiêu dòng. */
+  const restore = S.skipped
+    ? `<div class="mail-foot">
+         <button class="mail-restore" onclick="restoreSkipped()">
+           ⟲ Lấy lại ${S.skipped} giao dịch đã bỏ qua</button>
+         <button class="mail-purge" onclick="purgeSkipped()">🗑 Xóa hẳn</button>
+       </div>`
+    : '';
+
+  if (!S.mail.length) {
+    /* Phân biệt rõ 2 tình huống, vì cách xử lý khác nhau:
+       chưa quét lần nào  → mời bấm ↻
+       quét rồi, không có → báo sạch hộp thư, kèm giờ quét gần nhất */
+    let last = 0;
+    try { last = Number(localStorage.getItem(LS.MAILTS) || 0); } catch (e) {}
+    const when = last ? new Date(last).toTimeString().slice(0,5) : '';
+    box.innerHTML = '<span class="empty">'
+      + (S.mailDidScan
+          ? ('Không có giao dịch mới' + (when ? ' · quét lúc ' + when : ''))
+          : 'Bấm ↻ để quét hộp thư ngân hàng')
+      + '</span>' + restore;
+    return;
+  }
+
+  box.innerHTML = S.mail.map((m,i) => {
+    const g = m.guessItem ? `<span class="mail-g">${esc(m.guessItem.trim())}</span>` : '';
+    const d = m.maybeDup ? '<span class="mail-dup">⚠ CÓ THỂ ĐÃ GHI</span>' : '';
+    const who = m.payee ? ' · ' + esc(m.payee) : '';
+    return `<div class="mailrow">
+      <div class="mail-main" onclick="openMailDetail(${i})">
+        <div class="mail-t">${fmt(m.amount)} đ${d}</div>
+        <div class="mail-s">${esc(m.dateLabel)}${who} · ${esc(m.note)}${g}<span class="mail-more">xem ›</span></div>
+      </div>
+      <button class="mail-use" onclick="useMail(${i})">Dùng</button>
+      <button class="icon-btn" onclick="skipMail(${i})"><span>✕</span></button>
+    </div>`;
+  }).join('') + restore;
+}
+
+/* ============ CHI TIẾT GIAO DỊCH TỪ EMAIL ============ */
+
+/** Mở bảng chi tiết. Các trường đã có sẵn trong S.mail nên hiện ngay lập tức;
+    toàn văn email chỉ tải khi bạn bấm "Xem nội dung email gốc". */
+function openMailDetail(i){
+  const m = S.mail[i];
+  if (!m) return;
+  S.mailOpen = i;
+  S.mailRaw = null;
+
+  document.getElementById('msAmt').textContent  = fmt(m.amount) + ' đ';
+  document.getElementById('msWhen').textContent = m.timeLabel || m.dateLabel || '';
+
+  const rows = [
+    ['Người nhận',   m.payee],
+    ['Nội dung',     m.content || m.note],
+    ['Ngân hàng',    m.bankName],
+    ['Tài khoản',    m.account],
+    ['Phí',          m.fee ? fmt(m.fee) + ' đ' : ''],
+    ['Số lệnh',      m.id],
+    ['Ghi vào tháng', prettySheet(m.sheet)],
+    ['Khoản mục đoán', m.guessItem ? m.guessItem.trim() : '']
+  ].filter(r => r[1]);
+
+  document.getElementById('msBody').innerHTML =
+    (m.maybeDup ? `<div class="ms-warn">⚠ ${esc(prettySheet(m.sheet))} đã có một dòng
+       cùng ngày ${esc(m.dateLabel)} và cùng số tiền ${fmt(m.amount)} đ.
+       Kiểm tra tab Lịch sử trước khi ghi để khỏi trùng.</div>` : '')
+    + rows.map(r => `<div class="ms-r"><div class="ms-k">${esc(r[0])}</div>
+                   <div class="ms-v">${esc(String(r[1]))}</div></div>`).join('')
+    + (m.subject ? `<div class="ms-sec">Email</div>
+         <div class="ms-r"><div class="ms-k">Tiêu đề</div>
+         <div class="ms-v">${esc(m.subject)}</div></div>` : '')
+    + `<button class="ms-link" id="msRawBtn" onclick="loadMailRaw()">
+         Xem nội dung email gốc ›</button>
+       <div id="msRaw"></div>`;
+
+  document.getElementById('mailBackdrop').classList.add('show');
+  document.getElementById('mailSheet').classList.add('show');
+  try { navigator.vibrate && navigator.vibrate(8); } catch(e){}
+}
+
+function closeMailDetail(){
+  document.getElementById('mailBackdrop').classList.remove('show');
+  document.getElementById('mailSheet').classList.remove('show');
+  S.mailOpen = -1;
+}
+
+/** Tải toàn văn email — gọi server riêng, chỉ khi người dùng yêu cầu */
+function loadMailRaw(){
+  const m = S.mail[S.mailOpen];
+  const btn = document.getElementById('msRawBtn');
+  const box = document.getElementById('msRaw');
+  if (!m || !box) return;
+  if (!m.gmailId) { box.innerHTML = '<div class="ms-raw">Email này không còn truy cập được.</div>'; return; }
+
+  if (btn) { btn.textContent = 'Đang tải email…'; btn.disabled = true; }
+  api('getMailDetail', {pin:S.pin, gmailId:m.gmailId})
+    .then(res => {
+      if (btn) btn.remove();
+      if (!res || !res.ok) {
+        box.innerHTML = '<div class="ms-raw">⚠️ ' +
+          esc((res && res.message) || 'Không đọc được email') + '</div>';
+        return;
+      }
+      box.innerHTML = `<div class="ms-sec">Nội dung email gốc</div>
+        <div class="ms-raw">${esc(res.lines.join('\n'))}</div>`;
+    })
+    .catch(() => {
+      if (btn) { btn.textContent = 'Xem nội dung email gốc ›'; btn.disabled = false; }
+      toast('Không gọi được máy chủ', 'err');
+    });
+}
+
+function useFromSheet(){
+  const i = S.mailOpen;
+  closeMailDetail();
+  if (i >= 0) useMail(i);
+}
+
+function skipFromSheet(){
+  const i = S.mailOpen;
+  closeMailDetail();
+  if (i >= 0) skipMail(i);
+}
+
+function skipAllMail(){
+  if (!S.mail.length) return;
+  if (!confirm('Bỏ qua tất cả ' + S.mail.length + ' giao dịch này?')) return;
+  S.mail.forEach(m => api('markMailDone', {pin:S.pin, id:m.id}).catch(()=>{}));
+  S.mail = []; renderMail();
+}
+
+/** Chạm "Dùng" → điền sẵn form, chờ bạn chọn khoản mục rồi bấm Ghi */
+function useMail(i){
+  const m = S.mail[i];
+  if (!m) return;
+
+  // Giao dịch thuộc tháng khác → đổi sheet nếu sheet đó tồn tại
+  if (m.sheet && m.sheet !== S.sheet && S.sheets.indexOf(m.sheet) >= 0) {
+    S.sheet = m.sheet;
+    document.getElementById('sheetSel').value = m.sheet;
+    localStorage.setItem(LS.SHEET, m.sheet);
+    S.txLoaded = false; S.all = []; S.cmp = null;
+    reload();
+  }
+
+  document.getElementById('amount').value = fmt(m.amount);
+  document.getElementById('date').value = m.dateKey;
+  document.getElementById('note').value = m.note;
+
+  // Khoản mục đoán được từ lịch sử — vẫn để bạn xem lại trước khi lưu
+  if (m.guessHu && S.hu.some(h => h.v === m.guessHu)) {
+    document.getElementById('hu').value = m.guessHu;
+    renderItems(); applyCatColor();
+    const el = document.getElementById('item');
+    if ([...el.options].some(o => o.value === m.guessItem)) el.value = m.guessItem;
+  }
+
+  S.pendingOrder = m.id;
+  switchTab('ghi');
+  syncSaveBar();
+  document.querySelector('.amt-box').scrollIntoView({behavior:'smooth', block:'center'});
+  toast(m.guessItem ? 'Đã điền sẵn — kiểm tra khoản mục nhé'
+                    : 'Đã điền sẵn — chọn khoản mục rồi bấm Ghi');
+}
+
+/**
+ * Bỏ qua một giao dịch. Đánh dấu kind:'skip' để server lưu riêng khỏi nhóm
+ * "đã ghi vào sheet" — nhờ vậy mới khôi phục lại được mà không đụng tới
+ * những giao dịch đã nhập.
+ */
+function skipMail(i){
+  const m = S.mail[i];
+  if (!m) return;
+  api('markMailDone', {pin:S.pin, id:m.id, kind:'skip'}).catch(()=>{});
+  S.mail.splice(i,1);
+  S.skipped = (S.skipped || 0) + 1;
+  renderMail();
+  // Lỡ tay bấm ✕ là chuyện thường → cho hoàn tác ngay trong 6 giây
+  toast('Đã bỏ qua ' + fmt(m.amount) + ' đ', '', '',
+        {label:'Hoàn tác', fn:() => undoSkip(m, i)});
+}
+
+/** Hoàn tác một lần bỏ qua — trả giao dịch về đúng vị trí cũ trong danh sách */
+function undoSkip(m, i){
+  api('undoMailSkip', {pin:S.pin, id:m.id})
+    .then(res => {
+      if (!res || !res.ok) { toast((res && res.message) || 'Không hoàn tác được','err'); return; }
+      if (!S.mail.some(x => x.id === m.id)) {
+        S.mail.splice(Math.min(i, S.mail.length), 0, m);
+      }
+      S.skipped = Math.max(0, (S.skipped || 0) - 1);
+      renderMail();
+      toast('Đã khôi phục');
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
+}
+
+/**
+ * Bỏ HẲN nhóm đã bỏ qua — thôi không hỏi lại nữa.
+ * Không phải "xoá dữ liệu": các giao dịch này vốn đã bị chặn khỏi hàng chờ từ
+ * lúc bạn bấm ✕. Thao tác này chỉ dẹp luôn lời mời "Lấy lại N giao dịch".
+ */
+function purgeSkipped(){
+  const n = S.skipped || 0;
+  if (!n) return;
+  if (!confirm('Bỏ hẳn ' + n + ' giao dịch đã bỏ qua?\n\n'
+             + 'Chúng sẽ không hiện lại và app cũng thôi mời lấy lại nữa.\n'
+             + 'Trong app sẽ KHÔNG còn cách lấy lại — cân nhắc trước khi bấm.')) return;
+  api('purgeSkippedMail', {pin:S.pin})
+    .then(res => {
+      if (!res || !res.ok) { toast((res && res.message) || 'Lỗi','err'); return; }
+      S.skipped = 0;
+      renderMail();
+      toast(res.message);
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
+}
+
+/** Lấy lại TẤT CẢ giao dịch từng bị bỏ qua (trong 14 ngày quét) */
+function restoreSkipped(){
+  const n = S.skipped || 0;
+  if (!n) return;
+  if (!confirm('Lấy lại ' + n + ' giao dịch đã bỏ qua để xem lại?\n\n'
+             + 'Những giao dịch đã ghi vào sheet không bị ảnh hưởng.')) return;
+  S.mailLoading = true; renderMail();
+  api('restoreSkippedMail', {pin:S.pin})
+    .then(res => {
+      S.mailLoading = false;
+      if (!res || !res.ok) { renderMail(); toast((res && res.message) || 'Lỗi','err'); return; }
+      S.skipped = 0;
+      toast(res.message);
+      scanMail(true);               // quét lại để kéo chúng về danh sách
+    })
+    .catch(() => { S.mailLoading = false; renderMail(); toast('Không gọi được máy chủ','err'); });
+}
+
+function renderHero(){
+  document.getElementById('todayTotal').textContent = fmt(S.todayTotal) + ' đ';
+  // Chưa chi gì hôm nay → đổi nhãn thành câu vui thay vì "Chi tiêu hôm nay"
+  const lbl = document.querySelector('.hero-lbl');
+  if (lbl) lbl.textContent = (FUN.enabled && !S.todayTotal)
+    ? (S._zeroLine || (S._zeroLine = pick(FUN.emptyToday)))
+    : 'Chi tiêu hôm nay';
+  if (S.todayTotal) S._zeroLine = '';
+  const parts = ['Tháng <b>' + fmt(S.monthTotal) + ' đ</b>'];
+  if (S.txCount) parts.push('<b>' + S.txCount + '</b> giao dịch');
+  if (S.daysLeft > 0) parts.push('còn <b>' + S.daysLeft + '</b> ngày');
+  if (!S.sheetExists) parts.push('<span class="warnx">chưa có dữ liệu tháng này</span>');
+  document.getElementById('heroMeta').innerHTML =
+    parts.join('<span class="sepdot">·</span>');
+}
+
+/* ===================== TABS & PHẠM VI ===================== */
+function switchTab(t){
+  if (S.tab !== t && navigator.vibrate) navigator.vibrate(8);
+  S.tab = t;
+  ['ghi','su','tk'].forEach(x => {
+    const tab = document.getElementById('tab-'+x);
+    // Gỡ rồi gắn lại class để animation lắc chạy lại từ đầu mỗi lần chọn
+    tab.classList.remove('sel');
+    if (x === t) { void tab.offsetWidth; tab.classList.add('sel'); }
+    document.getElementById('pane-'+x).classList.toggle('hide', x!==t);
+  });
+  document.getElementById('bar').classList.toggle('hide', t!=='ghi');
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (t === 'su') loadTx(false);
+  if (t === 'tk') {
+    if (S.scope === 'year') loadYear(false);
+    else { loadTx(false); loadCompare(false); }
+  }
+}
+
+function setScope(s){
+  S.scope = s;
+  document.getElementById('scope-month').classList.toggle('sel', s==='month');
+  document.getElementById('scope-year').classList.toggle('sel', s==='year');
+  document.getElementById('tkMonth').classList.toggle('hide', s!=='month');
+  document.getElementById('tkYear').classList.toggle('hide', s!=='year');
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (s === 'year') loadYear(false); else { loadTx(false); loadCompare(false); }
+}
+
+function setYear(y){
+  if (S.year === y) return;
+  S.year = y; S.yearData = null;
+  renderYearChips();
+  ['yKpis','yMonth','yHu','yItem','yTag'].forEach(id =>
+    document.getElementById(id).innerHTML = '<span class="empty">Đang tải…</span>');
+  loadYear(true);
+}
+
+/** Chạm cột tháng trong biểu đồ năm → chuyển sang xem tháng đó */
+function openMonth(sheetName, exists){
+  if (!exists) { toast('Chưa có dữ liệu ' + prettySheet(sheetName),'err'); return; }
+  S.sheet = sheetName;
+  document.getElementById('sheetSel').value = sheetName;
+  localStorage.setItem(LS.SHEET, sheetName);
+  S.txLoaded = false; S.openDay = ''; S.all = [];
+  setScope('month');
+  reload(); loadTx(true);
+}
+
+/* ===================== MÀU THEO LOẠI CHI PHÍ ===================== */
+function catColor(huName){
+  const k = norm(huName);
+  const map = CAT_COLORS[S.theme] || CAT_COLORS.light;
+  if (map[k]) return map[k];
+  // chưa khai báo → gán màu ổn định theo vị trí trong danh sách
+  const pool = CAT_FALLBACK[S.theme] || CAT_FALLBACK.light;
+  const idx = S.hu.findIndex(h => norm(h.v) === k);
+  return pool[(idx < 0 ? 0 : idx) % pool.length];
+}
+
+/** Nền nhạt của cùng màu đó — hex 8 chữ số, nền tối cần đậm hơn chút */
+function tint(c){ return c + (S.theme === 'dark' ? '33' : '1f'); }
+
+function applyCatColor(){
+  const el = document.getElementById('hu');
+  if (!el) return;
+  document.documentElement.style.setProperty('--cat', catColor(el.value));
+}
+
+/* ===================== RENDER: TAB GHI ===================== */
+function fillSelect(id, arr){
+  document.getElementById(id).innerHTML =
+    arr.map(o => `<option value="${esc(o.v)}">${esc(o.t)}</option>`).join('');
+}
+
+function renderItems(){
+  const key = norm(document.getElementById('hu').value);
+  const list = S.items.filter(it => it.huKey === key);
+  fillSelect('item', list.length ? list : [{v:'', t:'(Chưa có khoản mục)'}]);
+}
+
+function renderQuickAmounts(){
+  document.getElementById('quickAmt').innerHTML = QUICK_AMOUNTS
+    .map(a => `<div class="chip" onclick="setAmt(${a})">${a/1000}k</div>`).join('');
+}
+
+function renderMoneySeg(){
+  document.getElementById('moneySeg').innerHTML = S.moneyTypes
+    .map(m => `<div class="${m===S.money?'sel':''}" onclick="pickMoney('${esc(m)}')">${esc(m)}</div>`)
+    .join('');
+}
+
+function syncSaveBar(){
+  const amt = parseAmtLocal(document.getElementById('amount').value);
+  const item = document.getElementById('item');
+  const name = item && item.selectedIndex >= 0 ? item.options[item.selectedIndex].text : '';
+  document.getElementById('saveMain').textContent = amt ? ('Ghi ' + fmt(amt) + ' đ') : 'Ghi chi tiêu';
+  document.getElementById('saveSub').textContent = (amt && name) ? ('· ' + name) : '';
+  document.getElementById('saveBtn').disabled = S.busy;
+}
+
+/* ===================== RENDER: TAB LỊCH SỬ ===================== */
+function renderHuFilter(){
+  const used = [], seen = {};
+  S.all.forEach(r => {
+    const k = norm(r.hu);
+    if (!k || seen[k]) return;
+    seen[k] = 1; used.push(r.hu.trim());
+  });
+  document.getElementById('huFilter').innerHTML =
+    `<div class="chip sm${S.filterHu===''?' sel':''}" onclick="setFilter('')">Tất cả</div>`
+    + used.map(h => {
+        const c = catColor(h);
+        const on = S.filterHu === norm(h);
+        const st = on ? `background:${c};border-color:${c};color:#fff`
+                      : `background:${tint(c)};color:${c}`;
+        return `<div class="chip sm" style="${st}"
+            onclick="setFilter('${esc(norm(h))}')">${esc(shortHu(h))}</div>`;
+      }).join('');
+}
+
+function setFilter(k){ S.filterHu = k; renderHuFilter(); renderHistory(); }
+
+function filteredTx(){
+  const q = norm(document.getElementById('search').value);
+  return S.all.filter(r => {
+    if (S.filterHu && norm(r.hu) !== S.filterHu) return false;
+    if (!q) return true;
+    if (norm(r.note).indexOf(q) >= 0 || norm(r.item).indexOf(q) >= 0) return true;
+    /* Gõ "hẹn hò" phải ra được giao dịch mang #henho — người dùng nhớ TÊN
+       nhãn chứ không nhớ chuỗi viết liền không dấu. */
+    return parseTags(r.note).tags.some(t => norm(tagInfo(t).label).indexOf(q) >= 0);
+  });
+}
+
+/**
+ * Bật/tắt quyền sửa giao dịch.
+ * Trạng thái do máy chủ giữ, và máy chủ cũng tự kiểm tra lại trong
+ * updateExpense — ẩn nút ở giao diện thôi thì chưa phải là khoá.
+ */
+function toggleEditOn(){
+  const next = !S.editOn;
+  S.editOn = next;
+  renderHistory();                 // đổi giao diện ngay, không chờ máy chủ
+  if (navigator.vibrate) navigator.vibrate(8);
+  if (!next) closeEdit();          // đang mở bảng sửa mà tắt thì đóng lại luôn
+  api('setEditEnabled', {pin:S.pin, on:next})
+    .then(res => {
+      if (!res || !res.ok) {
+        S.editOn = !next; renderHistory();
+        toast((res && res.message) || 'Không đổi được cài đặt','err');
+        return;
+      }
+      toast(res.message);
+    })
+    .catch(() => { S.editOn = !next; renderHistory();
+                   toast('Không gọi được máy chủ','err'); });
+}
+
+function renderHistory(){
+  const sw = document.getElementById('editSw');
+  if (sw) { sw.classList.toggle('on', S.editOn);
+            sw.setAttribute('aria-checked', S.editOn ? 'true' : 'false'); }
+  const lbl = document.getElementById('editLbl');
+  if (lbl) lbl.classList.toggle('on', S.editOn);
+
+  const box = document.getElementById('histBody');
+  const rows = filteredTx();
+  let total = 0;
+  rows.forEach(r => total += r.amount);
+  document.getElementById('histCount').textContent =
+    rows.length + ' giao dịch · ' + fmt(total) + ' đ';
+
+  if (!rows.length) {
+    // Phân biệt "chưa ghi gì" với "lọc không ra" — hai tình huống khác nhau
+    const filtering = S.filterHu || document.getElementById('search').value.trim();
+    box.innerHTML = '<span class="empty">'
+      + (FUN.enabled ? (filtering ? FUN.emptySearch : FUN.emptyTx)
+                     : 'Không có giao dịch nào') + '</span>';
+    return;
+  }
+
+  // Nhóm theo ngày, giữ thứ tự mới nhất trước
+  const groups = [], gmap = {};
+  rows.forEach(r => {
+    const k = r.dateKey || '—';
+    if (!gmap[k]) { gmap[k] = {key:k, label:r.dateLabel, wd:r.weekday, total:0, list:[]};
+                    groups.push(gmap[k]); }
+    gmap[k].total += r.amount;
+    gmap[k].list.push(r);
+  });
+
+  box.innerHTML = groups.map(g => `
+    <div class="day-head">
+      <div><span class="day-d">${esc(g.label||'—')}</span><span class="day-w">${esc(g.wd||'')}</span></div>
+      <div class="day-t">${fmt(g.total)} đ</div>
+    </div>
+    ${g.list.map(r => {
+      const c = catColor(r.hu);
+      // Ghi chú hiện phần chữ thôi; #thẻ tách ra thành chip cho dễ đọc
+      const pt = parseTags(r.note);
+      // Chỉ gắn sự kiện chạm khi đã bật công tắc sửa
+      const tap = S.editOn ? ` onclick="openEdit(${r.row})"` : '';
+      const hint = S.editOn ? '<span class="tx-edit">sửa ›</span>' : '';
+      return `<div class="tx${r.row===S.freshRow?' fresh':''}">
+        <span class="tx-ava" style="background:${tint(c)};color:${c}">${esc(initial(r.item))}</span>
+        <div class="tx-main"${tap}>
+          <div class="tx-t">${esc((pt.clean || r.item).trim())}${tagChipsHtml(pt.tags)}</div>
+          <div class="tx-s">${esc(r.item.trim())} · ${esc(r.moneyType)}${hint}</div>
+        </div>
+        <div class="tx-a"${tap}>${fmt(r.amount)}</div>
+        <button class="icon-btn" onclick="del(${r.row},${r.amount})">✕</button>
+      </div>`;
+    }).join('')}
+  `).join('');
+}
+
+/** Chữ cái đầu của khoản mục, dùng làm "icon" trong ô vuông màu */
+function initial(s){
+  const t = String(s||'').trim();
+  return t ? t.charAt(0).toUpperCase() : '•';
+}
+
+function shortHu(h){
+  const t = String(h).trim();
+  return t.length > 16 ? t.slice(0,15) + '…' : t;
+}
+
+/* ============== RENDER: THỐNG KÊ — PHẠM VI THÁNG ============== */
+function renderStats(){
+  const rows = S.all;
+  const total = rows.reduce((s,r) => s + r.amount, 0);
+
+  // Gom theo ngày: vừa giữ mảng (danh sách) vừa map theo số ngày (biểu đồ cột)
+  const dayMap = {};
+  rows.forEach(r => { const k = r.dateKey || '—';
+    if (!dayMap[k]) dayMap[k] = {key:k, label:r.dateLabel, wd:r.weekday, total:0, list:[]};
+    dayMap[k].total += r.amount; dayMap[k].list.push(r); });
+  S.days = Object.keys(dayMap).map(k => dayMap[k]).sort((a,b) => a.key < b.key ? 1 : -1);
+  S.dayByNum = {};
+  S.days.forEach(d => {
+    const n = Number(String(d.key).slice(8,10));
+    if (n) S.dayByNum[n] = d;
+  });
+
+  const activeDays = S.days.length;
+  const maxDay = S.days.reduce((a,b) => (b.total > (a? a.total : -1) ? b : a), null);
+  S.topDayKey = maxDay ? maxDay.key : '';
+  const avg = activeDays ? Math.round(total/activeDays) : 0;
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi k1"><div class="kpi-l">Tổng chi</div>
+      <div class="kpi-v">${fmt(total)} đ</div>
+      <div class="kpi-s">${rows.length} giao dịch</div></div>
+    <div class="kpi k2"><div class="kpi-l">TB mỗi ngày</div>
+      <div class="kpi-v">${fmt(avg)} đ</div>
+      <div class="kpi-s">${activeDays} ngày có chi</div></div>
+    <div class="kpi k3${maxDay ? ' tap' : ''}"${maxDay ? ' onclick="openTopDay()"' : ''}>
+      <div class="kpi-l">Ngày cao nhất</div>
+      <div class="kpi-v">${maxDay ? fmt(maxDay.total) + ' đ' : '—'}</div>
+      <div class="kpi-s">${maxDay ? esc(maxDay.label) + ' · xem ›' : '—'}</div></div>
+    <div class="kpi k4"><div class="kpi-l">Giao dịch TB</div>
+      <div class="kpi-v">${rows.length ? fmt(Math.round(total/rows.length)) + ' đ' : '—'}</div>
+      <div class="kpi-s">mỗi lần chi</div></div>`;
+
+  renderStatDay();
+
+  if (!rows.length) {
+    ['statHu','statItem','statTag'].forEach(id =>
+      document.getElementById(id).innerHTML = '<span class="empty">Chưa có dữ liệu</span>');
+    return;
+  }
+
+  // --- Theo nhãn (cắt ngang qua HŨ và KHOẢN MỤC) ---
+  const tagMap = {};
+  let untagged = 0;
+  rows.forEach(r => {
+    const ts = parseTags(r.note).tags;
+    if (!ts.length) { untagged += r.amount; return; }
+    ts.forEach(t => {
+      if (!tagMap[t]) tagMap[t] = {tag:t, total:0, n:0};
+      tagMap[t].total += r.amount; tagMap[t].n++;
+    });
+  });
+  const tagArr = Object.keys(tagMap).map(k => tagMap[k]).sort((a,b) => b.total - a.total);
+  document.getElementById('statTag').innerHTML =
+    tagStatHtml(tagArr, total, untagged, 'tháng');
+
+  // --- Theo loại chi phí ---
+  const huMap = {};
+  rows.forEach(r => { const k = norm(r.hu) || '—';
+    if (!huMap[k]) huMap[k] = {name:r.hu.trim(), total:0, n:0};
+    huMap[k].total += r.amount; huMap[k].n++; });
+  const huArr = Object.keys(huMap).map(k => huMap[k]).sort((a,b) => b.total - a.total);
+  document.getElementById('statHu').innerHTML =
+    leadLine(huArr, total, 'tháng') + barRows(huArr, total, 'total', false);
+
+  // --- Top khoản mục (tính % trên TỔNG, không phải trên 12 mục hiển thị) ---
+  const itMap = {};
+  rows.forEach(r => { const k = norm(r.item) || '—';
+    if (!itMap[k]) itMap[k] = {name:r.item.trim(), hu:r.hu, total:0, n:0};
+    itMap[k].total += r.amount; itMap[k].n++; });
+  const itArr = Object.keys(itMap).map(k => itMap[k])
+    .sort((a,b) => b.total - a.total).slice(0, 12);
+  // Danh hiệu vui theo khoản mục tốn nhất tháng
+  const badge = itArr.length ? funTitle(itArr[0].name) : '';
+  document.getElementById('statItem').innerHTML =
+    (badge ? `<div class="badge-fun">${esc(badge)}</div>` : '')
+    + leadLine(itArr, total, 'tháng') + barRows(itArr, total, 'max', true);
+}
+
+/**
+ * Thanh ngang dùng chung.
+ * widthBy 'total' → bề rộng = tỉ trọng trên tổng (dùng cho loại chi phí)
+ * widthBy 'max'   → bề rộng so với mục lớn nhất (dùng cho khoản mục,
+ *                   nếu dùng tỉ trọng thì thanh quá ngắn, khó so sánh)
+ * showCount       → hiện thêm số lần chi bên cạnh %
+ */
+function barRows(arr, total, widthBy, showCount){
+  if (!arr.length) return '<span class="empty">Chưa có dữ liệu</span>';
+  const max = arr[0].total || 1;
+  return arr.map(o => {
+    const c = catColor(o.hu || o.name);
+    const pct = total ? (o.total / total * 100) : 0;
+    const w = (widthBy === 'total' && total) ? pct : (o.total / max * 100);
+    const cnt = showCount ? `<span class="brow-p">${o.n}×</span>` : '';
+    return `<div class="brow">
+      <div class="brow-top">
+        <div class="brow-n"><span class="tx-dot" style="background:${c}"></span>
+          <span>${esc(o.name)}</span></div>
+        <div class="brow-v">${fmt(o.total)}${cnt}<span class="brow-pct"
+          style="color:${c}">${pctText(pct)}</span></div>
+      </div>
+      <div class="track"><div class="fill" style="width:${w}%;background:${c}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+/** Dưới 1% vẫn phải thấy được, không làm tròn thành 0% */
+function pctText(p){
+  if (!p) return '0%';
+  if (p < 1) return '<1%';
+  return p.toFixed(p < 10 ? 1 : 0).replace('.', ',') + '%';
+}
+
+/** Câu tóm tắt đặt trên danh sách: mục nào chiếm tỉ trọng lớn nhất */
+function leadLine(arr, total, noun){
+  if (!arr.length || !total) return '';
+  const top = arr[0];
+  return `<div class="lead">Cao nhất: <b>${esc(top.name)}</b> — ${fmt(top.total)} đ,
+    chiếm <b>${pctText(top.total/total*100)}</b> tổng chi${noun ? ' ' + noun : ''}</div>`;
+}
+
+function setDayView(v){
+  S.dayView = v;
+  document.getElementById('dv-chart').classList.toggle('sel', v==='chart');
+  document.getElementById('dv-list').classList.toggle('sel', v==='list');
+  renderStatDay();
+}
+
+function renderStatDay(){
+  const box = document.getElementById('statDay');
+  if (!S.days.length) {
+    box.innerHTML = '<span class="empty">'
+      + (FUN.enabled ? FUN.emptyChart : 'Chưa có dữ liệu') + '</span>';
+    return;
+  }
+  box.innerHTML = (S.dayView === 'chart') ? dayChartHtml() : dayListHtml();
+}
+
+/** Biểu đồ cột dọc: mỗi ngày trong tháng một cột, chạm để xem chi tiết */
+function dayChartHtml(){
+  const n = S.daysInMonth || 31;
+  let max = 1, sum = 0;
+  for (let d = 1; d <= n; d++){
+    const v = S.dayByNum[d] ? S.dayByNum[d].total : 0;
+    sum += v; if (v > max) max = v;
+  }
+  const H = 110;
+  let bars = '', labels = '';
+  for (let d = 1; d <= n; d++){
+    const rec = S.dayByNum[d];
+    const v = rec ? rec.total : 0;
+    const h = v ? Math.max(4, Math.round(v / max * H)) : 3;
+    const sel = (rec && rec.key === S.openDay) ? ' sel' : '';
+    const tap = rec ? ` onclick="toggleDay('${esc(rec.key)}')"` : '';
+    bars += `<div class="col${sel}"${tap}>
+      <div class="col-bar${v?'':' zero'}" style="height:${h}px"></div></div>`;
+    const isOpen = rec && rec.key === S.openDay;
+    const showLbl = (d === 1 || d % 5 === 0 || d === n || isOpen);
+    labels += `<div${isOpen?' class="on"':''}>${showLbl ? d : ''}</div>`;
+  }
+
+  let html = `<div class="chart-top">
+      <span>Cao nhất <b>${fmtShort(max)}</b></span>
+      <span>Tổng <b>${fmtShort(sum)}</b></span></div>
+    <div class="colchart">${bars}</div>
+    <div class="col-x">${labels}</div>`
+    + dayStripHtml();
+
+  // Chi tiết ngày đang chọn, hiện ngay dưới biểu đồ
+  const open = S.days.filter(d => d.key === S.openDay)[0];
+  if (open) {
+    const i = S.days.findIndex(d => d.key === open.key);
+    // S.days xếp MỚI nhất trước, nên "ngày sau" là chỉ số NHỎ hơn
+    const hasNext = i > 0, hasPrev = i >= 0 && i < S.days.length - 1;
+    html += `<div class="daydetail boxed">
+      <div class="dd-head sb">
+        <span>${esc(open.label)} ${esc(open.wd||'')} · ${fmt(open.total)} đ</span>
+        <span class="dd-nav">
+          <button class="dd-arrow" ${hasPrev?'':'disabled'} onclick="stepDay(1)">‹</button>
+          <button class="dd-arrow" ${hasNext?'':'disabled'} onclick="stepDay(-1)">›</button>
+        </span>
+      </div>`
+      + open.list.map(r => `
+        <div class="dd-tx">
+          <span class="dd-dot" style="background:${catColor(r.hu)}"></span>
+          <div class="dd-main">
+            <div class="dd-t">${esc(r.item.trim())}</div>
+            <div class="dd-s">${esc(r.note.trim() || '(không ghi chú)')} · ${esc(r.moneyType)}</div>
+          </div>
+          <div class="dd-a">${fmt(r.amount)}</div>
+        </div>`).join('') + `</div>`;
+  }
+  return html;
+}
+
+/** Danh sách thanh ngang: dễ chạm, thấy rõ số tiền từng ngày */
+function dayListHtml(){
+  const dayMax = S.days.reduce((m,d) => Math.max(m, d.total), 1);
+  return S.days.map(d => {
+    // Thanh mang màu của loại chi phí chiếm nhiều tiền nhất trong ngày
+    const byHu = {};
+    d.list.forEach(r => { const k = norm(r.hu);
+      byHu[k] = (byHu[k] || 0) + r.amount; });
+    let topHu = '', topVal = -1;
+    Object.keys(byHu).forEach(k => { if (byHu[k] > topVal){ topVal = byHu[k]; topHu = k; } });
+    const c = catColor(topHu);
+
+    const head = `<div class="dayrow" onclick="toggleDay('${esc(d.key)}')">
+        <div class="dayrow-d">${esc(d.label||'—')}<div style="font-size:10px;
+             color:var(--dim);font-weight:600">${esc(d.wd||'')}</div></div>
+        <div class="dayrow-bar"><div class="fill"
+          style="width:${d.total/dayMax*100}%;background:${c}"></div></div>
+        <div class="dayrow-v">${fmt(d.total)}</div>
+      </div>`;
+    if (S.openDay !== d.key) return head;
+    return head + `<div class="daydetail">` + d.list.map(r => `
+        <div class="dd-tx indent">
+          <span class="dd-dot" style="background:${catColor(r.hu)}"></span>
+          <div class="dd-main">
+            <div class="dd-t">${esc(r.item.trim())}</div>
+            <div class="dd-s">${esc(r.note.trim() || '(không ghi chú)')} · ${esc(r.moneyType)}</div>
+          </div>
+          <div class="dd-a">${fmt(r.amount)}</div>
+        </div>`).join('') + `</div>`;
+  }).join('');
+}
+
+/**
+ * Dải ngày bấm được.
+ * Cột trong biểu đồ chỉ rộng ~9px trên iPhone — dưới xa mức 44pt tối thiểu
+ * của iOS, bấm 3 lần trượt 2. Dải này mỗi ô rộng 48px nên chạm là trúng.
+ * Chỉ liệt kê NGÀY CÓ CHI (tháng này 12 ngày chứ không phải 31), nên danh
+ * sách ngắn, ô to, và không có ô rỗng vô nghĩa để chạm nhầm.
+ * Biểu đồ vẫn giữ nguyên vai trò nhìn tổng quan, chạm vào vẫn được.
+ */
+function dayStripHtml(){
+  if (!S.days.length) return '';
+  // S.days mới nhất trước; đảo lại cho dải chạy theo chiều thời gian
+  const asc = S.days.slice().reverse();
+  const chips = asc.map(d => {
+    const on = d.key === S.openDay;
+    const dd = String(d.key).slice(8, 10);
+    return `<button type="button" class="dchip${on ? ' on' : ''}"
+              id="dchip-${esc(d.key)}" onclick="toggleDay('${esc(d.key)}')">
+      <span class="dchip-d">${esc(dd)}</span>
+      <span class="dchip-w">${esc((d.wd || '').replace('Thứ ', 'T'))}</span>
+      <span class="dchip-a">${fmtShort(d.total)}</span>
+    </button>`;
+  }).join('');
+  return `<div class="dstrip-lbl">Chạm ngày để xem chi tiết</div>
+          <div class="scroll-row dstrip" id="dstrip">${chips}</div>`;
+}
+
+function toggleDay(k){
+  S.openDay = (S.openDay === k) ? '' : k;
+  renderStatDay();
+  scrollDayChip();
+}
+
+/** Bước sang ngày có chi liền kề. dir +1 = lùi về trước, -1 = tiến tới sau */
+function stepDay(dir){
+  const i = S.days.findIndex(d => d.key === S.openDay);
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= S.days.length) return;
+  S.openDay = S.days[j].key;
+  renderStatDay();
+  scrollDayChip();
+  if (navigator.vibrate) navigator.vibrate(6);
+}
+
+/** Kéo dải ngày sao cho ô đang chọn nằm giữa tầm nhìn */
+function scrollDayChip(){
+  if (!S.openDay) return;
+  setTimeout(() => {
+    const el = document.getElementById('dchip-' + S.openDay);
+    const row = document.getElementById('dstrip');
+    if (!el || !row) return;
+    row.scrollTo({ left: el.offsetLeft - row.clientWidth / 2 + el.clientWidth / 2,
+                   behavior: 'smooth' });
+  }, 40);
+}
+
+/**
+ * Chạm ô "Ngày cao nhất" → mở luôn chi tiết ngày đó ở thẻ Chi tiêu theo ngày.
+ * Dùng lại đúng cơ chế S.openDay sẵn có, không dựng thêm màn hình mới: chi
+ * tiết hiện ngay trong mạch đang đọc, không phải nhảy sang tab khác rồi lạc.
+ */
+function openTopDay(){
+  if (!S.topDayKey) return;
+  S.openDay = S.topDayKey;
+  renderStatDay();
+  if (navigator.vibrate) navigator.vibrate(8);
+
+  /* Cuộn tới phần chi tiết. Phải đợi một nhịp cho trình duyệt dựng xong DOM
+     mới đo được vị trí, nếu không nó cuộn tới chỗ của bố cục CŨ. */
+  setTimeout(() => {
+    const d = document.querySelector('#statDay .daydetail');
+    const t = d || document.getElementById('statDay');
+    if (t) t.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 60);
+}
+
+/* ============== RENDER: THỐNG KÊ — PHẠM VI NĂM ============== */
+function renderYearChips(){
+  const box = document.getElementById('yearChips');
+  const years = S.years.length ? S.years : (S.year ? [S.year] : []);
+  box.innerHTML = years.map(y =>
+    `<div class="chip sm${y===S.year?' sel':''}" onclick="setYear(${y})">${y}</div>`).join('');
+  document.getElementById('yearPickCard').classList.toggle('hide', years.length < 2);
+}
+
+function renderYear(){
+  renderYearChips();
+  const y = S.yearData;
+  if (!y) return;
+
+  const avgMonth = y.activeMonths ? Math.round(y.total / y.activeMonths) : 0;
+  const best = y.months.reduce((a,b) => (b.total > (a? a.total : -1) ? b : a), null);
+
+  document.getElementById('yKpis').innerHTML = `
+    <div class="kpi k1"><div class="kpi-l">Tổng cả năm</div>
+      <div class="kpi-v">${fmt(y.total)} đ</div>
+      <div class="kpi-s">${y.count} giao dịch</div></div>
+    <div class="kpi k2"><div class="kpi-l">TB mỗi tháng</div>
+      <div class="kpi-v">${fmt(avgMonth)} đ</div>
+      <div class="kpi-s">${y.activeMonths} tháng có chi</div></div>
+    <div class="kpi k3"><div class="kpi-l">Tháng cao nhất</div>
+      <div class="kpi-v">${best && best.total ? fmt(best.total) + ' đ' : '—'}</div>
+      <div class="kpi-s">${best && best.total ? esc(best.name) : '—'}</div></div>
+    <div class="kpi k4"><div class="kpi-l">Giao dịch TB</div>
+      <div class="kpi-v">${y.count ? fmt(Math.round(y.total/y.count)) + ' đ' : '—'}</div>
+      <div class="kpi-s">mỗi lần chi</div></div>`;
+
+  // --- Biểu đồ cột 12 tháng, chạm để mở tháng đó ---
+  const max = y.months.reduce((m,x) => Math.max(m, x.total), 1);
+  const H = 110;
+  let bars = '', labels = '';
+  y.months.forEach(m => {
+    const h = m.total ? Math.max(4, Math.round(m.total / max * H)) : 3;
+    const cur = (m.sheet === S.sheet) ? ' sel' : '';
+    bars += `<div class="col${cur}" onclick="openMonth('${esc(m.sheet)}',${m.exists?'true':'false'})">
+      <div class="col-bar${m.total?'':' zero'}" style="height:${h}px"></div></div>`;
+    labels += `<div${cur?' class="on"':''}>${m.month}</div>`;
+  });
+  document.getElementById('yMonth').innerHTML =
+    `<div class="chart-top"><span>Cao nhất <b>${fmtShort(max)}</b></span>
+       <span>Chạm cột để mở tháng</span></div>
+     <div class="colchart">${bars}</div>
+     <div class="col-x">${labels}</div>`;
+
+  document.getElementById('yHu').innerHTML =
+    leadLine(y.hu, y.total, 'năm') + barRows(y.hu, y.total, 'total', false);
+  const yBadge = y.items.length ? funTitle(y.items[0].name) : '';
+  document.getElementById('yItem').innerHTML =
+    (yBadge ? `<div class="badge-fun">${esc(yBadge)}</div>` : '')
+    + leadLine(y.items, y.total, 'năm') + barRows(y.items, y.total, 'max', true);
+
+  document.getElementById('yTag').innerHTML =
+    tagStatHtml(y.tags || [], y.total, y.untagged || 0, 'năm');
+}
+
+/* ===================== ACTIONS ===================== */
+function pickMoney(m){ S.money = m; renderMoneySeg(); rememberLast(); }
+function onHuChange(){ renderItems(); applyCatColor(); autoTag(); rememberLast(); syncSaveBar(); }
+function onItemChange(){ autoTag(); rememberLast(); syncSaveBar(); }
+
+function rememberLast(){
+  localStorage.setItem(LS.LAST, JSON.stringify({
+    hu: document.getElementById('hu').value,
+    item: document.getElementById('item').value,
+    money: S.money
+  }));
+}
+
+function setAmt(v){
+  document.getElementById('amount').value = v ? fmt(v) : '';
+  syncSaveBar();
+}
+
+function onAmountInput(){
+  const el = document.getElementById('amount');
+  const raw = el.value;
+  if (!/[a-zA-Z]/.test(raw)) {            // cho phép gõ 50k, 1tr2
+    const digits = raw.replace(/\D/g,'');
+    el.value = digits ? fmt(Number(digits)) : '';
+  }
+  syncSaveBar();
+}
+
+/**
+ * Ghi giao dịch — CẬP NHẬT LẠC QUAN:
+ * cộng tiền vào tổng ngay trên client, không chờ server. Server trả về
+ * tổng chính xác + dòng vừa ghi → ghi đè lại. Lỗi thì hoàn tác.
+ */
+function save(){
+  if (S.busy) return;
+  const amtNum = parseAmtLocal(document.getElementById('amount').value);
+  const tx = {
+    clientId: uuid(),
+    sheetName:S.sheet,
+    amount:   document.getElementById('amount').value,
+    date:     document.getElementById('date').value,
+    hu:       document.getElementById('hu').value,
+    item:     document.getElementById('item').value,
+    moneyType:S.money,
+    note:     noteWithTags(),
+    /* Số lệnh biên lai gửi KÈM luôn: máy chủ tự đánh dấu đã xử lý trong cùng
+       lời gọi, khỏi tốn thêm một vòng mạng ~1,3 giây cho markMailDone. */
+    orderId:  S.pendingOrder || '',
+  };
+  if (!amtNum) { toast('Chưa nhập số tiền','err');
+    document.getElementById('amount').focus(); return; }
+  if (!tx.item) { toast('Chưa chọn khoản mục','err'); return; }
+  if (!tx.date) { toast('Chưa chọn ngày','err'); return; }
+  if (!tx.sheetName) { toast('Chưa chọn sheet đích','err'); return; }
+
+  rememberLast();
+
+  // --- Lạc quan: cập nhật UI ngay ---
+  const snapshot = {today:S.todayTotal, month:S.monthTotal, count:S.txCount};
+  if (tx.date === todayISOLocal()) S.todayTotal += amtNum;
+  S.monthTotal += amtNum; S.txCount++;
+  renderHero();
+  document.getElementById('todayTotal').classList.add('pending');
+  clearForm();
+  if (navigator.vibrate) navigator.vibrate(25);
+
+  if (!navigator.onLine) {
+    enqueue(tx);
+    // Gỡ khỏi hàng chờ email ngay, còn markMailDone để lúc đồng bộ xong
+    if (S.pendingOrder) {
+      S.mail = S.mail.filter(m => m.id !== S.pendingOrder);
+      S.pendingOrder = '';
+      renderMail();
+    }
+    document.getElementById('todayTotal').classList.remove('pending');
+    toast('Đã lưu offline, sẽ tự đồng bộ');
+    return;
+  }
+
+  setBusy(true);
+  api('addExpense', Object.assign({pin:S.pin}, tx))
+    .then(res => {
+      document.getElementById('todayTotal').classList.remove('pending');
+      setBusy(false);
+      if (!res.ok) {
+        // Hoàn tác
+        S.todayTotal = snapshot.today; S.monthTotal = snapshot.month;
+        S.txCount = snapshot.count; renderHero();
+        toast(res.message,'err');
+        return;
+      }
+      // Số liệu chính xác từ server
+      S.todayTotal = res.todayTotal; S.monthTotal = res.monthTotal;
+      S.txCount = res.txCount; renderHero();
+      // Chèn thẳng vào danh sách, không tải lại
+      if (S.txLoaded && res.tx) {
+        S.all.unshift(res.tx);
+        S.freshRow = res.tx.row;
+        saveTxCache();
+        renderHuFilter(); renderHistory(); renderStats();
+      }
+      S.yearData = null;   // tổng hợp năm đã cũ, lần sau mở sẽ tải lại
+      S.cmp = null;        // so cùng kỳ cũng vậy
+
+      /* Giao dịch đến từ email: máy chủ ĐÃ tự đánh dấu trong cùng lời gọi
+         addExpense (xem trường orderId ở trên), nên ở đây chỉ việc gỡ khỏi
+         hàng chờ — không gọi markMailDone nữa. */
+      if (S.pendingOrder) {
+        const id = S.pendingOrder; S.pendingOrder = '';
+        S.mail = S.mail.filter(m => m.id !== id);
+        renderMail();
+      }
+
+      const line = funSaveLine(amtNum);
+      if (line) toast(line, '', res.message); else toast(res.message);
+    })
+    .catch(() => {
+      document.getElementById('todayTotal').classList.remove('pending');
+      setBusy(false);
+      enqueue(tx);
+      toast('Mất mạng — đã xếp hàng đợi');
+      updateNet();
+    });
+}
+
+/**
+ * Ghép ghi chú với các nhãn đang chọn thành chuỗi lưu xuống sheet.
+ * Nhãn đã có sẵn trong ghi chú (người dùng tự gõ #...) thì không nhân đôi.
+ */
+function noteWithTags(){
+  const raw = document.getElementById('note').value || '';
+  const have = parseTags(raw).tags;
+  const add = S.pickTags.filter(t => have.indexOf(t) < 0).map(t => '#' + t);
+  if (!add.length) return raw.trim();
+  return (raw.trim() + ' ' + add.join(' ')).trim();
+}
+
+function clearForm(){
+  document.getElementById('amount').value = '';
+  document.getElementById('note').value = '';
+  S.pickTags = [];            // nhãn chỉ thuộc về giao dịch vừa ghi
+  S.scActive = '';
+  S.tagTouched = false; S.autoWhy = null;
+  renderTagPick(); renderShortcuts();
+  syncSaveBar();
+}
+
+function del(row, amount){
+  if (!confirm('Xóa giao dịch ' + fmt(amount) + ' đ ?')) return;
+  api('deleteExpense', {pin:S.pin, sheetName:S.sheet, row:row, amount:amount})
+    .then(res => {
+      toast(res.message, res.ok?'':'err');
+      if (!res.ok) return;
+      S.todayTotal = res.todayTotal; S.monthTotal = res.monthTotal;
+      S.txCount = res.txCount; renderHero();
+      S.yearData = null; S.cmp = null;
+      // Dòng bị xóa → các dòng sau dồn lên 1, số row thay đổi → tải lại danh sách
+      try { localStorage.removeItem(LS.TX); } catch (e) {}
+      if (S.txLoaded) loadTx(true);
+      /* Biên lai email vừa được trả về hàng chờ → mời quét lại để thấy nó.
+         Không tự quét: quét là thao tác nặng, và công tắc có thể đang tắt. */
+      if (res.released) { S.mailDidScan = false; renderMail(); }
+    })
+    .catch(e => toast('Lỗi: '+e.message,'err'));
+}
+
+function setBusy(b){
+  S.busy = b;
+  document.getElementById('saveBtn').disabled = b;
+  document.getElementById('saveMain').textContent = b ? 'Đang ghi…' : 'Ghi chi tiêu';
+  if (b) document.getElementById('saveSub').textContent = '';
+  else syncSaveBar();
+}
+
+
+/* ============ SỬA GIAO DỊCH ĐÃ GHI ============
+   Mở từ tab Lịch sử. Sửa tại chỗ đúng 6 cột C:H của đúng dòng đó — không
+   chèn, không xoá, không dịch dòng, vì từ cột K trở đi là bảng phụ có công
+   thức. Phía máy chủ còn so lại số tiền cũ trước khi ghi, đề phòng app đang
+   cầm dữ liệu đã lỗi thời. */
+
+function openEdit(row){
+  if (!S.editOn) { toast('Bật công tắc "Sửa" ở trên trước đã','err'); return; }
+  const r = S.all.filter(x => x.row === row)[0];
+  if (!r) { toast('Không tìm thấy giao dịch — tải lại danh sách','err'); return; }
+  S.edit = r;
+
+  const pt = parseTags(r.note);
+  S.editTags = pt.tags.slice(0, 1);          // nhãn cũng chỉ một, như form Ghi
+  S.editTagTouched = false;
+
+  document.getElementById('edWhen').textContent =
+    (r.dateLabel || '') + (r.weekday ? ' · ' + r.weekday : '') + ' · dòng ' + r.row;
+  document.getElementById('edAmount').value = fmt(r.amount);
+  document.getElementById('edDate').value = r.dateKey || '';
+  document.getElementById('edNote').value = pt.clean;
+
+  fillSelect('edHu', S.hu);
+  document.getElementById('edHu').value = r.hu;
+  renderEdItems();
+  const it = document.getElementById('edItem');
+  if ([...it.options].some(o => o.value === r.item)) it.value = r.item;
+
+  fillSelect('edMoney', S.moneyTypes.map(m => ({v:m, t:m})));
+  document.getElementById('edMoney').value = r.moneyType;
+
+  renderEdTagPick();
+  document.getElementById('edBackdrop').classList.add('show');
+  document.getElementById('edSheet').classList.add('show');
+  if (navigator.vibrate) navigator.vibrate(8);
+}
+
+function closeEdit(){
+  document.getElementById('edBackdrop').classList.remove('show');
+  document.getElementById('edSheet').classList.remove('show');
+  S.edit = null;
+}
+
+function renderEdItems(){
+  const key = norm(document.getElementById('edHu').value);
+  const list = S.items.filter(i => i.huKey === key);
+  fillSelect('edItem', list.length ? list : [{v:'', t:'(Chưa có khoản mục)'}]);
+}
+
+function onEdAmountInput(){
+  const el = document.getElementById('edAmount');
+  if (!/[a-zA-Z]/.test(el.value)) {
+    const d = el.value.replace(/\D/g,'');
+    el.value = d ? fmt(Number(d)) : '';
+  }
+}
+
+function renderEdTagPick(){
+  document.getElementById('edTagPick').innerHTML = (S.tags || []).map(t => {
+    const on = S.editTags.indexOf(t.tag) >= 0;
+    return `<button type="button" class="tg-pick${on ? ' on' : ''}"
+              onclick="toggleEditTag('${esc(t.tag)}')">${esc(t.emoji)} ${esc(t.label)}</button>`;
+  }).join('');
+}
+function toggleEditTag(t){
+  S.editTags = (S.editTags[0] === t) ? [] : [t];
+  S.editTagTouched = true;     // ý bạn thắng phỏng đoán của máy
+  if (navigator.vibrate) navigator.vibrate(6);
+  renderEdTagPick();
+}
+
+/** Gõ từ khoá trong ghi chú ở bảng sửa → bật chip tương ứng */
+function onEdNoteInput(){
+  if (S.editTagTouched) return;
+  const d = detectTagFromNote(document.getElementById('edNote').value);
+  const next = d && (S.tags || []).some(t => t.tag === d.tag) ? [d.tag] : [];
+  if (next[0] === S.editTags[0]) return;
+  S.editTags = next;
+  renderEdTagPick();
+}
+
+function saveEdit(){
+  const r = S.edit;
+  if (!r) return;
+  const amt = parseAmtLocal(document.getElementById('edAmount').value);
+  if (!amt) { toast('Chưa nhập số tiền','err'); return; }
+  const item = document.getElementById('edItem').value;
+  if (!item) { toast('Chưa chọn khoản mục','err'); return; }
+  const date = document.getElementById('edDate').value;
+  if (!date) { toast('Chưa chọn ngày','err'); return; }
+
+  // Ghép nhãn vào ghi chú, y như lúc ghi mới
+  const raw = document.getElementById('edNote').value || '';
+  const have = parseTags(raw).tags;
+  const add = S.editTags.filter(t => have.indexOf(t) < 0).map(t => '#' + t);
+  const note = (raw.trim() + (add.length ? ' ' + add.join(' ') : '')).trim();
+
+  const btn = document.getElementById('edSave');
+  btn.disabled = true; btn.textContent = 'Đang lưu…';
+
+  api('updateExpense', {
+    pin: S.pin, sheetName: S.sheet, row: r.row,
+    expectAmount: r.amount,              // chốt chặn sửa nhầm dòng
+    amount: document.getElementById('edAmount').value,
+    date: date, hu: document.getElementById('edHu').value, item: item,
+    moneyType: document.getElementById('edMoney').value, note: note
+  })
+    .then(res => {
+      btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+      if (!res.ok) { toast(res.message, 'err'); return; }
+
+      S.todayTotal = res.todayTotal; S.monthTotal = res.monthTotal;
+      S.txCount = res.txCount; renderHero();
+      // Thay dòng cũ bằng dòng mới tại chỗ, khỏi tải lại cả bảng
+      const i = S.all.findIndex(x => x.row === r.row);
+      if (i >= 0) S.all[i] = res.tx;
+      S.freshRow = res.tx.row;
+      S.yearData = null; S.cmp = null;
+      saveTxCache();
+      renderHuFilter(); renderHistory(); renderStats();
+      closeEdit();
+      toast(res.message);
+    })
+    .catch(() => {
+      btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+      toast('Không gọi được máy chủ','err');
+    });
+}
+
+
+/* ============ SO VỚI CÙNG KỲ THÁNG TRƯỚC ============
+   "Cùng kỳ" mới là điểm đáng giá: hôm nay 22/10 thì so 1–22/10 với 1–22/9.
+   So cả tháng 10 (mới đi 2/3 chặng) với cả tháng 9 (trọn vẹn) thì tháng nào
+   đang diễn ra cũng "tiết kiệm hơn" — một kết luận vô nghĩa. */
+
+function loadCompare(force){
+  if (S.cmpLoading) return;
+  if (S.cmp && S.cmp.sheet === S.sheet && !force) { renderCompare(); return; }
+  S.cmpLoading = true;
+  document.getElementById('statCmp').innerHTML =
+    '<span class="empty">Đang so sánh…</span>';
+  api('getCompare', {pin:S.pin, sheetName:S.sheet})
+    .then(res => {
+      S.cmpLoading = false;
+      if (!res.ok) {
+        document.getElementById('statCmp').innerHTML =
+          '<span class="empty">⚠️ ' + esc(res.message || 'Lỗi') + '</span>';
+        return;
+      }
+      S.cmp = res;
+      renderCompare();
+    })
+    .catch(() => {
+      S.cmpLoading = false;
+      document.getElementById('statCmp').innerHTML =
+        '<span class="empty">Không gọi được máy chủ</span>';
+    });
+}
+
+function renderCompare(){
+  const box = document.getElementById('statCmp');
+  const c = S.cmp;
+  if (!box || !c) return;
+
+  if (!c.prevExists) {
+    box.innerHTML = '<span class="empty">Chưa có dữ liệu ' + esc(prettySheet(c.prevSheet))
+      + ' để so sánh.</span>';
+    return;
+  }
+
+  const d = c.curTotal - c.prevTotal;
+  const pct = c.prevTotal ? Math.round(Math.abs(d) / c.prevTotal * 100) : 0;
+  const up = d > 0;
+  // Chi nhiều hơn là xấu, chi ít hơn là tốt — màu phải nói đúng điều đó
+  const cls = d === 0 ? 'flat' : (up ? 'bad' : 'good');
+  const arrow = d === 0 ? '=' : (up ? '▲' : '▼');
+
+  const head = `
+    <div class="cmp-top">
+      <div class="cmp-lbl">Ngày 1–${c.cut} tháng này</div>
+      <div class="cmp-big">${fmt(c.curTotal)} đ</div>
+      <div class="cmp-delta ${cls}">${arrow} ${fmt(Math.abs(d))} đ
+        ${c.prevTotal ? '· ' + pct + '%' : ''}
+        <span class="cmp-vs">so với ${fmt(c.prevTotal)} đ cùng kỳ ${esc(prettySheet(c.prevSheet))}</span>
+      </div>
+      ${c.clipped ? `<div class="cmp-warn">${esc(prettySheet(c.prevSheet))} chỉ có ${c.cutPrev} ngày
+         nên so 1–${c.cutPrev} hai bên cho cân.</div>` : ''}
+    </div>`;
+
+  return void (box.innerHTML = head + cmpChart(c) + cmpMovers(c));
+}
+
+/**
+ * Biểu đồ cột theo tháng, mỗi tháng HAI cột chồng nhau:
+ *   cột nhạt (sau)  = tổng cả tháng đó
+ *   cột đậm (trước) = tổng tính đến cùng kỳ (ngày 1 → mốc cắt)
+ * Một biểu đồ nói được hai điều: tháng đó cuối cùng tiêu hết bao nhiêu, và
+ * đến ngày này thì đã tiêu bao nhiêu. Tháng đang diễn ra thì hai cột bằng
+ * nhau — đúng bản chất, vì tháng chưa kết thúc.
+ * Đường gạch đứt + bong bóng số đánh dấu tháng đang xem.
+ */
+function cmpChart(c){
+  const ss = c.series || [];
+  if (!ss.length) return '';
+  const max = ss.reduce((m,x) => Math.max(m, x.full, x.same), 0) || 1;
+  const Hpx = 124;
+
+  const cols = ss.map(m => {
+    const hFull = Math.max(m.full ? 3 : 2, Math.round(m.full / max * Hpx));
+    const hSame = Math.max(m.same ? 3 : 2, Math.round(m.same / max * Hpx));
+    return `<div class="c2${m.isCur ? ' cur' : ''}"
+                 onclick="openMonthCmp('${esc(m.name)}',${m.exists?'true':'false'})">
+      ${m.isCur ? `<div class="c2-tip">${fmtShort(m.same)}</div>` : ''}
+      <div class="c2-stack">
+        <div class="c2-full${m.full ? '' : ' zero'}" style="height:${hFull}px"></div>
+        <div class="c2-same${m.same ? '' : ' zero'}" style="height:${hSame}px"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const labels = ss.map(m =>
+    `<div${m.isCur ? ' class="on"' : ''}>T${m.month}</div>`).join('');
+
+  return `
+    <div class="c2wrap">
+      <div class="c2chart" style="height:${Hpx + 26}px">${cols}</div>
+      <div class="col-x">${labels}</div>
+    </div>
+    <div class="cmp-legend">
+      <span><i class="lg-same"></i>Đến ngày ${c.cut} (cùng kỳ)</span>
+      <span><i class="lg-full"></i>Cả tháng</span>
+    </div>`;
+}
+
+/** Chạm cột tháng trong biểu đồ so sánh → chuyển sang xem tháng đó */
+function openMonthCmp(name, exists){
+  if (!exists) { toast('Chưa có dữ liệu ' + prettySheet(name), 'err'); return; }
+  if (name === S.sheet) return;
+  const sel = document.getElementById('sheetSel');
+  if (!sel || ![...sel.options].some(o => o.value === name)) {
+    toast(prettySheet(name) + ' không có trong danh sách', 'err'); return;
+  }
+  sel.value = name;
+  switchSheet();
+}
+
+/** Khoản mục biến động mạnh nhất — trả lời "tiền đội lên ở đâu" */
+function cmpMovers(c){
+  if (!c.movers || !c.movers.length) return '';
+  const max = c.movers.reduce((m,x) => Math.max(m, Math.abs(x.delta)), 1);
+  return '<div class="cmp-sec">Biến động theo khoản mục</div>'
+    + c.movers.map(m => {
+      const up = m.delta > 0;
+      const w = Math.round(Math.abs(m.delta) / max * 50);
+      return `<div class="mv">
+        <div class="mv-n">${esc(m.name)}
+          <span class="mv-s">${fmt(m.prev)} → ${fmt(m.cur)}</span></div>
+        <div class="mv-bar"><i class="${up?'up':'down'}" style="width:${w}%"></i></div>
+        <div class="mv-d ${up?'bad':'good'}">${up?'+':'−'}${fmt(Math.abs(m.delta))}</div>
+      </div>`;
+    }).join('');
+}
+
+
+
+/* ============ NHÃN TỰ ĐỘNG THEO KHOẢN MỤC ============
+   Hai cơ chế, cố ý tách riêng vì độ tin cậy khác nhau:
+
+   1) LUẬT CỨNG (CONFIG.TAG_RULES) — khoản mục bản chất đã thuộc nhãn, ví dụ
+      "Dating expenses" thì lần nào cũng là hẹn hò. Gắn chắc chắn.
+
+   2) HỌC THEO THÓI QUEN — khoản mục nhập nhằng như CAFE: app nhìn lịch sử,
+      nếu phần lớn lần trước bạn gắn #henho thì bật sẵn chip đó.
+
+   Nguyên tắc chung: nhãn tự gắn PHẢI NHÌN THẤY ĐƯỢC. Chip sáng lên để bạn
+   biết nó đã bật và tắt đi được. Gắn ngầm sau lưng thì số liệu thống kê
+   không còn đáng tin, mà bạn cũng chẳng hiểu vì sao nó ra như vậy. */
+
+/**
+ * Dò từ khoá nhãn trong ghi chú. Trả {tag, key} hoặc null.
+ *
+ * Khớp theo TỪ TRỌN VẸN, không phải chuỗi con — nếu không thì "cv" sẽ dính
+ * vào "dich vu", "nhan vien cv"... và gắn nhãn lung tung. Ghi chú được bỏ dấu
+ * trước khi dò nên gõ "Hẹn Hò", "hen ho" hay "henho" đều ăn.
+ */
+function detectTagFromNote(note){
+  const raw = String(note || '');
+  if (!raw.trim()) return null;
+  // bỏ dấu + hạ chữ thường, mọi ký tự không phải chữ/số thành khoảng trắng
+  const flat = ' ' + deburrJS(raw).replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+  for (let i = 0; i < (S.tags || []).length; i++) {
+    const t = S.tags[i];
+    const keys = t.keys || [];
+    for (let j = 0; j < keys.length; j++) {
+      const k = deburrJS(keys[j]).replace(/[^a-z0-9]+/g, ' ').trim();
+      if (k && flat.indexOf(' ' + k + ' ') >= 0) return { tag: t.tag, key: k };
+    }
+  }
+  return null;
+}
+
+/** Bỏ dấu tiếng Việt, hạ chữ thường — bản cho client */
+function deburrJS(s){
+  return String(s == null ? '' : s).toLowerCase()
+    .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+    .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+    .replace(/[ìíịỉĩ]/g, 'i')
+    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+    .replace(/[ùúụủũưừứựửữ]/g, 'u')
+    .replace(/[ỳýỵỷỹ]/g, 'y')
+    .replace(/đ/g, 'd');
+}
+
+/**
+ * Nhãn gợi ý. Hai nguồn, ưu tiên theo mức độ chắc chắn:
+ *   1. TỪ KHOÁ TRONG GHI CHÚ — bạn gõ ra thì đó là ý bạn, chắc nhất.
+ *   2. LUẬT THEO KHOẢN MỤC — khoản mục bản chất đã thuộc nhãn
+ *      (vd "Dating expenses" thì lần nào cũng là hẹn hò).
+ */
+function suggestTagFor(item, note){
+  const byNote = detectTagFromNote(note);
+  if (byNote) return { tag: byNote.tag, why: 'note', key: byNote.key };
+  const ruled = (S.tagRules || {})[norm(item)];
+  if (ruled) return { tag: ruled, why: 'luật' };
+  return null;
+}
+
+/**
+ * Áp nhãn gợi ý.
+ * KHÔNG đụng vào nếu bạn đã tự tay bật/tắt nhãn cho giao dịch này — ý bạn
+ * luôn thắng phỏng đoán của máy.
+ */
+function autoTag(){
+  if (S.tagTouched) return;
+  const item = document.getElementById('item').value;
+  const note = document.getElementById('note').value;
+  const sug = suggestTagFor(item, note);
+  const next = sug && (S.tags || []).some(t => t.tag === sug.tag) ? [sug.tag] : [];
+  if (next[0] === S.pickTags[0] && !!S.autoWhy === !!next.length) return;
+  S.pickTags = next;
+  S.autoWhy = next.length ? sug : null;
+  renderTagPick();
+}
+
+function onNoteInput(){ autoTag(); syncSaveBar(); }
+
+/* ===================== PHÍM TẮT KHOẢN MỤC =====================
+   Chạm một phát điền sẵn Loại chi phí + Khoản mục, khỏi phải mở 2 ô chọn.
+   Số tiền gợi ý lấy từ CHÍNH lịch sử của bạn (số hay chi nhất cho khoản mục
+   đó), nên nhiều lần chỉ còn 2 chạm là xong: phím tắt → Ghi. */
+
+function renderShortcuts(){
+  const card = document.getElementById('scCard');
+  const row = document.getElementById('scRow');
+  if (!card || !row) return;
+  if (!S.shortcuts.length) { card.classList.add('hide'); return; }
+  card.classList.remove('hide');
+  row.innerHTML = S.shortcuts.map(sc => {
+    const on = S.scActive === sc.key;
+    const hint = suggestAmount(sc.item);
+    return `<button type="button" class="sc${on ? ' on' : ''}"
+              onclick="applyShortcut('${esc(sc.key)}')">
+      <span class="sc-e">${esc(sc.emoji)}</span>
+      <span class="sc-t">${esc(sc.label)}</span>
+      ${hint ? `<span class="sc-a">${fmtShort(hint)}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+/**
+ * Số tiền hay chi nhất cho một khoản mục, lấy từ lịch sử đã tải.
+ * Dùng SỐ PHỔ BIẾN NHẤT chứ không phải trung bình: trung bình của 3 lần
+ * 30k/30k/300k ra 120k — một con số chưa bao giờ xảy ra. Số phổ biến nhất thì
+ * luôn là một số tiền có thật.
+ * Chưa tải lịch sử thì trả 0 và không hiện gợi ý — thà không có còn hơn sai.
+ */
+function suggestAmount(item){
+  if (!S.txLoaded || !S.all.length) return 0;
+  const k = norm(item), freq = {};
+  let best = 0, bestN = 0;
+  S.all.forEach(r => {
+    if (norm(r.item) !== k) return;
+    const a = Math.round(r.amount);
+    freq[a] = (freq[a] || 0) + 1;
+    if (freq[a] > bestN || (freq[a] === bestN && a > best)) { best = a; bestN = freq[a]; }
+  });
+  return bestN >= 2 ? best : 0;      // 1 lần thì chưa đủ gọi là "hay chi"
+}
+
+function applyShortcut(key){
+  const sc = S.shortcuts.filter(x => x.key === key)[0];
+  if (!sc) return;
+
+  // Chạm lại phím đang chọn → bỏ chọn, xoá số tiền gợi ý
+  if (S.scActive === key) {
+    S.scActive = '';
+    document.getElementById('amount').value = '';
+    renderShortcuts(); syncSaveBar();
+    return;
+  }
+
+  document.getElementById('hu').value = sc.hu;
+  renderItems();
+  const it = document.getElementById('item');
+  if ([...it.options].some(o => o.value === sc.item)) it.value = sc.item;
+  applyCatColor();
+
+  // Chỉ điền số tiền khi ô đang trống — không ghi đè thứ bạn đã gõ
+  const amtEl = document.getElementById('amount');
+  const sug = suggestAmount(sc.item);
+  if (sug && !parseAmtLocal(amtEl.value)) amtEl.value = fmt(sug);
+
+  S.scActive = key;
+  autoTag();
+  renderShortcuts();
+  rememberLast(); syncSaveBar();
+  if (navigator.vibrate) navigator.vibrate(8);
+
+  if (!parseAmtLocal(amtEl.value)) {
+    amtEl.focus();
+    toast(sc.label + ' — nhập số tiền rồi bấm Ghi');
+  } else {
+    toast(sc.label + ' · ' + fmt(sug) + ' đ — sửa số nếu cần rồi bấm Ghi');
+  }
+}
+
+/* ===================== OFFLINE QUEUE ===================== */
+function getQueue(){ try { return JSON.parse(localStorage.getItem(LS.QUEUE) || '[]'); } catch(e){ return []; } }
+function setQueue(q){ localStorage.setItem(LS.QUEUE, JSON.stringify(q)); updateNet(); }
+function enqueue(tx){ const q = getQueue(); q.push(tx); setQueue(q); }
+
+function flushQueue(){
+  const q = getQueue();
+  if (!q.length || !navigator.onLine) return;
+  api('addExpenseBatch', {pin:S.pin, items:q})
+    .then(res => {
+      if (!res.ok) return;
+      const okIds = {};
+      res.results.forEach(r => { if (r.ok) okIds[r.clientId] = 1; });
+      const left = q.filter(t => !okIds[t.clientId]);
+      setQueue(left);
+
+      /* Giao dịch nào đến từ email và đã ghi thành công thì đánh dấu đã xử lý
+         ở đây — lúc bấm Ghi máy đang offline nên chưa gọi được. */
+      q.filter(t => okIds[t.clientId] && t.orderId).forEach(t => {
+        api('markMailDone', {pin:S.pin, id:t.orderId, sheetName:t.sheetName,
+                             dateKey:t.date, amount:parseAmtLocal(t.amount)})
+          .catch(()=>{});
+      });
+      const done = q.length - left.length;
+      if (done > 0) {
+        toast('Đã đồng bộ ' + done + ' giao dịch');
+        const lastOk = res.results.filter(r => r.ok).pop();
+        if (lastOk) {
+          S.todayTotal = lastOk.todayTotal; S.monthTotal = lastOk.monthTotal;
+          S.txCount = lastOk.txCount; renderHero();
+        }
+        S.yearData = null;
+        if (S.txLoaded) loadTx(true);
+      }
+    })
+    .catch(() => {});
+}
+
+function updateNet(){
+  const b = document.getElementById('netBadge');
+  if (!b) return;
+  const on = navigator.onLine;
+  const n = getQueue().length;
+  b.textContent = on ? (n ? ('⏳ ' + n) : 'Online') : 'Offline';
+  b.className = 'net ' + (on ? 'on' : 'off');
+}
+
+/* ===================== UTILS ===================== */
+/** 1234567 → "1.234.567" (chuẩn VN, dấu chấm phân cách nghìn) */
+function fmt(n){
+  return Math.round(Number(n)||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+/** Rút gọn cho biểu đồ, nơi không đủ chỗ: 1.250.000 → "1,3 tr" */
+function fmtShort(n){
+  n = Math.round(Number(n)||0);
+  if (n >= 1e9) return (n/1e9).toFixed(1).replace('.',',') + ' tỷ';
+  if (n >= 1e6) return (n/1e6).toFixed(1).replace('.',',') + ' tr';
+  if (n >= 1e3) return Math.round(n/1e3) + 'k';
+  return String(n);
+}
+
+function norm(s){ return String(s||'').trim().toUpperCase().replace(/\s+/g,' '); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uuid(){ return 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,10); }
+
+/**
+ * Tên sheet cho người đọc: "T10/2026" → "Tháng 10/2026".
+ * CHỈ dùng để HIỂN THỊ. Giá trị thật gửi lên máy chủ luôn là tên sheet gốc —
+ * máy chủ dò sheet bằng CONFIG.SHEET_PATTERN /^T(\d{1,2})\/(\d{4})$/, đổi
+ * chuỗi gửi đi là hỏng hết.
+ */
+function prettySheet(name){
+  const p = parseSheet(name);
+  return p ? ('Tháng ' + p.month + '/' + p.year) : String(name || '');
+}
+
+function parseSheet(name){
+  const m = String(name||'').match(/^T(\d{1,2})\/(\d{4})$/);
+  return m ? {month:Number(m[1]), year:Number(m[2])} : null;
+}
+
+function todayISOLocal(){
+  const d = new Date();
+  const p = n => (n < 10 ? '0' : '') + n;
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+
+/** Nhận "50k", "1tr2", "1.234.567", "1,234,567" đều ra số đúng */
+function parseAmtLocal(raw){
+  let s = String(raw||'').trim().toLowerCase().replace(/\s|₫|đ/g,'');
+  let m = s.match(/^(\d+(?:[.,]\d+)?)(tr|m)(\d*)$/);
+  if (m){ let b = parseFloat(m[1].replace(',','.'))*1e6;
+    if (m[3]) b += parseInt(m[3],10)*Math.pow(10,6-m[3].length); return Math.round(b); }
+  m = s.match(/^(\d+(?:[.,]\d+)?)k$/);
+  if (m) return Math.round(parseFloat(m[1].replace(',','.'))*1000);
+  return Math.round(Number(s.replace(/[.,]/g,'')) || 0);
+}
+
+let toastT;
+/** sub = dòng phụ nhỏ bên dưới (vd chi tiết giao dịch vừa ghi) */
+/**
+ * toast(msg, type, sub, action)
+ * action = {label, fn} → gắn thêm một nút bấm được (vd "Hoàn tác") và kéo dài
+ * thời gian hiện lên 6 giây để kịp với tay bấm. Mặc định toast không nhận chạm
+ * (pointer-events:none) nên chỉ bật lại khi thực sự có nút.
+ */
+let toastAct = null;
+function toast(msg, type, sub, action){
+  const t = document.getElementById('toast');
+  toastAct = action && action.fn ? action.fn : null;
+  t.innerHTML = esc(msg)
+    + (sub ? `<span class="t-sub">${esc(sub)}</span>` : '')
+    + (action ? `<button class="t-act" onclick="runToastAct()">${esc(action.label)}</button>` : '');
+  t.className = 'show ' + (type||'') + (action ? ' act' : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>{ t.className=''; toastAct = null; }, action ? 6000 : 2800);
+}
+function runToastAct(){
+  const fn = toastAct; toastAct = null;
+  document.getElementById('toast').className = '';
+  clearTimeout(toastT);
+  if (fn) fn();
+}
 </script>
 </body>
 </html>
