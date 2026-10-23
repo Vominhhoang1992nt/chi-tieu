@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Thử kết nối API</title>
+<!--
+  PHÉP THỬ TRƯỚC KHI VIẾT LẠI
+  ===========================
+  Toàn bộ việc chuyển app sang chạy thẳng trên GitHub Pages phụ thuộc vào MỘT
+  câu hỏi chưa có lời đáp: từ tên miền github.io, trình duyệt trên iPhone có
+  gọi được Apps Script không?
+
+  Bên trong iframe hiện tại, app dùng google.script.run — một cơ chế riêng của
+  Apps Script. Ra khỏi iframe thì cơ chế đó biến mất, phải gọi qua mạng như
+  một API bình thường, và lúc đó đụng hàng rào CORS của trình duyệt.
+
+  Trang này thử 3 cách, đo thời gian từng cách. Chạy nó TRƯỚC, vì nếu cả 3 đều
+  hỏng thì cả hướng đi sụp, và viết lại rồi mới phát hiện thì mất trắng công.
+-->
+<style>
+  :root{
+    --bg:#f4f6fb; --surface:#fff; --txt:#0c111d; --dim:#94a0b4; --mut:#5d6b82;
+    --line:#e3e8f0; --ok:#067647; --ok-bg:#e7f6ee; --err:#d92d20; --err-bg:#fee4e2;
+    --acc:#2563eb; --acc-weak:#e8efff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#0a0e16; --surface:#141821; --txt:#eef2f8; --dim:#6b7689;
+          --mut:#9aa6ba; --line:#222838; --ok-bg:#0c2e1e; --err-bg:#2e1413;
+          --acc-weak:#1b2540;}
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;padding:16px;background:var(--bg);color:var(--txt);
+       font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+       font-size:15px;line-height:1.5;}
+  h1{font-size:19px;margin:4px 0 4px;}
+  .sub{font-size:13px;color:var(--dim);margin-bottom:16px;}
+  .card{background:var(--surface);border-radius:16px;padding:14px;
+        margin-bottom:12px;border:1px solid var(--line);}
+  label{display:block;font-size:11px;font-weight:800;letter-spacing:.4px;
+        text-transform:uppercase;color:var(--dim);margin-bottom:5px;}
+  input{width:100%;padding:11px 12px;border-radius:11px;border:1.5px solid var(--line);
+        background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;
+        margin-bottom:10px;}
+  button{width:100%;padding:14px;border:none;border-radius:13px;background:var(--acc);
+         color:#fff;font-size:15px;font-weight:750;font-family:inherit;cursor:pointer;}
+  button:active{transform:scale(.98);}
+  button:disabled{opacity:.5;}
+  .r{display:flex;align-items:flex-start;gap:9px;padding:10px 0;
+     border-bottom:1px solid var(--line);font-size:13.5px;}
+  .r:last-child{border-bottom:none;}
+  .r-i{flex:0 0 22px;font-size:16px;line-height:1.3;}
+  .r-m{flex:1;min-width:0;}
+  .r-n{font-weight:750;}
+  .r-d{font-size:12px;color:var(--mut);word-break:break-word;margin-top:2px;}
+  .r-t{flex:0 0 auto;font-size:12px;font-weight:750;color:var(--acc);
+       font-variant-numeric:tabular-nums;}
+  .verdict{border-radius:12px;padding:12px 13px;font-size:13.5px;font-weight:650;
+           line-height:1.55;margin-top:4px;}
+  .verdict.ok{background:var(--ok-bg);color:var(--ok);}
+  .verdict.bad{background:var(--err-bg);color:var(--err);}
+  code{background:var(--acc-weak);padding:1px 5px;border-radius:5px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<h1>Thử kết nối API</h1>
+<div class="sub">Kiểm tra xem GitHub Pages có gọi được Apps Script không — bước
+bắt buộc trước khi chuyển giao diện ra khỏi iframe.</div>
+
+<div class="card">
+  <label>Link /exec của Web App</label>
+  <input id="url" type="url" placeholder="https://script.google.com/macros/s/.../exec"
+         autocomplete="off" autocapitalize="off" spellcheck="false">
+  <button id="go" onclick="runAll()">Chạy thử 3 cách</button>
+</div>
+
+<div class="card" id="out" style="display:none"></div>
+
+<script>
+/* Link được nhớ lại để lần sau khỏi dán — đây là trang thử trên chính tên
+   miền github.io nên localStorage ở đây là first-party, sống bình thường.
+   Bản thân việc nó nhớ được cũng đã là một phép thử nhỏ. */
+const K = 'probe_exec_url';
+try { document.getElementById('url').value = localStorage.getItem(K) || ''; } catch (e) {}
+
+const rows = [];
+function render(verdict){
+  const box = document.getElementById('out');
+  box.style.display = 'block';
+  box.innerHTML = rows.map(r => `
+    <div class="r">
+      <div class="r-i">${r.ok === null ? '⏳' : (r.ok ? '✅' : '❌')}</div>
+      <div class="r-m"><div class="r-n">${r.name}</div>
+        <div class="r-d">${r.detail || ''}</div></div>
+      <div class="r-t">${r.ms != null ? r.ms + ' ms' : ''}</div>
+    </div>`).join('') + (verdict || '');
+}
+function add(name){ const r = {name, ok:null, ms:null, detail:''}; rows.push(r); render(); return r; }
+
+/** JSONP: đi bằng thẻ <script> nên không bị CORS chặn. Chỉ dùng được cho GET. */
+function jsonp(url, timeoutMs){
+  return new Promise((resolve, reject) => {
+    const cb = 'probe_cb_' + Math.random().toString(36).slice(2, 9);
+    const sep = url.indexOf('?') >= 0 ? '&' : '?';
+    const el = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('quá hạn')); }, timeoutMs || 15000);
+    function cleanup(){ clearTimeout(timer); delete window[cb];
+                        if (el.parentNode) el.parentNode.removeChild(el); }
+    window[cb] = d => { cleanup(); resolve(d); };
+    el.onerror = () => { cleanup(); reject(new Error('không tải được script')); };
+    el.src = url + sep + 'callback=' + cb;
+    document.head.appendChild(el);
+  });
+}
+
+async function runAll(){
+  const btn = document.getElementById('go');
+  const url = document.getElementById('url').value.trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) {
+    alert('Link phải có dạng https://script.google.com/macros/s/..../exec');
+    return;
+  }
+  try { localStorage.setItem(K, url); } catch (e) {}
+  btn.disabled = true; btn.textContent = 'Đang thử…';
+  rows.length = 0; render();
+
+  // --- Cách 1: fetch GET, cần máy chủ cho phép CORS ---
+  const r1 = add('fetch GET (cần CORS)');
+  let t = Date.now();
+  try {
+    const res = await fetch(url + '?api=ping', { method:'GET' });
+    const txt = await res.text();
+    r1.ms = Date.now() - t;
+    const d = JSON.parse(txt);
+    r1.ok = !!(d && d.pong);
+    r1.detail = r1.ok ? 'Máy chủ trả lời: pong · ' + (d.at || '')
+                      : 'Trả về không đúng dạng: ' + txt.slice(0, 120);
+  } catch (err) {
+    r1.ms = Date.now() - t; r1.ok = false;
+    r1.detail = 'Hỏng: ' + err.message + ' — nhiều khả năng bị CORS chặn';
+  }
+  render();
+
+  // --- Cách 2: JSONP, không bị CORS ---
+  const r2 = add('JSONP (không bị CORS)');
+  t = Date.now();
+  try {
+    const d = await jsonp(url + '?api=ping');
+    r2.ms = Date.now() - t;
+    r2.ok = !!(d && d.pong);
+    r2.detail = r2.ok ? 'Máy chủ trả lời: pong · ' + (d.at || '')
+                      : 'Trả về không đúng dạng';
+  } catch (err) {
+    r2.ms = Date.now() - t; r2.ok = false; r2.detail = 'Hỏng: ' + err.message;
+  }
+  render();
+
+  /* --- Cách 3: POST với Content-Type text/plain ---
+     text/plain là "simple request" nên trình duyệt KHÔNG gửi preflight
+     OPTIONS — mà Apps Script thì không trả lời được OPTIONS. Đây là mẹo
+     duy nhất để GHI dữ liệu từ tên miền khác. */
+  const r3 = add('POST text/plain (để ghi dữ liệu)');
+  t = Date.now();
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ api: 'ping' })
+    });
+    const txt = await res.text();
+    r3.ms = Date.now() - t;
+    r3.ok = res.ok;
+    r3.detail = 'HTTP ' + res.status + ' · ' + txt.slice(0, 140);
+  } catch (err) {
+    r3.ms = Date.now() - t; r3.ok = false;
+    r3.detail = 'Hỏng: ' + err.message;
+  }
+
+  const readOk = r1.ok || r2.ok;
+  const v = readOk
+    ? `<div class="verdict ok">ĐỌC ĐƯỢC — hướng GitHub Pages khả thi.
+         Cách dùng: <code>${r1.ok ? 'fetch GET' : 'JSONP'}</code>.
+         ${r3.ok ? 'Ghi dữ liệu dùng POST text/plain.'
+                 : 'Phần GHI còn vướng, sẽ xử lý riêng.'}</div>`
+    : `<div class="verdict bad">KHÔNG ĐỌC ĐƯỢC bằng cả 3 cách.
+         Kiểm tra lại: deploy đã đặt "Who has access = Anyone" chưa, và đã
+         bấm New version sau khi dán Code.gs mới chưa.</div>`;
+  render(v);
+  btn.disabled = false; btn.textContent = 'Chạy lại';
+}
+</script>
+</body>
+</html>
