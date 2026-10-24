@@ -194,7 +194,7 @@
   /* ===================== CARD ===================== */
   .card{
     background:var(--surface);border:1px solid var(--line);border-radius:16px;
-    padding:16px;margin-bottom:12px;box-shadow:var(--shadow);
+    padding:13px 14px;margin-bottom:9px;box-shadow:var(--shadow);
   }
   .head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
   .head.sb{justify-content:space-between;}
@@ -218,7 +218,7 @@
   select option{color:#0c111d;background-color:#ffffff;font-size:16px;}
   input:focus,select:focus{outline:none;border-color:var(--acc);
                            box-shadow:0 0 0 3px var(--acc-weak);}
-  input.search{padding:11px 12px;font-size:15px;}
+  input.search{padding:10px 12px;font-size:15px;margin-top:10px;margin-bottom:0;}
   .row2 input,.row2 select{padding:11.5px 10px;font-size:15px;}
   .row2 select{background-position:right 9px center;padding-right:28px;}
   /* Ô loại chi phí mang màu của chính loại đó */
@@ -242,12 +242,12 @@
   .amt-chips{display:flex;gap:6px;margin-top:10px;}
   .amt-chips .chip{flex:1;text-align:center;padding:9px 2px;font-size:13.5px;}
 
-  .scroll-row{display:flex;gap:6px;margin-top:10px;overflow-x:auto;
+  .scroll-row{display:flex;gap:6px;margin-top:8px;overflow-x:auto;
               padding-bottom:2px;-webkit-overflow-scrolling:touch;}
   .scroll-row::-webkit-scrollbar{display:none;}
   .chip{
     flex:0 0 auto;background:var(--surface-2);border:1.5px solid transparent;
-    border-radius:10px;padding:9px 13px;font-size:13.5px;font-weight:650;
+    border-radius:9px;padding:6px 11px;font-size:12.5px;font-weight:650;
     color:var(--txt);cursor:pointer;white-space:nowrap;
     -webkit-user-select:none;user-select:none;transition:.12s;
   }
@@ -282,7 +282,7 @@
   /* ===================== GIAO DỊCH ===================== */
   .day-head{
     display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-    padding:14px 0 7px;border-bottom:1.5px solid var(--line-soft);
+    padding:11px 0 5px;border-bottom:1.5px solid var(--line-soft);
     -webkit-user-select:none;user-select:none;
   }
   .day-head:first-child{padding-top:0;}
@@ -290,29 +290,29 @@
   .day-w{font-size:11px;color:var(--dim);font-weight:600;margin-left:5px;}
   .day-t{font-size:12.5px;font-weight:700;color:var(--acc-text);white-space:nowrap;}
 
-  .tx{display:flex;align-items:center;gap:11px;padding:10px 0;
+  .tx{display:flex;align-items:center;gap:9px;padding:7px 0;
       border-bottom:1px solid var(--line-soft);}
   .tx:last-child{border-bottom:none;}
   .tx.fresh{animation:pop .5s ease;}
   @keyframes pop{from{background:var(--acc-weak);} to{background:transparent;}}
   /* Ô vuông màu theo loại chi phí — thay cho chấm tròn nhỏ, nhìn giàu hơn hẳn */
-  .tx-ava{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
+  .tx-ava{width:29px;height:29px;border-radius:9px;flex:0 0 auto;
           display:flex;align-items:center;justify-content:center;
           font-size:14px;font-weight:750;}
   .tx-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
   .tx-main{flex:1;min-width:0;}
-  .tx-t{font-size:14.5px;font-weight:650;white-space:nowrap;
+  .tx-t{font-size:13.5px;font-weight:650;white-space:nowrap;
         overflow:hidden;text-overflow:ellipsis;}
-  .tx-s{font-size:12px;color:var(--dim);white-space:nowrap;
+  .tx-s{font-size:11px;color:var(--dim);white-space:nowrap;
         overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-  .tx-a{font-size:14.5px;font-weight:700;white-space:nowrap;}
+  .tx-a{font-size:13.5px;font-weight:700;white-space:nowrap;}
   .icon-btn{background:none;border:none;color:var(--dim);font-size:17px;
             padding:4px 6px;cursor:pointer;line-height:1;}
   .empty{font-size:13.5px;color:var(--dim);display:block;padding:6px 0;}
 
   /* ===================== THỐNG KÊ ===================== */
-  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px;}
-  .kpi{border-radius:15px;padding:13px;border:none;}
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:9px;}
+  .kpi{border-radius:14px;padding:10px 11px;border:none;}
   /* Ô KPI bấm được — phải thấy rõ là chạm được, không thì chẳng ai chạm thử */
   .kpi.tap{cursor:pointer;transition:transform .12s ease,filter .12s ease;}
   .kpi.tap:active{transform:scale(.97);filter:brightness(.96);}
@@ -322,7 +322,7 @@
   .kpi.k4{background:var(--t4-bg);} .kpi.k4 .kpi-v{color:var(--t4-fg);}
   .kpi-l{font-size:10.5px;color:var(--mut);font-weight:700;
          letter-spacing:.35px;text-transform:uppercase;opacity:.85;}
-  .kpi-v{font-size:19px;font-weight:750;letter-spacing:-.02em;margin-top:4px;}
+  .kpi-v{font-size:17.5px;font-weight:750;letter-spacing:-.02em;margin-top:2px;}
   .kpi-s{font-size:11px;color:var(--mut);margin-top:2px;font-weight:600;opacity:.8;}
 
   .brow{margin-bottom:13px;}
@@ -580,6 +580,26 @@
     border-radius:9px;padding:7px 11px;cursor:pointer;margin-top:8px;}
   .mail-purge:active{opacity:.6;}
 
+  /* ---- Khối gập/sổ ---- */
+  .fhd{cursor:pointer;-webkit-user-select:none;user-select:none;}
+  /* Mũi tên xoay 90° khi gập — báo hướng, không cần chữ */
+  .fcar{font-size:17px;color:var(--dim);line-height:1;display:inline-block;
+        transition:transform .22s ease;flex:0 0 auto;padding-left:2px;}
+  .fold.closed .fcar{transform:rotate(-90deg);}
+  /* Gập bằng grid-template-rows 1fr→0: mượt mà KHÔNG cần biết chiều cao
+     trước, điều mà max-height không làm được khi nội dung co giãn
+     (biểu đồ, danh sách dài ngắn tuỳ tháng). */
+  .fbody{display:grid;grid-template-rows:1fr;
+         transition:grid-template-rows .24s ease,opacity .2s ease,margin .24s ease;}
+  .fbody > *{min-height:0;overflow:hidden;}
+  .fold.closed > .fbody{grid-template-rows:0fr;opacity:0;}
+  /* Thẻ gập lại thì bỏ luôn khoảng trống dưới tiêu đề */
+  .card.fold.closed > .head{margin-bottom:0;}
+  /* Tiêu đề phụ (khối Tìm & lọc nằm trong thẻ lịch sử) */
+  .fsub{display:flex;justify-content:space-between;align-items:center;
+        font-size:12.5px;font-weight:700;color:var(--mut);padding:9px 0 2px;}
+  .fold.closed .fsub{padding-bottom:0;}
+
   /* ---- Dải chọn ngày ---- */
   .dstrip-lbl{font-size:11px;color:var(--dim);font-weight:650;
               padding:13px 0 0;display:block;}
@@ -682,7 +702,7 @@
            text-transform:uppercase;padding:15px 0 6px;}
   /* Hàng biến động: tên | thanh | số chênh. Thanh mọc từ GIỮA sang hai phía
      để tăng và giảm phân biệt được ngay mà không cần đọc dấu. */
-  .mv{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px;}
+  .mv{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:12.5px;}
   .mv-n{flex:1;min-width:0;font-weight:650;overflow:hidden;
         text-overflow:ellipsis;white-space:nowrap;}
   .mv-s{display:block;font-size:10.5px;color:var(--dim);font-weight:600;
@@ -989,11 +1009,6 @@
   <!-- ---------- TAB LỊCH SỬ ---------- -->
   <div id="pane-su" class="hide">
     <div class="card">
-      <input id="search" class="search" type="text" placeholder="Tìm ghi chú, khoản mục…"
-             autocomplete="off" oninput="renderHistory()">
-      <div class="scroll-row" id="huFilter"></div>
-    </div>
-    <div class="card">
       <div class="head sb">
         <b id="histCount">Giao dịch</b>
         <div class="head-act">
@@ -1001,6 +1016,18 @@
           <button class="sw" id="editSw" role="switch" aria-label="Bật/tắt sửa giao dịch"
                   onclick="toggleEditOn()"><span class="sw-k"></span></button>
           <button class="icon-btn" onclick="loadTx(true)">↻</button>
+        </div>
+      </div>
+      <!-- Ô tìm + bộ lọc gập riêng: phần lớn thời gian chỉ xem danh sách,
+           không cần chúng chiếm chỗ sẵn. -->
+      <div class="fold" id="fd-find">
+        <div class="fhd fsub" onclick="toggleFold('find')">
+          <span>🔍 Tìm &amp; lọc</span><span class="fcar">⌄</span>
+        </div>
+        <div class="fbody">
+          <input id="search" class="search" type="text" placeholder="Tìm ghi chú, khoản mục…"
+                 autocomplete="off" oninput="renderHistory()">
+          <div class="scroll-row" id="huFilter"></div>
         </div>
       </div>
       <div id="histBody"><span class="empty">Đang tải…</span></div>
@@ -1017,35 +1044,52 @@
 
     <!-- ===== Phạm vi THÁNG ===== -->
     <div id="tkMonth">
-      <div class="kpis" id="kpis"></div>
-      <div class="card">
-        <div class="head sb">
+      <!-- Mỗi khối gập/sổ được. Nút ↻ và nút gạt nằm trong tiêu đề phải chặn
+           sự kiện nổi lên (stopPropagation), nếu không chạm vào chúng sẽ gập
+           luôn cả khối. -->
+      <div class="card fold" id="fd-kpi">
+        <div class="head sb fhd" onclick="toggleFold('kpi')">
+          <b>Tổng quan tháng</b><span class="fcar">⌄</span>
+        </div>
+        <div class="fbody"><div class="kpis" id="kpis"></div></div>
+      </div>
+
+      <div class="card fold" id="fd-cmp">
+        <div class="head sb fhd" onclick="toggleFold('cmp')">
           <b>So với cùng kỳ tháng trước</b>
-          <button class="icon-btn" onclick="loadCompare(true)"><span class="ib-g">↻</span></button>
+          <span class="head-act">
+            <button class="icon-btn" onclick="event.stopPropagation();loadCompare(true)"><span class="ib-g">↻</span></button>
+            <span class="fcar">⌄</span>
+          </span>
         </div>
-        <div id="statCmp"><span class="empty">Đang tải…</span></div>
+        <div class="fbody"><div id="statCmp"><span class="empty">Đang tải…</span></div></div>
       </div>
-      <div class="card">
-        <div class="head sb">
-          <b>Chi tiêu theo ngày</b>
-          <div class="mini-seg">
-            <div id="dv-chart" class="sel" onclick="setDayView('chart')">Cột</div>
-            <div id="dv-list" onclick="setDayView('list')">Danh sách</div>
-          </div>
+
+      <div class="card fold" id="fd-day">
+        <div class="head sb fhd" onclick="toggleFold('day')">
+          <b>Chi tiêu theo ngày</b><span class="fcar">⌄</span>
         </div>
-        <div id="statDay"><span class="empty">Đang tải…</span></div>
+        <div class="fbody"><div id="statDay"><span class="empty">Đang tải…</span></div></div>
       </div>
-      <div class="card">
-        <div class="head"><b>Theo loại chi phí</b></div>
-        <div id="statHu"><span class="empty">Đang tải…</span></div>
-      </div>
-      <div class="card">
-        <div class="head"><b>Top khoản mục</b></div>
-        <div id="statItem"><span class="empty">Đang tải…</span></div>
-      </div>
-      <div class="card">
-        <div class="head"><b>Theo nhãn</b></div>
-        <div id="statTag"><span class="empty">Đang tải…</span></div>
+
+      <!-- Ba cách bổ nhỏ cùng một số tiền nên gộp một thẻ, chuyển bằng nút gạt -->
+      <div class="card fold" id="fd-brk">
+        <div class="head sb fhd" onclick="toggleFold('brk')">
+          <b>Bổ nhỏ chi tiêu</b>
+          <span class="head-act">
+            <span class="mini-seg" onclick="event.stopPropagation()">
+              <span id="bk-hu" class="sel" onclick="setBreak('hu')">Loại</span>
+              <span id="bk-item" onclick="setBreak('item')">Khoản mục</span>
+              <span id="bk-tag" onclick="setBreak('tag')">Nhãn</span>
+            </span>
+            <span class="fcar">⌄</span>
+          </span>
+        </div>
+        <div class="fbody">
+          <div id="statHu"><span class="empty">Đang tải…</span></div>
+          <div id="statItem" class="hide"></div>
+          <div id="statTag" class="hide"></div>
+        </div>
       </div>
     </div>
 
@@ -1165,7 +1209,8 @@ const LS = { PIN:'fin_pin', QUEUE:'fin_queue', LAST:'fin_last',
              BOOT:'fin_boot',      // gói dữ liệu mở app lần trước
              TX:'fin_tx',          // bảng giao dịch lần trước, theo sheet
              MAILTS:'fin_mailts',  // lần quét mail gần nhất
-             LOADS:'fin_loads' };  // đếm số lần mở app — để kiểm tra bộ nhớ máy
+             LOADS:'fin_loads',   // đếm số lần mở app — để kiểm tra bộ nhớ máy
+             FOLD:'fin_fold' };   // khối nào đang gập, khối nào đang sổ
 /* true  = LUÔN bắt gõ PIN mỗi lần mở app (an toàn hơn, và nhanh hơn vì bỏ
            được một vòng gọi máy chủ vô ích).
    false = nhớ PIN, mở app là vào thẳng.
@@ -1284,7 +1329,7 @@ let S = {
   topDayKey:'',                               // ngày chi cao nhất tháng
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
   editTagTouched:false,
-  scope:'month', dayView:'chart',             // phạm vi thống kê & kiểu biểu đồ
+  scope:'month', brk:'hu',                    // phạm vi thống kê & cách bổ nhỏ
   year:0, yearData:null, yearLoading:false,
   tab:'ghi', filterHu:'', openDay:'', theme:'light', busy:false, freshRow:0,
   dateTouched:false                           // người dùng đã tự đổi ngày chưa
@@ -1534,6 +1579,7 @@ window.addEventListener('load', () => {
   pmark('tải trang');
   checkStore();
   initTheme();
+  applyFolds();
   initKeyboardWatch();
   updateNet();
   if (FUN.enabled) {
@@ -1789,6 +1835,55 @@ function renderPerf(){
      suy đoán. */
   let org = '';
   try { org = String(location.origin || ''); } catch (e) { org = '(không đọc được)'; }
+  /* Khung app lần này lấy từ đâu — câu hỏi quyết định.
+     transferSize = 0 nghĩa là KHÔNG tải một byte nào qua mạng, tức service
+     worker hoặc bộ nhớ đệm trình duyệt đã phục vụ. Khác 0 là vẫn phải tải. */
+  let shellSrc = '(không đo được)';
+  try {
+    const nav = performance.getEntriesByType('navigation')[0];
+    const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    if (nav) {
+      const kb = Math.round((nav.transferSize || 0) / 1024);
+      shellSrc = (nav.transferSize === 0)
+        ? (sw ? 'service worker (0 KB mạng)' : 'bộ nhớ đệm (0 KB mạng)')
+        : ('TẢI QUA MẠNG ' + kb + ' KB' + (sw ? ' — SW có nhưng không phục vụ' : ' — SW CHƯA chạy'));
+    }
+  } catch (e) {}
+  html += row('Khung app lấy từ', shellSrc,
+    'Còn thấy "TẢI QUA MẠNG" nghĩa là service worker chưa ăn — đóng hẳn app '
+    + 'rồi mở lại một lần nữa.');
+
+  /* Chất lượng mạng lúc đo. Không có dòng này thì không phân biệt được
+     "kiến trúc chưa ăn" với "lúc đó mạng yếu" — hai thứ cần cách xử lý
+     hoàn toàn khác nhau. */
+  let net = '(trình duyệt không cho biết)';
+  try {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (c) net = (c.effectiveType || '?')
+      + (c.downlink ? ' · ' + c.downlink + ' Mbps' : '')
+      + (c.rtt ? ' · trễ ' + c.rtt + ' ms' : '');
+  } catch (e) {}
+  html += row('Mạng lúc đo', net);
+
+  /* Bóc tách 2,9 giây trước khi mã app chạy.
+     Ba lần đo liên tiếp đều ra ~2,9s dù mạng khi tốt khi rất tệ — một chi phí
+     CỐ ĐỊNH như vậy thì không phải do tải file. Bảng dưới chỉ đúng chỗ nó
+     nằm: nếu "chờ trước khi tải" chiếm gần hết thì đó là thời gian iOS khởi
+     động WebKit cho app màn hình chính, và không ai cắt được. */
+  try {
+    const n = performance.getEntriesByType('navigation')[0];
+    if (n) {
+      const seg = [
+        ['Chờ trước khi tải', Math.round(n.fetchStart - n.startTime)],
+        ['Chờ máy chủ trả byte đầu', Math.round(n.responseStart - n.fetchStart)],
+        ['Tải xong nội dung', Math.round(n.responseEnd - n.responseStart)],
+        ['Dựng DOM', Math.round(n.domInteractive - n.responseEnd)]
+      ];
+      html += '<div class="pf-sec">2,9 giây đó nằm ở đâu</div>';
+      seg.forEach(x => { html += row(x[0], x[1] + ' ms'); });
+    }
+  } catch (e) {}
+
   html += row('Khung chạy app', org.replace(/^https?:\/\//, ''),
     'So tên miền này giữa 2 lần mở app: KHÁC nhau nghĩa là mỗi lần mở là một '
     + 'kho bộ nhớ mới — đó mới là lý do "số lần mở app" luôn bằng 1.');
@@ -1807,7 +1902,22 @@ function copyPerf(){
     const abs = PERF.t0 ? (PERF.start - PERF.t0 + PERF.marks[k]) : PERF.marks[k];
     lines.push(k + ': ' + abs + ' ms');
   });
-  try { lines.push('khung chạy: ' + String(location.origin || '')); } catch (e) {}
+  try {
+    lines.push('khung chạy: ' + String(location.origin || ''));
+    const nav = performance.getEntriesByType('navigation')[0];
+    const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    if (nav) lines.push('khung app: ' + (nav.transferSize === 0 ? 'từ cache' :
+      ('tải mạng ' + Math.round((nav.transferSize || 0) / 1024) + ' KB'))
+      + ' | service worker: ' + (sw ? 'có' : 'không'));
+    if (nav) lines.push('chặng: chờ ' + Math.round(nav.fetchStart - nav.startTime)
+      + ' | byte đầu ' + Math.round(nav.responseStart - nav.fetchStart)
+      + ' | tải ' + Math.round(nav.responseEnd - nav.responseStart)
+      + ' | dựng DOM ' + Math.round(nav.domInteractive - nav.responseEnd) + ' ms');
+    const c = navigator.connection;
+    if (c) lines.push('mạng: ' + (c.effectiveType || '?')
+      + (c.downlink ? ' · ' + c.downlink + ' Mbps' : '')
+      + (c.rtt ? ' · trễ ' + c.rtt + ' ms' : ''));
+  } catch (e) {}
   PERF.calls.forEach(c => lines.push(
     c.m + ': ' + c.total + ' ms (máy chủ ' + (c.srv == null ? '?' : c.srv) + ' ms'
     + (c.cached ? ', cache' : '') + (c.err ? ', LỖI' : '') + ')'));
@@ -2392,7 +2502,11 @@ function switchTab(t){
   if (t === 'su') loadTx(false);
   if (t === 'tk') {
     if (S.scope === 'year') loadYear(false);
-    else { loadTx(false); loadCompare(false); }
+    else {
+      loadTx(false);
+      // Chỉ tải khi khối đang mở — gập thì khỏi tốn một vòng mạng ~2 giây
+      if (foldState().cmp) loadCompare(false);
+    }
   }
 }
 
@@ -2403,7 +2517,8 @@ function setScope(s){
   document.getElementById('tkMonth').classList.toggle('hide', s!=='month');
   document.getElementById('tkYear').classList.toggle('hide', s!=='year');
   window.scrollTo({top:0, behavior:'smooth'});
-  if (s === 'year') loadYear(false); else { loadTx(false); loadCompare(false); }
+  if (s === 'year') loadYear(false);
+  else { loadTx(false); if (foldState().cmp) loadCompare(false); }
 }
 
 function setYear(y){
@@ -2730,13 +2845,6 @@ function leadLine(arr, total, noun){
     chiếm <b>${pctText(top.total/total*100)}</b> tổng chi${noun ? ' ' + noun : ''}</div>`;
 }
 
-function setDayView(v){
-  S.dayView = v;
-  document.getElementById('dv-chart').classList.toggle('sel', v==='chart');
-  document.getElementById('dv-list').classList.toggle('sel', v==='list');
-  renderStatDay();
-}
-
 function renderStatDay(){
   const box = document.getElementById('statDay');
   if (!S.days.length) {
@@ -2744,7 +2852,7 @@ function renderStatDay(){
       + (FUN.enabled ? FUN.emptyChart : 'Chưa có dữ liệu') + '</span>';
     return;
   }
-  box.innerHTML = (S.dayView === 'chart') ? dayChartHtml() : dayListHtml();
+  box.innerHTML = dayChartHtml();
 }
 
 /** Biểu đồ cột dọc: mỗi ngày trong tháng một cột, chạm để xem chi tiết */
@@ -2804,62 +2912,56 @@ function dayChartHtml(){
   return html;
 }
 
-/** Danh sách thanh ngang: dễ chạm, thấy rõ số tiền từng ngày */
-function dayListHtml(){
-  const dayMax = S.days.reduce((m,d) => Math.max(m, d.total), 1);
-  return S.days.map(d => {
-    // Thanh mang màu của loại chi phí chiếm nhiều tiền nhất trong ngày
-    const byHu = {};
-    d.list.forEach(r => { const k = norm(r.hu);
-      byHu[k] = (byHu[k] || 0) + r.amount; });
-    let topHu = '', topVal = -1;
-    Object.keys(byHu).forEach(k => { if (byHu[k] > topVal){ topVal = byHu[k]; topHu = k; } });
-    const c = catColor(topHu);
+/** Chuyển giữa 3 cách bổ nhỏ. Dữ liệu đã vẽ sẵn cả 3, chỉ ẩn/hiện nên
+    chuyển là tức thì, không gọi lại máy chủ. */
 
-    const head = `<div class="dayrow" onclick="toggleDay('${esc(d.key)}')">
-        <div class="dayrow-d">${esc(d.label||'—')}<div style="font-size:10px;
-             color:var(--dim);font-weight:600">${esc(d.wd||'')}</div></div>
-        <div class="dayrow-bar"><div class="fill"
-          style="width:${d.total/dayMax*100}%;background:${c}"></div></div>
-        <div class="dayrow-v">${fmt(d.total)}</div>
-      </div>`;
-    if (S.openDay !== d.key) return head;
-    return head + `<div class="daydetail">` + d.list.map(r => `
-        <div class="dd-tx indent">
-          <span class="dd-dot" style="background:${catColor(r.hu)}"></span>
-          <div class="dd-main">
-            <div class="dd-t">${esc(r.item.trim())}</div>
-            <div class="dd-s">${esc(r.note.trim() || '(không ghi chú)')} · ${esc(r.moneyType)}</div>
-          </div>
-          <div class="dd-a">${fmt(r.amount)}</div>
-        </div>`).join('') + `</div>`;
-  }).join('');
+/* ===================== GẬP / SỔ CÁC KHỐI =====================
+   Trạng thái gập lưu ở bộ nhớ máy, nên mở app lần sau vẫn đúng như bạn để.
+   Lưu được là nhờ app đã chuyển sang chạy trên tên miền github.io — hồi còn
+   trong iframe Apps Script thì bộ nhớ bị xoá mỗi lần mở, tính năng này sẽ
+   vô nghĩa. */
+
+/* Mặc định: mở những khối bạn nhìn mỗi lần, gập những khối chỉ xem khi cần. */
+const FOLD_DEFAULT = { kpi:1, cmp:0, day:1, brk:1, find:0 };
+
+function foldState(){
+  let st = {};
+  try { st = JSON.parse(localStorage.getItem(LS.FOLD) || '{}'); } catch (e) { st = {}; }
+  const out = {};
+  Object.keys(FOLD_DEFAULT).forEach(k => {
+    out[k] = (typeof st[k] === 'number') ? st[k] : FOLD_DEFAULT[k];
+  });
+  return out;
 }
 
-/**
- * Dải ngày bấm được.
- * Cột trong biểu đồ chỉ rộng ~9px trên iPhone — dưới xa mức 44pt tối thiểu
- * của iOS, bấm 3 lần trượt 2. Dải này mỗi ô rộng 48px nên chạm là trúng.
- * Chỉ liệt kê NGÀY CÓ CHI (tháng này 12 ngày chứ không phải 31), nên danh
- * sách ngắn, ô to, và không có ô rỗng vô nghĩa để chạm nhầm.
- * Biểu đồ vẫn giữ nguyên vai trò nhìn tổng quan, chạm vào vẫn được.
- */
-function dayStripHtml(){
-  if (!S.days.length) return '';
-  // S.days mới nhất trước; đảo lại cho dải chạy theo chiều thời gian
-  const asc = S.days.slice().reverse();
-  const chips = asc.map(d => {
-    const on = d.key === S.openDay;
-    const dd = String(d.key).slice(8, 10);
-    return `<button type="button" class="dchip${on ? ' on' : ''}"
-              id="dchip-${esc(d.key)}" onclick="toggleDay('${esc(d.key)}')">
-      <span class="dchip-d">${esc(dd)}</span>
-      <span class="dchip-w">${esc((d.wd || '').replace('Thứ ', 'T'))}</span>
-      <span class="dchip-a">${fmtShort(d.total)}</span>
-    </button>`;
-  }).join('');
-  return `<div class="dstrip-lbl">Chạm ngày để xem chi tiết</div>
-          <div class="scroll-row dstrip" id="dstrip">${chips}</div>`;
+function applyFolds(){
+  const st = foldState();
+  Object.keys(st).forEach(k => {
+    const el = document.getElementById('fd-' + k);
+    if (el) el.classList.toggle('closed', !st[k]);
+  });
+}
+
+function toggleFold(k){
+  const st = foldState();
+  st[k] = st[k] ? 0 : 1;
+  try { localStorage.setItem(LS.FOLD, JSON.stringify(st)); } catch (e) {}
+  const el = document.getElementById('fd-' + k);
+  if (el) el.classList.toggle('closed', !st[k]);
+  if (navigator.vibrate) navigator.vibrate(6);
+
+  /* Mở khối "So với cùng kỳ" lần đầu mới gọi máy chủ — gập thì khỏi tốn
+     một vòng mạng ~2 giây cho thứ không ai nhìn. */
+  if (k === 'cmp' && st[k] && !S.cmp) loadCompare(false);
+}
+
+function setBreak(v){
+  S.brk = v;
+  [['hu','statHu'],['item','statItem'],['tag','statTag']].forEach(x => {
+    document.getElementById('bk-' + x[0]).classList.toggle('sel', v === x[0]);
+    document.getElementById(x[1]).classList.toggle('hide', v !== x[0]);
+  });
+  if (navigator.vibrate) navigator.vibrate(6);
 }
 
 function toggleDay(k){
@@ -3397,7 +3499,7 @@ function cmpMovers(c){
   if (!c.movers || !c.movers.length) return '';
   const max = c.movers.reduce((m,x) => Math.max(m, Math.abs(x.delta)), 1);
   return '<div class="cmp-sec">Biến động theo khoản mục</div>'
-    + c.movers.map(m => {
+    + c.movers.slice(0, 5).map(m => {
       const up = m.delta > 0;
       const w = Math.round(Math.abs(m.delta) / max * 50);
       return `<div class="mv">
