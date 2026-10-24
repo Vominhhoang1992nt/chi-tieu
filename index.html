@@ -101,6 +101,20 @@
   }
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+  /* CHẠM 2 LẦN KHÔNG CÒN PHÓNG TO.
+     Mặc định Safari phải CHỜ ~300ms sau mỗi lần chạm để xem có phải bạn sắp
+     chạm lần hai (cử chỉ phóng to) hay không. Gõ PIN là chuỗi chạm nhanh
+     liên tiếp nên dính bẫy này thường xuyên.
+     touch-action:manipulation bảo trình duyệt: vẫn cho vuốt và chụm 2 ngón
+     để phóng to, nhưng BỎ cử chỉ chạm-2-lần. Cố ý không dùng
+     user-scalable=no — cách đó giết luôn cả chụm 2 ngón, tức là lấy mất khả
+     năng phóng to của người mắt kém.
+     Phần thưởng kèm theo: hết 300ms chờ, bàn phím PIN phản hồi tức thì. */
+  html, body{touch-action:manipulation;}
+  button, .key, .chip, .tabs div, .seg div, .mini-seg div, .mini-seg span,
+  .sc, .tg-pick, .dchip, .c2, .col, .kpi.tap, .fhd, .sw, .mail-main,
+  .tx-main, .tx-a, .dayrow{touch-action:manipulation;}
   html{-webkit-text-size-adjust:100%;}
   body{
     margin:0;background:var(--bg);color:var(--txt);
@@ -134,8 +148,10 @@
   .sheet-pick span{font-size:11px;color:rgba(255,255,255,.75);font-weight:650;
                    letter-spacing:.2px;text-transform:uppercase;}
   .sheet-pick select{
-    background-color:transparent;border:none;color:#fff;font-size:14px;
-    font-weight:700;padding:7px 18px 7px 2px;width:auto;border-radius:0;
+    /* 16px, không phải 14px: dưới 16px là iOS tự phóng to khi chạm vào.
+       Bù lại bằng cách siết padding để ô không phình ra trong hero. */
+    background-color:transparent;border:none;color:#fff;font-size:16px;
+    font-weight:700;padding:5px 17px 5px 2px;width:auto;border-radius:0;
     background-image:none;box-shadow:none;
   }
   .sheet-pick select:focus{outline:none;box-shadow:none;}
@@ -218,8 +234,11 @@
   select option{color:#0c111d;background-color:#ffffff;font-size:16px;}
   input:focus,select:focus{outline:none;border-color:var(--acc);
                            box-shadow:0 0 0 3px var(--acc-weak);}
-  input.search{padding:10px 12px;font-size:15px;margin-top:10px;margin-bottom:0;}
-  .row2 input,.row2 select{padding:11.5px 10px;font-size:15px;}
+  /* 16px là ngưỡng CỨNG của iOS: ô nhập nhỏ hơn 16px thì vừa chạm vào là
+     Safari tự phóng to cả trang. Đây là nguyên nhân phóng to thứ hai, không
+     liên quan gì tới chạm 2 lần, và touch-action không chữa được. */
+  input.search{padding:10px 12px;font-size:16px;margin-top:10px;margin-bottom:0;}
+  .row2 input,.row2 select{padding:11.5px 10px;font-size:16px;}
   .row2 select{background-position:right 9px center;padding-right:28px;}
   /* Ô loại chi phí mang màu của chính loại đó */
   select.cat-edge{border-color:var(--cat);}
