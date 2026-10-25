@@ -289,11 +289,14 @@
   .seg.scope div.sel{background:linear-gradient(135deg,var(--h1),var(--h2));}
 
   .mini-seg{display:flex;gap:2px;background:var(--surface-2);border-radius:9px;padding:2px;}
-  .mini-seg div{
+  /* Dùng > * chứ không phải "div": con của .mini-seg có chỗ là <div>, có
+     chỗ là <span> (thẻ gập được không cho lồng <div> vào tiêu đề flex). */
+  .mini-seg > *{
     padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:700;
     color:var(--mut);cursor:pointer;-webkit-user-select:none;user-select:none;
+    white-space:nowrap;
   }
-  .mini-seg div.sel{background:var(--acc);color:#fff;}
+  .mini-seg > *.sel{background:var(--acc);color:#fff;}
 
   .mb{margin-bottom:12px;}
   .row{display:flex;gap:8px;}.row>*{flex:1;min-width:0;}
@@ -2031,6 +2034,27 @@ function saveTxCache(){
   } catch (e) { /* hết dung lượng — bỏ qua */ }
 }
 
+/**
+ * Chạy phần VẼ GIAO DIỆN tách khỏi phần gọi mạng.
+ *
+ * Vì sao cần: trước đây phần vẽ nằm trong .then() của lời gọi api, mà cuối
+ * chuỗi có .catch() bắt lỗi mạng. Một lỗi LẬP TRÌNH khi vẽ (hàm bị xoá nhầm,
+ * thuộc tính undefined...) cũng rơi vào đúng cái .catch đó, bị nuốt mất và
+ * chỉ hiện "Không tải được giao dịch" — nghe như lỗi mạng. Kết quả: thẻ
+ * thống kê đứng im ở chữ "Đang tải…" mà nhật ký lỗi trình duyệt SẠCH SẼ, nên
+ * tôi đã phát hành nguyên một bản lỗi mà không hay biết.
+ *
+ * Nay lỗi vẽ được báo đúng bản chất, và vẫn ném tiếp ra ngoài để hiện trong
+ * nhật ký trình duyệt thay vì chìm nghỉm.
+ */
+function safeRender(fn){
+  try { fn(); }
+  catch (err) {
+    toast('Lỗi hiển thị: ' + err.message, 'err');
+    setTimeout(() => { throw err; }, 0);   // nổi lên nhật ký lỗi, không nuốt
+  }
+}
+
 function loadTx(force){
   if (S.txLoaded && !force) return;
 
@@ -2054,8 +2078,10 @@ function loadTx(force){
       S.daysInMonth = res.daysInMonth || 0;
       S.txLoaded = true;
       saveTxCache();
-      renderHuFilter(); renderHistory(); renderStats();
-      renderShortcuts();   // giờ mới có lịch sử để gợi ý số tiền
+      /* Tách lỗi VẼ khỏi lỗi MẠNG — xem chú thích ở safeRender. */
+      safeRender(() => {
+        renderHuFilter(); renderHistory(); renderStats(); renderShortcuts();
+      });
     })
     .catch(() => toast('Không tải được giao dịch','err'));
 }
@@ -2981,6 +3007,31 @@ function setBreak(v){
     document.getElementById(x[1]).classList.toggle('hide', v !== x[0]);
   });
   if (navigator.vibrate) navigator.vibrate(6);
+}
+
+/**
+ * Dải ngày bấm được.
+ * Cột trong biểu đồ chỉ rộng ~9px trên iPhone — dưới xa mức 44pt tối thiểu
+ * của iOS, bấm 3 lần trượt 2. Dải này mỗi ô rộng 48px nên chạm là trúng.
+ * Chỉ liệt kê NGÀY CÓ CHI, nên danh sách ngắn, ô to, và không có ô rỗng vô
+ * nghĩa để chạm nhầm.
+ */
+function dayStripHtml(){
+  if (!S.days.length) return '';
+  // S.days mới nhất trước; đảo lại cho dải chạy theo chiều thời gian
+  const asc = S.days.slice().reverse();
+  const chips = asc.map(d => {
+    const on = d.key === S.openDay;
+    const dd = String(d.key).slice(8, 10);
+    return `<button type="button" class="dchip${on ? ' on' : ''}"
+              id="dchip-${esc(d.key)}" onclick="toggleDay('${esc(d.key)}')">
+      <span class="dchip-d">${esc(dd)}</span>
+      <span class="dchip-w">${esc((d.wd || '').replace('Thứ ', 'T'))}</span>
+      <span class="dchip-a">${fmtShort(d.total)}</span>
+    </button>`;
+  }).join('');
+  return `<div class="dstrip-lbl">Chạm ngày để xem chi tiết</div>
+          <div class="scroll-row dstrip" id="dstrip">${chips}</div>`;
 }
 
 function toggleDay(k){
