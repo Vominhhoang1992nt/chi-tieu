@@ -1535,7 +1535,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v16';
+const BUILD = 'v17';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -3555,12 +3555,13 @@ function renderSettings(){
   let html = '';
 
   /* ---- 1. HẠN MỨC ---- */
-  html += '<div class="sp-sec"><div class="sp-h">Hạn mức chi tiêu</div><div class="sp-card">'
-       + opt('plan', 'Theo sheet DỰ TOÁN 2026',
-             'Lấy tổng các khoản chi đã lên kế hoạch cho tháng. Sửa trong sheet là app theo ngay.')
-       + opt('manual', 'Tự nhập trong app',
-             'Một con số cố định, không đụng tới sheet.')
-       + opt('off', 'Tắt',
+  html += '<div class="sp-sec"><div class="sp-h">🎯 Hạn mức chi tiêu</div><div class="sp-card">'
+       + opt('plan', '📋 Theo sheet DỰ TOÁN 2026',
+             'Cộng các khoản <b>chi phí</b> và <b>nợ</b> bạn đã lên kế hoạch cho tháng. '
+             + 'Sửa số trong sheet là app theo ngay.')
+       + opt('manual', '✍️ Tự nhập trong app',
+             'Một con số cố định do bạn gõ, không đụng tới sheet.')
+       + opt('off', '🚫 Tắt',
              'Ẩn thanh hạn mức ở đầu app.')
        + '</div>';
 
@@ -3591,15 +3592,18 @@ function renderSettings(){
        + '</div></div></div>';
 
   /* ---- 2. KẾ HOẠCH ĐỌC TỪ SHEET ---- */
-  html += '<div class="sp-sec"><div class="sp-h">Kế hoạch tháng này</div>'
+  /* Ghi hẳn tên tháng vào tiêu đề. "Kế hoạch tháng này" nghe thì gọn nhưng
+     không nói được đang xem tháng nào — mà app có nút đổi tháng ở hero. */
+  html += '<div class="sp-sec"><div class="sp-h">📋 Dự toán '
+       + esc(prettySheet(S.sheet)) + '</div>'
        + '<div class="sp-card">' + planHtml() + '</div></div>';
 
   /* ---- 3. BẢO MẬT ---- */
-  html += '<div class="sp-sec"><div class="sp-h">Mở khoá</div>'
+  html += '<div class="sp-sec"><div class="sp-h">🔒 Mở khoá</div>'
        + '<div class="sp-card"><div id="faceSet"></div></div></div>';
 
   /* ---- 4. CHẨN ĐOÁN ---- */
-  html += '<div class="sp-sec"><div class="sp-h">Kỹ thuật</div><div class="sp-card">'
+  html += '<div class="sp-sec"><div class="sp-h">🔧 Kỹ thuật</div><div class="sp-card">'
        + '<div class="sp-row" onclick="togglePerf()" style="cursor:pointer">'
        + '<span class="sp-lb">⏱ Tốc độ tải</span>'
        + '<span class="icon-btn" id="perfCaret">›</span></div>'
@@ -3611,6 +3615,20 @@ function renderSettings(){
   renderFaceSet();
 }
 
+/**
+ * Giải thích "dự toán" là gì, viết một lần dùng ở cả hai trạng thái của bảng.
+ * Cần thiết vì con số hạn mức không do app nghĩ ra: nó là tổng những ô
+ * người dùng tự điền trong sheet, mà sau vài tuần thì chính người điền cũng
+ * quên mất nó từ đâu ra.
+ */
+function planWhat(){
+  return 'Trong sheet <b>DỰ TOÁN 2026</b>, mỗi dòng là một khoản mục '
+       + '(tiền thuê nhà, ăn trưa, trả nợ…) và mỗi cột là một tháng. '
+       + 'Số bạn điền vào ô = số tiền <b>dự định</b> chi cho khoản mục đó '
+       + 'trong tháng đó. App cộng các khoản <b>chi phí</b> và <b>nợ</b> '
+       + 'lại thành hạn mức của tháng.';
+}
+
 /** Bảng kế hoạch đọc từ sheet DỰ TOÁN, để đối chiếu app đọc có đúng không */
 function planHtml(){
   if (S.planLoading) return '<div class="sp-note">Đang đọc sheet DỰ TOÁN 2026…</div>';
@@ -3618,12 +3636,23 @@ function planHtml(){
   const p = S.plan;
   if (!p || p.empty || !p.blocks)
     return '<div class="sp-note">Chưa đọc được kế hoạch.</div>';
-  if (!p.has && !p.debt && !p.save)
-    return '<div class="sp-note">Tháng ' + p.month + ' chưa có dòng dự toán nào trong '
-         + '<b>DỰ TOÁN 2026</b>. Điền số vào cột tháng tương ứng là app nhận ngay.</div>';
+  if (!p.has && !p.debt && !p.save) {
+    /* Trống thì phải chỉ ĐÚNG Ô cần điền. "Điền vào cột tháng tương ứng"
+       bắt người dùng tự đếm 12 cột trong sheet — chỉ thẳng "cột O" là xong. */
+    let h = '<div class="sp-note">' + planWhat()
+      + '<br><br>Tháng <b>' + p.month + '</b> chưa có số nào: cột <b>'
+      + esc(p.col || '?') + '</b> trong sheet đang để trống.';
+    const ms = p.monthsWithPlan || [];
+    if (ms.length) {
+      h += ' Hiện mới có kế hoạch cho tháng <b>'
+         + ms.map(m => m).join(', ') + '</b>.';
+    }
+    h += '</div>';
+    return h;
+  }
 
   const cls = {out:'pl-out', debt:'pl-debt', save:'pl-save', in:''};
-  let h = '';
+  let h = '<div class="sp-note" style="margin-bottom:10px">' + planWhat() + '</div>';
   const out = [];          // tên các khối KHÔNG vào hạn mức, để ghi chú cho đúng
   p.blocks.forEach(b => {
     if (!b.total && !(b.items||[]).length) return;
