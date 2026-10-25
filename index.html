@@ -632,6 +632,9 @@
   .pl-sub{font-size:11.5px;color:var(--dim);font-weight:600;padding-left:10px;}
   .pl-tot{border-top:1.5px solid var(--line);margin-top:4px;padding-top:9px;}
   .pl-out{color:var(--acc-text);} .pl-debt{color:#b54708;} .pl-save{color:#067647;}
+  .pl-off{font-size:10px;font-weight:700;color:var(--dim);
+          background:var(--line-soft);border-radius:5px;padding:1px 5px;
+          white-space:nowrap;}
   .sp-ver{text-align:center;font-size:11px;color:var(--dim);
           padding:6px 0 2px;font-variant-numeric:tabular-nums;}
 
@@ -1532,7 +1535,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v14';
+const BUILD = 'v16';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -2349,6 +2352,16 @@ function api(method, payload){
       cached: !!(res && res.cached) });
     if (PERF.calls.length > 40) PERF.calls.shift();
     renderPerf();
+
+    /* "Không rõ action" nghĩa là token đã qua nhưng Code.gs trên máy chủ
+       CŨ HƠN file app này — tức đã dán code mới nhưng chưa bấm Deploy →
+       New version. Dịch sang câu người dùng hiểu được và làm được, thay vì
+       để nguyên thông báo kỹ thuật chẳng chỉ ra phải sửa ở đâu. */
+    if (res && res.ok === false && /^Không rõ action/.test(String(res.message||''))) {
+      res.message = 'Máy chủ đang chạy Code.gs bản cũ — vào Apps Script, '
+                  + 'Deploy → Manage deployments → New version.';
+      res.staleServer = true;
+    }
     return res;
   }).catch(err => {
     PERF.calls.push({ m:method, total:Date.now()-t, srv:null, err:true });
@@ -3611,9 +3624,16 @@ function planHtml(){
 
   const cls = {out:'pl-out', debt:'pl-debt', save:'pl-save', in:''};
   let h = '';
+  const out = [];          // tên các khối KHÔNG vào hạn mức, để ghi chú cho đúng
   p.blocks.forEach(b => {
     if (!b.total && !(b.items||[]).length) return;
-    h += `<div class="pl-row"><span class="pl-n">${esc(b.name)}</span>`
+    const skip = (b.kind !== 'in') && !b.inBudget;
+    if (skip) out.push(b.name);
+    /* Khối không vào hạn mức thì ghi rõ ngay trên dòng của nó, thay vì chỉ
+       nói ở chú thích cuối bảng — nhìn bảng là biết số nào đang được cộng. */
+    h += `<div class="pl-row"><span class="pl-n">${esc(b.name)}`
+       + (skip ? ' <span class="pl-off">ngoài hạn mức</span>' : '')
+       + `</span>`
        + `<span class="pl-v ${cls[b.kind]||''}">${fmt(b.total)} đ</span></div>`;
     (b.items||[]).forEach(it => {
       h += `<div class="pl-row"><span class="pl-sub">${esc(it.name)}</span>`
@@ -3621,11 +3641,11 @@ function planHtml(){
     });
   });
   h += `<div class="pl-row pl-tot"><span class="pl-n">Vào hạn mức</span>`
-     + `<span class="pl-v pl-out">${fmt(p.spend)} đ</span></div>`;
-  if (p.debt || p.save) {
-    h += '<div class="sp-note" style="margin-top:8px">Trả nợ và tiết kiệm '
-       + 'KHÔNG tính vào thanh hạn mức — đó là nghĩa vụ cố định, gộp vào thì '
-       + 'thanh lúc nào cũng đỏ và hết tác dụng cảnh báo.</div>';
+     + `<span class="pl-v pl-out">${fmt(p.budget)} đ</span></div>`;
+  if (out.length) {
+    h += '<div class="sp-note" style="margin-top:8px">'
+       + esc(out.join(' và ')) + ' không cộng vào thanh hạn mức — '
+       + 'đó là tiền chuyển sang chỗ khác chứ không mất đi.</div>';
   }
   return h;
 }
