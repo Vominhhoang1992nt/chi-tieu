@@ -1485,7 +1485,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v12';
+const BUILD = 'v13';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -3069,7 +3069,7 @@ function renderHistory(){
     return;
   }
 
-  // Nhóm theo ngày, giữ thứ tự mới nhất trước
+  // Nhóm theo ngày
   const groups = [], gmap = {};
   rows.forEach(r => {
     const k = r.dateKey || '—';
@@ -3078,6 +3078,21 @@ function renderHistory(){
     gmap[k].total += r.amount;
     gmap[k].list.push(r);
   });
+
+  /* Sắp ngày mới nhất lên đầu. BẮT BUỘC sắp, không được tin vào thứ tự
+     nhóm vừa dựng: thứ tự đó là thứ tự DÒNG trong Sheet, mà dòng thì ghi
+     theo lúc nhập chứ không theo ngày giao dịch — nhập bù một khoản cũ là
+     ngày đó nhảy xuống cuối danh sách.
+     dateKey dạng 2026-10-25 nên so chuỗi là đủ, không cần dựng Date.
+     Ngày trống ('—') dồn xuống cuối thay vì lẫn vào giữa. */
+  groups.sort((a, b) => {
+    if (a.key === '—') return 1;
+    if (b.key === '—') return -1;
+    return a.key < b.key ? 1 : (a.key > b.key ? -1 : 0);
+  });
+
+  // Trong cùng một ngày: khoản ghi sau nằm trên, để vừa ghi là thấy ngay
+  groups.forEach(g => g.list.sort((x, y) => (y.row || 0) - (x.row || 0)));
 
   // Cập nhật thanh điều khiển gập/mở
   const bar = document.getElementById('dayBarN');
