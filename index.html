@@ -573,6 +573,68 @@
   .scan-note{font-size:12px;color:var(--acc-text);font-weight:650;
              padding:2px 0 8px;display:block;}
 
+
+  /* ---- MÀN CÀI ĐẶT (trang riêng, trượt từ phải) ----
+     Cố ý KHÔNG làm bottom-sheet như bảng sửa giao dịch: cài đặt là nơi
+     người dùng dừng lại đọc và đổi nhiều thứ, sheet nửa màn hình sẽ phải
+     cuộn trong cuộn. Trượt ngang cũng là quy ước iOS cho màn con. */
+  #setPanel{
+    position:fixed;inset:0;z-index:140;background:var(--bg);
+    display:flex;flex-direction:column;
+    transform:translateX(100%);transition:transform .26s cubic-bezier(.22,1,.36,1);
+    visibility:hidden;
+  }
+  #setPanel.show{transform:translateX(0);visibility:visible;}
+  .sp-head{
+    display:flex;align-items:center;gap:10px;flex:0 0 auto;
+    padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
+    background:var(--surface);border-bottom:1px solid var(--line);
+  }
+  .sp-back{background:none;border:none;font-size:22px;line-height:1;cursor:pointer;
+           color:var(--acc-text);padding:6px 8px;font-family:inherit;}
+  .sp-back:active{opacity:.5;}
+  .sp-ttl{font-size:17px;font-weight:800;color:var(--txt);}
+  .sp-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+           padding:14px 16px calc(28px + env(safe-area-inset-bottom));}
+  .sp-sec{margin-bottom:18px;}
+  .sp-sec > .sp-h{font-size:11px;font-weight:800;letter-spacing:.5px;
+                  text-transform:uppercase;color:var(--dim);
+                  margin:0 4px 7px;}
+  .sp-card{background:var(--surface);border:1px solid var(--line);
+           border-radius:14px;padding:13px 14px;}
+  .sp-card + .sp-card{margin-top:9px;}
+  /* Hàng công tắc: nhãn trái, điều khiển phải, mô tả xuống dòng */
+  .sp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+          min-height:34px;}
+  .sp-row + .sp-note{margin-top:5px;}
+  .sp-lb{font-size:14.5px;font-weight:700;color:var(--txt);}
+  .sp-note{font-size:12px;color:var(--mut);line-height:1.5;}
+  .sp-note b{color:var(--txt);}
+  .sp-hr{height:1px;background:var(--line-soft);margin:12px -14px;}
+
+  /* Chọn nguồn hạn mức: 3 lựa chọn xếp dọc cho dễ đọc nhãn dài */
+  .sp-opt{display:flex;align-items:flex-start;gap:10px;padding:9px 0;cursor:pointer;}
+  .sp-opt + .sp-opt{border-top:1px solid var(--line-soft);}
+  .sp-rd{flex:0 0 19px;width:19px;height:19px;border-radius:50%;margin-top:1px;
+         border:2px solid var(--line);position:relative;transition:.15s;}
+  .sp-opt.on .sp-rd{border-color:var(--acc);}
+  .sp-opt.on .sp-rd::after{content:'';position:absolute;inset:3px;border-radius:50%;
+                           background:var(--acc);}
+  .sp-opt-t{font-size:14px;font-weight:700;color:var(--txt);}
+  .sp-opt-d{font-size:11.5px;color:var(--mut);margin-top:2px;line-height:1.45;}
+
+  /* Bảng kế hoạch đọc từ sheet */
+  .pl-row{display:flex;justify-content:space-between;align-items:baseline;
+          gap:10px;padding:7px 0;font-size:13px;}
+  .pl-row + .pl-row{border-top:1px solid var(--line-soft);}
+  .pl-n{color:var(--txt);font-weight:650;min-width:0;}
+  .pl-v{font-weight:750;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .pl-sub{font-size:11.5px;color:var(--dim);font-weight:600;padding-left:10px;}
+  .pl-tot{border-top:1.5px solid var(--line);margin-top:4px;padding-top:9px;}
+  .pl-out{color:var(--acc-text);} .pl-debt{color:#b54708;} .pl-save{color:#067647;}
+  .sp-ver{text-align:center;font-size:11px;color:var(--dim);
+          padding:6px 0 2px;font-variant-numeric:tabular-nums;}
+
   /* ---- Bảng chi tiết giao dịch (bottom sheet) ---- */
   #mailBackdrop, #edBackdrop{
     position:fixed;inset:0;background:rgba(12,17,29,.46);
@@ -1030,6 +1092,8 @@
       <div class="hero-right">
         <span class="net" id="netBadge">•</span>
         <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+        <button class="theme-btn" id="setBtn" onclick="openSettings()"
+                aria-label="Cài đặt">⚙️</button>
       </div>
     </div>
     <div class="hero-lbl">Chi tiêu hôm nay</div>
@@ -1209,35 +1273,8 @@
     </div>
 
     <!-- Cài đặt: hạn mức tháng & Face ID -->
-    <div class="card fold closed" id="fd-set">
-      <div class="head sb fhd" onclick="toggleFold('set')">
-        <b>⚙️ Cài đặt</b><span class="fcar">⌄</span>
-      </div>
-      <div class="fbody"><div class="fwrap">
-        <label class="lbl">Hạn mức tháng</label>
-        <div class="amt-box"><input id="bgInput" class="amt-in" type="text"
-             inputmode="numeric" placeholder="0" oninput="onBgInput()">
-             <span class="amt-cur">đ</span></div>
-        <div class="set-row">
-          <button class="set-btn" onclick="saveBudget('default')">Mọi tháng</button>
-          <button class="set-btn alt" onclick="saveBudget('month')">Chỉ tháng này</button>
-          <button class="set-btn ghost" onclick="clearBudget()">Bỏ</button>
-        </div>
-        <div class="set-note" id="bgNote"></div>
-
-        <label class="lbl" style="margin-top:14px">Mở khoá</label>
-        <div id="faceSet"></div>
-      </div></div>
-    </div>
-
-    <!-- Chẩn đoán tốc độ — gập lại mặc định, chỉ mở khi cần soi -->
-    <div class="card">
-      <div class="head sb" onclick="togglePerf()" style="cursor:pointer;">
-        <b>⏱ Tốc độ tải</b>
-        <span class="icon-btn" id="perfCaret">›</span>
-      </div>
-      <div id="perfBox" class="hide"></div>
-    </div>
+    <!-- Hạn mức, Face ID và chẩn đoán tốc độ đã dời sang màn Cài đặt
+         riêng (nút ⚙️ ở góc trên). Thống kê chỉ còn việc của nó: xem số. -->
 
     <!-- ===== Phạm vi NĂM ===== -->
     <div id="tkYear" class="hide">
@@ -1331,6 +1368,15 @@
     <button class="ms-use" id="edSave" onclick="saveEdit()">Lưu thay đổi</button>
     <button class="ms-skip" onclick="closeEdit()">Hủy</button>
   </div>
+</div>
+
+<!-- ==================== MÀN CÀI ĐẶT ==================== -->
+<div id="setPanel" role="dialog" aria-label="Cài đặt">
+  <div class="sp-head">
+    <button class="sp-back" onclick="closeSettings()" aria-label="Quay lại">‹</button>
+    <span class="sp-ttl">Cài đặt</span>
+  </div>
+  <div class="sp-body" id="setBody"></div>
 </div>
 
 <div id="toast"></div>
@@ -1466,6 +1512,7 @@ let S = {
   shortcuts:[], scActive:'',                  // phím tắt khoản mục
   topDayKey:'',                               // ngày chi cao nhất tháng
   dayFold:loadDayFold(),                      // ngày nào đang gập ở Lịch sử
+  plan:null, planLoading:false, planErr:'',   // kế hoạch đọc từ sheet DỰ TOÁN
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
   editTagTouched:false,
   scope:'month', brk:'hu',                    // phạm vi thống kê & cách bổ nhỏ
@@ -1485,7 +1532,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v13';
+const BUILD = 'v14';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -2414,6 +2461,8 @@ function loadYear(force){
 }
 
 function switchSheet(){
+  // Kế hoạch gắn với TỪNG THÁNG — giữ lại là hiện số của tháng trước
+  S.plan = null; S.planErr = '';
   S.sheet = document.getElementById('sheetSel').value;
   localStorage.setItem(LS.SHEET, S.sheet);
   S.txLoaded = false; S.openDay = ''; S.all = []; S.cmp = null;
@@ -2895,7 +2944,6 @@ function switchTab(t){
   window.scrollTo({top:0, behavior:'smooth'});
   if (t === 'su') loadTx(false);
   if (t === 'tk') {
-    renderSettings();
     if (S.scope === 'year') loadYear(false);
     else {
       loadTx(false);
@@ -3428,35 +3476,181 @@ function toggleFold(k){
 }
 
 
-/* ===================== CÀI ĐẶT ===================== */
+/* ===================== MÀN CÀI ĐẶT ===================== */
+/* Cài đặt là một TRANG riêng, không phải thẻ gập trong Thống kê nữa.
+   Lý do: hạn mức, bảo mật và chẩn đoán tốc độ chẳng liên quan gì tới việc
+   xem số liệu; nhét chung làm tab Thống kê dài ra mà vẫn khó tìm. */
+
+function openSettings(){
+  const el = document.getElementById('setPanel');
+  el.classList.add('show');
+  document.body.style.overflow = 'hidden';   // khoá cuộn nền phía sau
+  renderSettings();
+  // Kế hoạch từ sheet DỰ TOÁN chỉ nạp khi thật sự mở màn này
+  if (!S.plan && !S.planLoading) loadPlan();
+}
+
+function closeSettings(){
+  document.getElementById('setPanel').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+/** Nạp kế hoạch tháng từ sheet DỰ TOÁN. Hỏng thì ghi nhận, không chặn gì. */
+function loadPlan(){
+  S.planLoading = true;
+  renderSettings();
+  return api('getPlan', {pin:S.pin, sheetName:S.sheet})
+    .then(res => {
+      S.planLoading = false;
+      if (res && res.ok) { S.plan = res.plan || {empty:true}; S.planErr = res.message || ''; }
+      else S.planErr = (res && res.message) || 'Không đọc được sheet dự toán';
+      safeRender(renderSettings);
+    })
+    .catch(() => { S.planLoading = false; S.planErr = 'Không gọi được máy chủ';
+                   safeRender(renderSettings); });
+}
+
 function onBgInput(){
   const el = document.getElementById('bgInput');
+  if (!el) return;
   if (!/[a-zA-Z]/.test(el.value)) {
     const d = el.value.replace(/\D/g,'');
     el.value = d ? fmt(Number(d)) : '';
   }
 }
 
+/** Nguồn hạn mức đang chọn, suy từ budget máy chủ trả về */
+function bgSrc(){
+  const s = (S.budget && S.budget.source) || 'plan';
+  if (s === 'manual' || s === 'off') return s;
+  return 'plan';                   // 'plan', 'manual-fallback', 'none'
+}
+
 function renderSettings(){
-  const inp = document.getElementById('bgInput');
-  if (inp && !inp.value && S.budget && S.budget.amount) inp.value = fmt(S.budget.amount);
-  const note = document.getElementById('bgNote');
-  if (note) {
-    note.innerHTML = (S.budget && S.budget.amount)
-      ? ('Đang áp dụng: <b>' + fmt(S.budget.amount) + ' đ</b>'
-         + (S.budget.own ? ' (riêng tháng này)' : ' (mặc định mọi tháng)'))
-      : 'Chưa đặt hạn mức — thanh tiến độ ở đầu app sẽ ẩn.';
+  const box = document.getElementById('setBody');
+  if (!box) return;
+  const src = bgSrc();
+  const B = S.budget || {};
+
+  const opt = (val, title, desc) =>
+    `<div class="sp-opt${src===val?' on':''}" onclick="setBudgetSrc('${val}')">
+       <div class="sp-rd"></div>
+       <div><div class="sp-opt-t">${esc(title)}</div>
+            <div class="sp-opt-d">${desc}</div></div>
+     </div>`;
+
+  let html = '';
+
+  /* ---- 1. HẠN MỨC ---- */
+  html += '<div class="sp-sec"><div class="sp-h">Hạn mức chi tiêu</div><div class="sp-card">'
+       + opt('plan', 'Theo sheet DỰ TOÁN 2026',
+             'Lấy tổng các khoản chi đã lên kế hoạch cho tháng. Sửa trong sheet là app theo ngay.')
+       + opt('manual', 'Tự nhập trong app',
+             'Một con số cố định, không đụng tới sheet.')
+       + opt('off', 'Tắt',
+             'Ẩn thanh hạn mức ở đầu app.')
+       + '</div>';
+
+  // Ô nhập tay — chỉ hiện khi đang dùng số tay hoặc sheet chưa có kế hoạch
+  if (src === 'manual' || B.planEmpty) {
+    html += '<div class="sp-card">'
+      + (B.planEmpty && src === 'plan'
+          ? '<div class="sp-note" style="margin-bottom:9px">Sheet <b>DỰ TOÁN 2026</b> '
+            + 'chưa có số nào cho tháng này, nên app đang tạm dùng số tự nhập.</div>'
+          : '')
+      + '<label class="lbl">Số tiền mỗi tháng</label>'
+      + '<div class="amt-box"><input id="bgInput" class="amt-in" type="text" '
+      + 'inputmode="numeric" placeholder="0" oninput="onBgInput()">'
+      + '<span class="amt-cur">đ</span></div>'
+      + '<div class="set-row">'
+      + '<button class="set-btn" onclick="saveBudget(\'default\')">Mọi tháng</button>'
+      + '<button class="set-btn alt" onclick="saveBudget(\'month\')">Chỉ tháng này</button>'
+      + '<button class="set-btn ghost" onclick="clearBudget()">Bỏ</button></div>'
+      + '<div class="set-note" id="bgNote"></div></div>';
   }
+
+  html += '<div class="sp-card"><div class="sp-note">'
+       + (Number(B.amount)
+          ? ('Đang áp dụng: <b>' + fmt(B.amount) + ' đ</b>'
+             + (src === 'plan' && !B.planEmpty ? ' — tổng chi theo kế hoạch tháng'
+                : B.own ? ' — riêng tháng này' : ' — mặc định mọi tháng'))
+          : 'Chưa có hạn mức, thanh tiến độ ở đầu app đang ẩn.')
+       + '</div></div></div>';
+
+  /* ---- 2. KẾ HOẠCH ĐỌC TỪ SHEET ---- */
+  html += '<div class="sp-sec"><div class="sp-h">Kế hoạch tháng này</div>'
+       + '<div class="sp-card">' + planHtml() + '</div></div>';
+
+  /* ---- 3. BẢO MẬT ---- */
+  html += '<div class="sp-sec"><div class="sp-h">Mở khoá</div>'
+       + '<div class="sp-card"><div id="faceSet"></div></div></div>';
+
+  /* ---- 4. CHẨN ĐOÁN ---- */
+  html += '<div class="sp-sec"><div class="sp-h">Kỹ thuật</div><div class="sp-card">'
+       + '<div class="sp-row" onclick="togglePerf()" style="cursor:pointer">'
+       + '<span class="sp-lb">⏱ Tốc độ tải</span>'
+       + '<span class="icon-btn" id="perfCaret">›</span></div>'
+       + '<div id="perfBox" class="hide"></div></div></div>';
+
+  html += '<div class="sp-ver">Ví Chi Tiêu · bản ' + esc(BUILD) + '</div>';
+
+  box.innerHTML = html;
   renderFaceSet();
 }
 
+/** Bảng kế hoạch đọc từ sheet DỰ TOÁN, để đối chiếu app đọc có đúng không */
+function planHtml(){
+  if (S.planLoading) return '<div class="sp-note">Đang đọc sheet DỰ TOÁN 2026…</div>';
+  if (S.planErr)     return '<div class="sp-note">' + esc(S.planErr) + '</div>';
+  const p = S.plan;
+  if (!p || p.empty || !p.blocks)
+    return '<div class="sp-note">Chưa đọc được kế hoạch.</div>';
+  if (!p.has && !p.debt && !p.save)
+    return '<div class="sp-note">Tháng ' + p.month + ' chưa có dòng dự toán nào trong '
+         + '<b>DỰ TOÁN 2026</b>. Điền số vào cột tháng tương ứng là app nhận ngay.</div>';
+
+  const cls = {out:'pl-out', debt:'pl-debt', save:'pl-save', in:''};
+  let h = '';
+  p.blocks.forEach(b => {
+    if (!b.total && !(b.items||[]).length) return;
+    h += `<div class="pl-row"><span class="pl-n">${esc(b.name)}</span>`
+       + `<span class="pl-v ${cls[b.kind]||''}">${fmt(b.total)} đ</span></div>`;
+    (b.items||[]).forEach(it => {
+      h += `<div class="pl-row"><span class="pl-sub">${esc(it.name)}</span>`
+         + `<span class="pl-sub">${fmt(it.amount)} đ</span></div>`;
+    });
+  });
+  h += `<div class="pl-row pl-tot"><span class="pl-n">Vào hạn mức</span>`
+     + `<span class="pl-v pl-out">${fmt(p.spend)} đ</span></div>`;
+  if (p.debt || p.save) {
+    h += '<div class="sp-note" style="margin-top:8px">Trả nợ và tiết kiệm '
+       + 'KHÔNG tính vào thanh hạn mức — đó là nghĩa vụ cố định, gộp vào thì '
+       + 'thanh lúc nào cũng đỏ và hết tác dụng cảnh báo.</div>';
+  }
+  return h;
+}
+
+function setBudgetSrc(src){
+  if (src === bgSrc()) return;
+  api('setBudgetSource', {pin:S.pin, source:src, sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.budget = res.budget;
+      renderHero(); safeRender(renderSettings);
+      if (src === 'plan' && !S.plan) loadPlan();
+      toast(res.message);
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
+}
+
 function saveBudget(scope){
-  const amt = parseAmtLocal(document.getElementById('bgInput').value);
+  const el = document.getElementById('bgInput');
+  const amt = el ? parseAmtLocal(el.value) : 0;
   if (!amt) { toast('Chưa nhập hạn mức','err'); return; }
   api('setBudget', {pin:S.pin, amount:String(amt), scope:scope, sheetName:S.sheet})
     .then(res => {
       if (!res.ok) { toast(res.message,'err'); return; }
-      S.budget = res.budget; renderHero(); renderSettings();
+      S.budget = res.budget; renderHero(); safeRender(renderSettings);
       toast(res.message);
     })
     .catch(() => toast('Không gọi được máy chủ','err'));
@@ -3467,8 +3661,7 @@ function clearBudget(){
     .then(res => {
       if (!res.ok) { toast(res.message,'err'); return; }
       S.budget = res.budget;
-      document.getElementById('bgInput').value = '';
-      renderHero(); renderSettings(); toast(res.message);
+      renderHero(); safeRender(renderSettings); toast(res.message);
     })
     .catch(() => toast('Không gọi được máy chủ','err'));
 }
@@ -3477,18 +3670,18 @@ async function renderFaceSet(){
   const box = document.getElementById('faceSet');
   if (!box) return;
   if (!(await faceAvailable())) {
-    box.innerHTML = '<div class="set-note">Máy này không dùng được Face ID '
+    box.innerHTML = '<div class="sp-note">Máy này không dùng được Face ID '
                   + 'cho web. Vẫn gõ PIN như thường.</div>';
     return;
   }
   box.innerHTML = faceEnabled()
-    ? '<div class="set-row"><button class="set-btn ghost" onclick="disableFace()">'
-      + 'Tắt Face ID</button></div>'
-      + '<div class="set-note">Đang bật. PIN được lưu trong máy này và chỉ mở ra '
+    ? '<div class="sp-row"><span class="sp-lb">Face ID</span>'
+      + '<button class="set-btn ghost" onclick="disableFace()">Tắt</button></div>'
+      + '<div class="sp-note">Đang bật. PIN được lưu trong máy này và chỉ mở ra '
       + 'khi Face ID khớp.</div>'
-    : '<div class="set-row"><button class="set-btn" onclick="enableFace(S.pin).then(renderFaceSet)">'
-      + 'Bật Face ID</button></div>'
-      + '<div class="set-note">Bật thì lần sau khỏi gõ PIN. Đổi lại, PIN sẽ được '
+    : '<div class="sp-row"><span class="sp-lb">Face ID</span>'
+      + '<button class="set-btn" onclick="enableFace(S.pin).then(renderFaceSet)">Bật</button></div>'
+      + '<div class="sp-note">Bật thì lần sau khỏi gõ PIN. Đổi lại, PIN sẽ được '
       + 'lưu trong máy này — ai mở được máy thì vào được app.</div>';
 }
 
