@@ -856,6 +856,8 @@
            min-height:20px;margin-bottom:8px;transition:color .2s;}
   /* Cùng một dòng: bình thường là lời chào, khi sai PIN mới chuyển sang đỏ */
   .pin-err.hint{color:rgba(255,255,255,.7);font-weight:600;}
+  .build{margin-top:16px;font-size:10.5px;letter-spacing:.3px;
+         color:rgba(255,255,255,.34);font-variant-numeric:tabular-nums;}
 
   /* ---- Linh vật: cái ví biết chớp mắt, nhắm mắt khi gõ PIN ---- */
   /* Nhịp thở nhẹ — thứ làm nhân vật "sống" nhất mà tốn ít công nhất */
@@ -983,6 +985,11 @@
 
     <div id="faceWrap"></div>
     <div class="keypad" id="keypad"></div>
+
+    <!-- Số hiệu bản dựng. Nhỏ và mờ, nhưng là thứ duy nhất trả lời được câu
+         "máy đang chạy bản nào" mà không phải cắm dây vào máy tính. Đổi
+         BUILD mỗi lần đẩy bản mới, cùng lúc với CACHE_VERSION trong sw.js. -->
+    <div class="build" id="buildTag"></div>
   </div>
 </div>
 
@@ -1444,6 +1451,10 @@ let S = {
 const EXEC_URL  = 'https://script.google.com/macros/s/AKfycbzs3BdcQrK0TgIw4XWGinCJCL1NCR0Rf8M1eYfOowcS41Wz6w7GLSl_jOnznWg01Lbk/exec';
 const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
+/* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
+   biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
+const BUILD = 'v10';
+
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
    "Hẹn hò" là một HOẠT ĐỘNG, không phải một loại chi phí: một buổi hẹn gồm
@@ -1579,6 +1590,18 @@ function toggleTheme(){
  * thỏ dưới của từng máy. Đoán thiếu thì thanh tab che mất nút Ghi, đoán thừa
  * thì hở một khe nhìn thấy rõ. Đo xong mới chắc.
  */
+/**
+ * Ghi số hiệu bản dựng vào chân màn hình PIN, kèm trạng thái cache.
+ * "v9 · đã lưu máy" = service worker đang phục vụ (nên mở nhanh).
+ * "v9 · đang tải về" = lần đầu, chưa có bản trong máy.
+ */
+function stampBuild(){
+  const el = document.getElementById('buildTag');
+  if (!el) return;
+  const cached = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+  el.textContent = BUILD + ' · ' + (cached ? 'đã lưu máy' : 'đang tải về');
+}
+
 function syncTabH(){
   const t = document.getElementById('tabbar');
   if (!t) return;
@@ -1828,9 +1851,34 @@ function resetPin(wrong){
    HTML lấy từ bộ nhớ máy, KHÔNG chạm mạng — đây là thứ kéo chặng "chạm icon
    → màn hình PIN" từ 3 giây xuống còn vài trăm ms. Lỗi đăng ký thì bỏ qua,
    app vẫn chạy bình thường, chỉ là không nhanh thêm. */
+/* Có bản mới thì phải TỰ tải lại, không thì cache cũ che mất bản mới.
+   Chuyện đã xảy ra thật: đẩy v9 lên nhưng app vẫn hiện v8, vì
+   register() đơn thuần chỉ cài bản mới ở nền rồi để đó — HTML mới chỉ
+   xuất hiện ở lần mở SAU. iOS hay đóng băng PWA nên "lần sau" có thể là
+   nhiều ngày. Ba mảnh dưới đây khớp nhau mới chạy đúng:
+     · updateViaCache:'none' — buộc lấy sw.js từ mạng, không qua cache HTTP
+     · update()             — hỏi máy chủ ngay mỗi lần mở
+     · controllerchange     — bản mới vừa nhận việc thì tải lại trang
+   sw.js đã có skipWaiting() + clients.claim() nên bản mới nhận việc liền,
+   không phải chờ đóng hết tab. */
 if ('serviceWorker' in navigator) {
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    /* Lần đầu cài đặt cũng bắn sự kiện này, mà lúc đó KHÔNG được tải lại:
+       chưa có gì cũ để thay, reload chỉ làm app nháy vô ích. Dấu hiệu phân
+       biệt: đang có controller sẵn từ trước nghĩa là đây là bản thay thế. */
+    if (reloading || !sessionStorage.getItem('sw_had_ctrl')) return;
+    reloading = true;
+    location.reload();
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    try {
+      if (navigator.serviceWorker.controller) sessionStorage.setItem('sw_had_ctrl', '1');
+    } catch (e) {}
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => { try { reg.update(); } catch (e) {} })
+      .catch(() => {});
   });
 }
 
@@ -1840,6 +1888,7 @@ window.addEventListener('load', () => {
   initTheme();
   applyFolds();
   syncTabH();
+  stampBuild();
   initKeyboardWatch();
   updateNet();
   if (FUN.enabled) {
