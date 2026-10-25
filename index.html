@@ -64,6 +64,7 @@
     --shadow-lg:0 8px 22px rgba(37,99,235,.28);
     --cat:#2563eb;
     --bar:96px;     /* chiều cao thanh Ghi */
+    --tabh:56px;    /* chiều cao thanh tab dưới đáy */
     --kb:0px;       /* chiều cao bàn phím, JS cập nhật qua visualViewport */
   }
   [data-theme="dark"]{
@@ -126,8 +127,10 @@
   }
   .wrap{
     width:100%;max-width:620px;margin:0 auto;
+    /* Chừa chỗ cho CẢ thanh Ghi lẫn thanh tab, nếu không nội dung cuối
+       trang bị hai thanh đó che mất. */
     padding:calc(12px + env(safe-area-inset-top)) 16px
-            calc(var(--bar) + 16px + env(safe-area-inset-bottom));
+            calc(var(--bar) + var(--tabh) + 16px);
   }
   .hide{display:none !important;}
 
@@ -170,6 +173,42 @@
     color:#fff;margin-top:2px;transition:opacity .15s;white-space:nowrap;
   }
   .hero-amt.pending{opacity:.55;}
+  /* ---- Nút Face ID trên màn khoá ---- */
+  .face-btn{
+    width:100%;max-width:330px;margin:0 auto 14px;display:block;
+    background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.3);
+    color:#fff;border-radius:14px;padding:13px;font-size:15px;font-weight:750;
+    font-family:inherit;cursor:pointer;
+  }
+  .face-btn:active{background:rgba(255,255,255,.3);}
+  .face-btn:disabled{opacity:.6;}
+
+  /* ---- Cài đặt ---- */
+  .set-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;}
+  .set-btn{
+    flex:1 1 auto;background:var(--acc);color:#fff;border:none;border-radius:11px;
+    padding:10px 12px;font-size:12.5px;font-weight:750;font-family:inherit;
+    cursor:pointer;white-space:nowrap;
+  }
+  .set-btn.alt{background:var(--surface-2);color:var(--acc-text);}
+  .set-btn.ghost{flex:0 0 auto;background:var(--surface-2);color:var(--mut);}
+  .set-btn:active{transform:scale(.97);}
+  .set-note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:8px;}
+  .set-note b{color:var(--acc-text);}
+
+  /* ---- Thanh hạn mức ---- */
+  #budgetWrap{margin-top:11px;}
+  .bg-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.26);
+          overflow:hidden;}
+  .bg-fill{height:100%;border-radius:99px;background:#fff;
+           transition:width .45s cubic-bezier(.22,1,.36,1),background .3s;}
+  /* Chi nhanh hơn nhịp thời gian → vàng; vượt hạn mức → đỏ */
+  .bg-fill.warn{background:#fde272;}
+  .bg-fill.over{background:#fda29b;}
+  .bg-txt{font-size:11.5px;color:rgba(255,255,255,.88);font-weight:600;
+          margin-top:6px;}
+  .bg-txt b{color:#fff;font-weight:800;}
+
   .hero-stats{
     display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12.5px;
     color:rgba(255,255,255,.8);
@@ -181,8 +220,13 @@
 
   /* ===================== TABS ===================== */
   .tabs{
-    display:flex;gap:3px;background:var(--surface);border:1px solid var(--line);
-    border-radius:13px;padding:4px;margin-bottom:12px;box-shadow:var(--shadow);
+    position:fixed;left:0;right:0;bottom:0;z-index:52;
+    display:flex;gap:3px;background:var(--surface);
+    border-top:1px solid var(--line);border-radius:0;
+    padding:5px 8px calc(5px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 12px rgba(16,24,40,.06);
+    transform:translateY(calc(var(--kb) * -1));
+    transition:transform .18s ease-out;
     -webkit-user-select:none;user-select:none;
   }
   .tabs div{
@@ -412,9 +456,12 @@
   .btn:disabled{opacity:.45;}
 
   #bar{
-    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    /* Nằm TRÊN thanh tab, nên đáy của nó bắt đầu từ chiều cao thanh tab.
+       Phần chừa cho tai thỏ dưới do thanh tab lo, ở đây không cộng nữa. */
+    position:fixed;left:0;right:0;z-index:50;
+    bottom:var(--tabh);
     background:var(--bg);border-top:1px solid var(--line);
-    padding:12px 16px calc(10px + env(safe-area-inset-bottom));
+    padding:10px 16px 10px;
     transform:translateY(calc(var(--kb) * -1));
     transition:transform .18s ease-out;
   }
@@ -428,7 +475,7 @@
   #toast{
     position:fixed;left:50%;
     transform:translateX(-50%) translateY(calc(var(--kb) * -1));
-    bottom:calc(var(--bar) + 12px + env(safe-area-inset-bottom));
+    bottom:calc(var(--bar) + var(--tabh) + 12px);
     background:linear-gradient(135deg, var(--h1), var(--h2));color:#fff;
     padding:12px 18px;border-radius:12px;font-size:14px;font-weight:650;
     max-width:88%;text-align:center;z-index:99;opacity:0;pointer-events:none;
@@ -934,6 +981,7 @@
     <div class="pin-dots" id="pinDots"></div>
     <div class="pin-err" id="pinErr"></div>
 
+    <div id="faceWrap"></div>
     <div class="keypad" id="keypad"></div>
   </div>
 </div>
@@ -955,13 +1003,12 @@
     <div class="hero-lbl">Chi tiêu hôm nay</div>
     <div class="hero-amt" id="todayTotal">0 đ</div>
     <div class="hero-stats" id="heroMeta"></div>
+    <div id="budgetWrap" class="hide">
+      <div class="bg-bar"><div class="bg-fill" id="bgFill"></div></div>
+      <div class="bg-txt" id="bgTxt"></div>
+    </div>
   </div>
 
-  <div class="tabs">
-    <div id="tab-ghi" class="sel" onclick="switchTab('ghi')"><span class="ti">✏️</span>Ghi</div>
-    <div id="tab-su"  onclick="switchTab('su')"><span class="ti">🧾</span>Lịch sử</div>
-    <div id="tab-tk"  onclick="switchTab('tk')"><span class="ti">📊</span>Thống kê</div>
-  </div>
 
   <!-- ---------- TAB GHI ---------- -->
   <div id="pane-ghi">
@@ -1115,6 +1162,28 @@
       </div>
     </div>
 
+    <!-- Cài đặt: hạn mức tháng & Face ID -->
+    <div class="card fold closed" id="fd-set">
+      <div class="head sb fhd" onclick="toggleFold('set')">
+        <b>⚙️ Cài đặt</b><span class="fcar">⌄</span>
+      </div>
+      <div class="fbody">
+        <label class="lbl">Hạn mức tháng</label>
+        <div class="amt-box"><input id="bgInput" class="amt-in" type="text"
+             inputmode="numeric" placeholder="0" oninput="onBgInput()">
+             <span class="amt-cur">đ</span></div>
+        <div class="set-row">
+          <button class="set-btn" onclick="saveBudget('default')">Mọi tháng</button>
+          <button class="set-btn alt" onclick="saveBudget('month')">Chỉ tháng này</button>
+          <button class="set-btn ghost" onclick="clearBudget()">Bỏ</button>
+        </div>
+        <div class="set-note" id="bgNote"></div>
+
+        <label class="lbl" style="margin-top:14px">Mở khoá</label>
+        <div id="faceSet"></div>
+      </div>
+    </div>
+
     <!-- Chẩn đoán tốc độ — gập lại mặc định, chỉ mở khi cần soi -->
     <div class="card">
       <div class="head sb" onclick="togglePerf()" style="cursor:pointer;">
@@ -1154,6 +1223,14 @@
 </div>
 
 <!-- ==================== THANH GHI DÍNH ĐÁY ==================== -->
+<!-- Thanh tab cố định ở ĐÁY: iPhone 11 cao 6,1 inch, mép trên là vùng ngón
+     cái với tới khó nhất khi cầm một tay. Đây cũng là quy ước của iOS. -->
+<div class="tabs" id="tabbar">
+  <div id="tab-ghi" class="sel" onclick="switchTab('ghi')"><span class="ti">✏️</span>Ghi</div>
+  <div id="tab-su"  onclick="switchTab('su')"><span class="ti">🧾</span>Lịch sử</div>
+  <div id="tab-tk"  onclick="switchTab('tk')"><span class="ti">📊</span>Thống kê</div>
+</div>
+
 <div id="bar" class="hide">
   <div class="inner">
     <button class="btn" id="saveBtn" onclick="save()">
@@ -1346,7 +1423,8 @@ let S = {
   mailOn:true, mailDidScan:false,             // công tắc & đã quét lần nào chưa
   edit:null, editTags:[],                     // giao dịch đang sửa
   editOn:false,                               // quyền sửa (mặc định TẮT)
-  cmp:null, cmpLoading:false,                 // dữ liệu so cùng kỳ
+  cmp:null, cmpLoading:false, txLoading:false, // dữ liệu so cùng kỳ / đang tải giao dịch
+  budget:null,                                // hạn mức tháng
   shortcuts:[], scActive:'',                  // phím tắt khoản mục
   topDayKey:'',                               // ngày chi cao nhất tháng
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
@@ -1495,6 +1573,25 @@ function toggleTheme(){
 /* ===================== BÀN PHÍM (iOS) ===================== */
 /* visualViewport cho biết phần màn hình còn nhìn thấy khi bàn phím mở.
    Dùng để đẩy nút Ghi lên trên bàn phím thay vì bị che. */
+/**
+ * Đo chiều cao THẬT của thanh tab rồi ghi vào biến --tabh.
+ * Đặt cứng 56px là đoán: chiều cao thật đổi theo cỡ chữ hệ thống và vùng tai
+ * thỏ dưới của từng máy. Đoán thiếu thì thanh tab che mất nút Ghi, đoán thừa
+ * thì hở một khe nhìn thấy rõ. Đo xong mới chắc.
+ */
+function syncTabH(){
+  const t = document.getElementById('tabbar');
+  if (!t) return;
+  const set = () => {
+    const h = Math.round(t.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--tabh', h + 'px');
+  };
+  set();
+  // Xoay máy hoặc đổi cỡ chữ hệ thống → đo lại
+  window.addEventListener('resize', set);
+  if (window.ResizeObserver) new ResizeObserver(set).observe(t);
+}
+
 function initKeyboardWatch(){
   const vv = window.visualViewport;
   if (!vv) return;
@@ -1519,6 +1616,145 @@ function scrollIntoViewSoft(el){
    khi gõ đủ số, không cần bấm nút. */
 const PIN_LEN = 6;
 let pinBuf = '';
+
+/**
+ * Mở sẵn đường truyền tới máy chủ ngay khi bạn chạm phím PIN đầu tiên.
+ *
+ * Vì sao đáng làm: số đo cho thấy lời gọi ĐẦU TIÊN sau khi mở khoá tốn
+ * ~2.400ms mạng, trong khi các lời gọi sau chỉ ~1.450ms — chênh gần 1 giây.
+ * Phần chênh đó là tra DNS + bắt tay TLS cho HAI tên miền (script.google.com
+ * rồi chuyển tiếp sang script.googleusercontent.com). Các lời gọi sau dùng
+ * lại đường đã mở nên không phải trả lại khoản này.
+ *
+ * Thẻ <link rel="preconnect"> ở đầu trang có làm việc đó, nhưng nó chạy lúc
+ * MỞ TRANG, rồi bạn ngồi gõ PIN mất ~5 giây — thừa đủ để kết nối nhàn rỗi bị
+ * đóng. Gọi lại đúng lúc bắt đầu gõ thì cái bắt tay chạy SONG SONG với mấy
+ * giây gõ phím, tới lúc bấm số cuối là đường đã nóng sẵn.
+ *
+ * Dùng /exec?api=ping: không cần token, không đụng vào Sheet, nên gần như
+ * không tốn gì phía máy chủ. Kết quả bỏ đi, chỉ cần cái bắt tay.
+ */
+let warmed = false;
+function warmConnection(){
+  if (warmed) return;
+  warmed = true;
+  try { fetch(EXEC_URL + '?api=ping', { method:'GET', cache:'no-store' })
+          .catch(() => {}); } catch (e) {}
+}
+
+
+/* ===================== MỞ KHOÁ BẰNG FACE ID =====================
+   iOS cho phép PWA gọi Face ID qua WebAuthn. Ở đây KHÔNG có máy chủ xác minh
+   chữ ký, nên đây là khoá TRÊN MÁY: Face ID canh giữ chiếc PIN cất trong máy,
+   mở được thì app gửi PIN đó lên như bình thường. Cổng phía máy chủ không đổi.
+
+   Đánh đổi phải nói rõ: bật tính năng này nghĩa là PIN được LƯU trong máy,
+   thay vì không lưu gì như hiện nay. Ai mở được điện thoại bạn thì vào được
+   app. Vì vậy nó MẶC ĐỊNH TẮT, phải tự bật, và luôn còn đường gõ PIN tay.
+*/
+const FACE = { CRED:'fin_fid_cred', PIN:'fin_fid_pin' };
+
+async function faceAvailable(){
+  try {
+    if (!window.PublicKeyCredential) return false;
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch (e) { return false; }
+}
+function faceEnabled(){
+  try { return !!(localStorage.getItem(FACE.CRED) && localStorage.getItem(FACE.PIN)); }
+  catch (e) { return false; }
+}
+function rnd(n){ const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+function b64(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function unb64(str){
+  const t = str.replace(/-/g,'+').replace(/_/g,'/');
+  return Uint8Array.from(atob(t), c => c.charCodeAt(0));
+}
+
+/** Bật Face ID — chỉ gọi được SAU khi đã mở khoá bằng PIN đúng */
+async function enableFace(pin){
+  try {
+    const cred = await navigator.credentials.create({ publicKey:{
+      challenge: rnd(32),
+      rp: { name: 'Ví Chi Tiêu' },
+      user: { id: rnd(16), name: 'vi-chi-tieu', displayName: 'Ví Chi Tiêu' },
+      pubKeyCredParams: [{ type:'public-key', alg:-7 }, { type:'public-key', alg:-257 }],
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',   // Face ID trên chính máy này
+        userVerification: 'required',
+        residentKey: 'preferred'
+      },
+      timeout: 60000
+    }});
+    if (!cred) throw new Error('Không tạo được khoá');
+    localStorage.setItem(FACE.CRED, b64(cred.rawId));
+    localStorage.setItem(FACE.PIN, pin);
+    toast('Đã bật Face ID');
+    return true;
+  } catch (err) {
+    toast('Không bật được Face ID: ' + (err.message || err.name), 'err');
+    return false;
+  }
+}
+
+function disableFace(){
+  try { localStorage.removeItem(FACE.CRED); localStorage.removeItem(FACE.PIN); } catch (e) {}
+  toast('Đã tắt Face ID');
+  renderFaceBtn();
+}
+
+/** Quét Face ID rồi lấy PIN ra mở app */
+async function faceUnlock(){
+  if (!faceEnabled()) return;
+  const btn = document.getElementById('faceBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Đang quét…'; }
+  try {
+    await navigator.credentials.get({ publicKey:{
+      challenge: rnd(32),
+      allowCredentials: [{ type:'public-key', id: unb64(localStorage.getItem(FACE.CRED)) }],
+      userVerification: 'required',
+      timeout: 60000
+    }});
+    const pin = localStorage.getItem(FACE.PIN) || '';
+    if (!pin) throw new Error('Chưa lưu PIN');
+    warmConnection();
+    pinBuf = pin;
+    submitPin();
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '􀎽 Mở bằng Face ID'; }
+    renderFaceBtn();
+    // Người dùng tự huỷ thì im lặng, chỉ báo khi thật sự lỗi
+    if (err && err.name !== 'NotAllowedError') {
+      toast('Face ID không mở được, hãy gõ PIN', 'err');
+    }
+  }
+}
+
+async function renderFaceBtn(){
+  const box = document.getElementById('faceWrap');
+  if (!box) return;
+  if (!faceEnabled()) { box.innerHTML = ''; return; }
+  box.innerHTML = '<button class="face-btn" id="faceBtn" onclick="faceUnlock()">'
+                + '😊 Mở bằng Face ID</button>';
+}
+
+/** Sau khi vào app bằng PIN: mời bật Face ID, chỉ mời MỘT lần */
+async function offerFace(pin){
+  try {
+    if (faceEnabled()) return;
+    if (localStorage.getItem('fin_fid_asked')) return;
+    if (!(await faceAvailable())) return;
+    localStorage.setItem('fin_fid_asked', '1');
+    setTimeout(() => {
+      if (confirm('Bật Face ID để lần sau khỏi gõ PIN?\n\n'
+        + 'PIN sẽ được lưu trong máy này và chỉ mở ra khi Face ID khớp.\n'
+        + 'Bạn vẫn gõ PIN tay được bất cứ lúc nào.')) enableFace(pin);
+    }, 1200);
+  } catch (e) {}
+}
 
 function renderKeypad(){
   const keys = ['1','2','3','4','5','6','7','8','9','', '0','del'];
@@ -1560,6 +1796,7 @@ function showHint(){
 
 function pinPress(d){
   if (pinBuf.length >= 8) return;
+  warmConnection();          // bắt tay mạng song song với lúc bạn gõ
   pinBuf += d;
   renderPinDots();
   showHint();
@@ -1602,6 +1839,7 @@ window.addEventListener('load', () => {
   checkStore();
   initTheme();
   applyFolds();
+  syncTabH();
   initKeyboardWatch();
   updateNet();
   if (FUN.enabled) {
@@ -1620,6 +1858,9 @@ window.addEventListener('load', () => {
     pmark('hiện màn khóa');
     show('lock');
     renderKeypad();
+    renderFaceBtn();
+    // Tự gọi Face ID ngay: mở app là liếc mắt một cái, không phải bấm thêm
+    if (faceEnabled()) setTimeout(faceUnlock, 350);
     return;
   }
 
@@ -1679,6 +1920,7 @@ function submitPin(){
       // Chế độ bắt buộc gõ PIN: KHÔNG lưu PIN xuống máy, chỉ giữ trong bộ nhớ
       // phiên làm việc. Đóng app là mất, đúng ý đồ bảo mật.
       if (!ALWAYS_ASK_PIN) { try { localStorage.setItem(LS.PIN, v); } catch (e) {} }
+      offerFace(v);
       err.textContent = '';
       // Để ví kịp nhảy mừng rồi mới vào app
       const m = document.getElementById('mascot');
@@ -2057,6 +2299,12 @@ function safeRender(fn){
 
 function loadTx(force){
   if (S.txLoaded && !force) return;
+  /* Chặn gọi TRÙNG: tải trước ở nền và thao tác chuyển tab có thể cùng gọi
+     trong khi lời gọi đầu chưa về — lúc đó S.txLoaded vẫn là false nên cả
+     hai cùng chạy, tốn thừa trọn một vòng mạng ~1,5 giây. Nhật ký đo của
+     bạn có đúng hai dòng getTransactions liền nhau vì lý do này. */
+  if (S.txLoading) return;
+  S.txLoading = true;
 
   // 1) Vẽ ngay từ bộ nhớ máy — chỉ dùng nếu đúng sheet đang xem
   if (!S.txLoaded) {
@@ -2073,6 +2321,7 @@ function loadTx(force){
   // 2) Gọi server làm mới
   api('getTransactions', {pin:S.pin, sheetName:S.sheet})
     .then(res => {
+      S.txLoading = false;
       if (!res.ok) { toast(res.message,'err'); return; }
       S.all = res.rows || [];
       S.daysInMonth = res.daysInMonth || 0;
@@ -2083,7 +2332,7 @@ function loadTx(force){
         renderHuFilter(); renderHistory(); renderStats(); renderShortcuts();
       });
     })
-    .catch(() => toast('Không tải được giao dịch','err'));
+    .catch(() => { S.txLoading = false; toast('Không tải được giao dịch','err'); });
 }
 
 /** Tổng hợp cả năm — nặng hơn nên chỉ gọi khi mở phạm vi Năm */
@@ -2124,6 +2373,7 @@ function applyBootstrap(res, fromCache){
   S.tagRules = res.tagRules || S.tagRules;
   if (typeof res.mailOn === 'boolean') S.mailOn = res.mailOn;
   if (typeof res.editOn === 'boolean') S.editOn = res.editOn;
+  if (res.budget) S.budget = res.budget;
   S.sheets = res.sheets || []; S.sheet = res.activeSheet || '';
   S.years = res.years || [];
   S.todayTotal = res.todayTotal || 0; S.monthTotal = res.monthTotal || 0;
@@ -2515,6 +2765,43 @@ function restoreSkipped(){
     .catch(() => { S.mailLoading = false; renderMail(); toast('Không gọi được máy chủ','err'); });
 }
 
+/**
+ * Thanh hạn mức.
+ * Không chỉ vẽ % đã dùng, mà so NHỊP CHI với nhịp thời gian: đi hết 70% tháng
+ * mà mới dùng 50% hạn mức là đang ổn, còn mới 40% tháng đã dùng 80% là đáng
+ * lo. Một con số % trần trụi không nói được điều đó.
+ */
+function renderBudget(){
+  const w = document.getElementById('budgetWrap');
+  if (!w) return;
+  const b = S.budget && Number(S.budget.amount) || 0;
+  if (!b) { w.classList.add('hide'); return; }
+  w.classList.remove('hide');
+
+  const used = S.monthTotal || 0;
+  const pct = Math.min(200, Math.round(used / b * 100));
+
+  // Đã đi bao nhiêu phần của tháng, tính cả hôm nay
+  const inMonth = S.daysInMonth || 30;
+  const gone = Math.max(1, inMonth - (S.daysLeft || 0));
+  const pacePct = Math.round(gone / inMonth * 100);
+
+  const fill = document.getElementById('bgFill');
+  fill.style.width = Math.min(100, pct) + '%';
+  fill.className = 'bg-fill' + (pct > 100 ? ' over' : (pct > pacePct + 10 ? ' warn' : ''));
+
+  const left = b - used;
+  let msg;
+  if (left < 0) {
+    msg = 'Vượt hạn mức <b>' + fmt(-left) + ' đ</b> · đã dùng <b>' + pct + '%</b>';
+  } else {
+    const perDay = S.daysLeft > 0 ? Math.floor(left / S.daysLeft) : left;
+    msg = 'Còn <b>' + fmt(left) + ' đ</b> / ' + fmt(b) + ' đ'
+        + (S.daysLeft > 0 ? ' · <b>' + fmt(perDay) + ' đ</b>/ngày' : '');
+  }
+  document.getElementById('bgTxt').innerHTML = msg;
+}
+
 function renderHero(){
   document.getElementById('todayTotal').textContent = fmt(S.todayTotal) + ' đ';
   // Chưa chi gì hôm nay → đổi nhãn thành câu vui thay vì "Chi tiêu hôm nay"
@@ -2529,6 +2816,7 @@ function renderHero(){
   if (!S.sheetExists) parts.push('<span class="warnx">chưa có dữ liệu tháng này</span>');
   document.getElementById('heroMeta').innerHTML =
     parts.join('<span class="sepdot">·</span>');
+  renderBudget();
 }
 
 /* ===================== TABS & PHẠM VI ===================== */
@@ -2546,6 +2834,7 @@ function switchTab(t){
   window.scrollTo({top:0, behavior:'smooth'});
   if (t === 'su') loadTx(false);
   if (t === 'tk') {
+    renderSettings();
     if (S.scope === 'year') loadYear(false);
     else {
       loadTx(false);
@@ -2967,7 +3256,7 @@ function dayChartHtml(){
    vô nghĩa. */
 
 /* Mặc định: mở những khối bạn nhìn mỗi lần, gập những khối chỉ xem khi cần. */
-const FOLD_DEFAULT = { kpi:1, cmp:0, day:1, brk:1, find:0 };
+const FOLD_DEFAULT = { kpi:1, cmp:0, day:1, brk:1, find:0, set:0 };
 
 function foldState(){
   let st = {};
@@ -2998,6 +3287,71 @@ function toggleFold(k){
   /* Mở khối "So với cùng kỳ" lần đầu mới gọi máy chủ — gập thì khỏi tốn
      một vòng mạng ~2 giây cho thứ không ai nhìn. */
   if (k === 'cmp' && st[k] && !S.cmp) loadCompare(false);
+}
+
+
+/* ===================== CÀI ĐẶT ===================== */
+function onBgInput(){
+  const el = document.getElementById('bgInput');
+  if (!/[a-zA-Z]/.test(el.value)) {
+    const d = el.value.replace(/\D/g,'');
+    el.value = d ? fmt(Number(d)) : '';
+  }
+}
+
+function renderSettings(){
+  const inp = document.getElementById('bgInput');
+  if (inp && !inp.value && S.budget && S.budget.amount) inp.value = fmt(S.budget.amount);
+  const note = document.getElementById('bgNote');
+  if (note) {
+    note.innerHTML = (S.budget && S.budget.amount)
+      ? ('Đang áp dụng: <b>' + fmt(S.budget.amount) + ' đ</b>'
+         + (S.budget.own ? ' (riêng tháng này)' : ' (mặc định mọi tháng)'))
+      : 'Chưa đặt hạn mức — thanh tiến độ ở đầu app sẽ ẩn.';
+  }
+  renderFaceSet();
+}
+
+function saveBudget(scope){
+  const amt = parseAmtLocal(document.getElementById('bgInput').value);
+  if (!amt) { toast('Chưa nhập hạn mức','err'); return; }
+  api('setBudget', {pin:S.pin, amount:String(amt), scope:scope, sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.budget = res.budget; renderHero(); renderSettings();
+      toast(res.message);
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
+}
+
+function clearBudget(){
+  api('setBudget', {pin:S.pin, amount:'0', scope:'default', sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.budget = res.budget;
+      document.getElementById('bgInput').value = '';
+      renderHero(); renderSettings(); toast(res.message);
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
+}
+
+async function renderFaceSet(){
+  const box = document.getElementById('faceSet');
+  if (!box) return;
+  if (!(await faceAvailable())) {
+    box.innerHTML = '<div class="set-note">Máy này không dùng được Face ID '
+                  + 'cho web. Vẫn gõ PIN như thường.</div>';
+    return;
+  }
+  box.innerHTML = faceEnabled()
+    ? '<div class="set-row"><button class="set-btn ghost" onclick="disableFace()">'
+      + 'Tắt Face ID</button></div>'
+      + '<div class="set-note">Đang bật. PIN được lưu trong máy này và chỉ mở ra '
+      + 'khi Face ID khớp.</div>'
+    : '<div class="set-row"><button class="set-btn" onclick="enableFace(S.pin).then(renderFaceSet)">'
+      + 'Bật Face ID</button></div>'
+      + '<div class="set-note">Bật thì lần sau khỏi gõ PIN. Đổi lại, PIN sẽ được '
+      + 'lưu trong máy này — ai mở được máy thì vào được app.</div>';
 }
 
 function setBreak(v){
@@ -3256,8 +3610,15 @@ function save(){
         renderMail();
       }
 
+      /* Hoàn tác ngay tại chỗ. Trước đây lỡ chạm nhầm phím tắt rồi bấm Ghi
+         thì phải: sang Lịch sử → bật công tắc Sửa → tìm dòng → sửa. Năm thao
+         tác cho một cú chạm nhầm. Dùng lại đúng cơ chế toast có nút đã làm
+         cho nút ✕ ở thẻ email. */
+      const undo = { row: res.tx && res.tx.row, amount: amtNum,
+                     sheet: tx.sheetName };
       const line = funSaveLine(amtNum);
-      if (line) toast(line, '', res.message); else toast(res.message);
+      toast(line || res.message, '', line ? res.message : '',
+            { label:'Hoàn tác', fn: () => undoSave(undo) });
     })
     .catch(() => {
       document.getElementById('todayTotal').classList.remove('pending');
@@ -3278,6 +3639,28 @@ function noteWithTags(){
   const add = S.pickTags.filter(t => have.indexOf(t) < 0).map(t => '#' + t);
   if (!add.length) return raw.trim();
   return (raw.trim() + ' ' + add.join(' ')).trim();
+}
+
+/**
+ * Hoàn tác giao dịch vừa ghi = xoá đúng dòng đó.
+ * Gửi kèm số tiền để máy chủ đối chiếu trước khi xoá (deleteExpense vốn đã
+ * kiểm tra), tránh xoá nhầm nếu dữ liệu đã dịch chuyển trong lúc chờ.
+ */
+function undoSave(u){
+  if (!u || !u.row) { toast('Không hoàn tác được giao dịch này','err'); return; }
+  api('deleteExpense', {pin:S.pin, sheetName:u.sheet, row:u.row, amount:u.amount})
+    .then(res => {
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.todayTotal = res.todayTotal; S.monthTotal = res.monthTotal;
+      S.txCount = res.txCount; renderHero();
+      S.all = S.all.filter(r => r.row !== u.row);
+      S.yearData = null; S.cmp = null;
+      try { localStorage.removeItem(LS.TX); } catch (e) {}
+      if (S.txLoaded) loadTx(true);
+      if (res.released) { S.mailDidScan = false; renderMail(); }
+      toast('Đã hoàn tác ' + fmt(u.amount) + ' đ');
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
 }
 
 function clearForm(){
