@@ -1733,7 +1733,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v37';
+const BUILD = 'v39';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -4058,17 +4058,28 @@ function renderPlanTab(){
           nhập thì đọc vô lý — thu nhập không phải khoản chi để so hạn mức. */
        + ((b.inBudget || b.kind === 'in') ? ''
             : '<span class="pl-off">' + esc(t('bud.offLimit')) + '</span>') + '</div>'
-       + '<span class="dt-bp' + barCls(pct, 101) + '">' + (r.plan > 0 ? pct + '%' : '—') + '</span>'
+       + '<span class="dt-bp' + barCls(pct, 101) + '">'
+       + (S.dtEdit ? (r.plan > 0 ? fmt(r.plan) + ' đ' : '') : (r.plan > 0 ? pct + '%' : '—'))
+       + '</span>'
        + '</div>'
-       + '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
-       + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
-       + '<div class="dt-bs">' + fmt(r.real) + ' / ' + fmt(r.plan) + ' đ</div>'
-       + '<div class="dt-bb">'
+       /* Lúc đang NHẬP thì bỏ thanh tiến độ và dòng "đã chi / kế hoạch":
+          người dùng đang điền số, chưa có gì để so, mà để lại thì mỗi khối
+          đẻ thêm hai dòng "0 / 0 đ" vô nghĩa. */
+       + (S.dtEdit ? ''
+           : '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
+             + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
+             + '<div class="dt-bs">' + fmt(r.real) + ' / ' + fmt(r.plan) + ' đ</div>')
+       /* Bọc nội dung trong ĐÚNG MỘT .fwrap. Mẹo gập bằng grid chỉ co được
+          hàng ĐẦU, mà khối này có mỗi khoản mục là một con riêng — những con
+          sau rơi vào hàng ngầm, hàng ngầm không nghe grid-template-rows, nên
+          gập lại vẫn chừa một mảng trắng cao bằng cả danh sách. Đúng lỗi đã
+          gặp ở phần "Tìm & lọc", lần này lặp lại ở đây. */
+       + '<div class="dt-bb"><div class="fwrap">'
        + r.items.map(it => dtItemHtml(it)).join('')
        + (r.nameMismatch
            ? '<div class="dt-warn">' + esc(t('bud.nameMismatch')) + '</div>'
            : '')
-       + '</div></div>';
+       + '</div></div></div>';
   });
 
   if (S.dtEdit) {
