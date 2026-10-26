@@ -734,6 +734,8 @@
   .bg-go{float:right;opacity:.6;font-weight:800;padding-left:8px;}
   #budgetWrap{cursor:pointer;border-radius:10px;transition:opacity .15s;}
   #budgetWrap:active{opacity:.7;}
+  .lang-seg{display:flex;width:100%;}
+  .lang-seg > *{flex:1;text-align:center;}
   .sp-ver{text-align:center;font-size:11px;color:var(--dim);
           padding:6px 0 2px;font-variant-numeric:tabular-nums;}
 
@@ -1181,8 +1183,8 @@
     </div>
 
     <!-- Đổi tên app ở 2 dòng này -->
-    <div class="brand-name">VÍ CHI TIÊU</div>
-    <div class="brand-sub">Quản lý tài chính cá nhân</div>
+    <div class="brand-name" data-i18n="app.name">VÍ CHI TIÊU</div>
+    <div class="brand-sub" data-i18n="app.tagline">Quản lý tài chính cá nhân</div>
 
     <div class="pin-dots" id="pinDots"></div>
     <div class="pin-err" id="pinErr"></div>
@@ -1206,7 +1208,7 @@
            nhãn thành ra "THÁNG Tháng 10/2026", thừa chữ mà lại ăn mất chỗ
            khiến năm bị cắt cụt. -->
       <div class="sheet-pick">
-        <select id="sheetSel" onchange="switchSheet()" aria-label="Chọn tháng"></select>
+        <select id="sheetSel" onchange="switchSheet()" data-i18n-aria="hero.pickMonth" aria-label="Chọn tháng"></select>
       </div>
       <div class="hero-right">
         <span class="net" id="netBadge">•</span>
@@ -1216,12 +1218,12 @@
              đúng lúc ấy mới là lúc người dùng cần vào xem nhất — giấu lối vào
              sau một thứ biết tự biến mất là hỏng. -->
         <button class="theme-btn" id="planBtn" onclick="openPlan()"
-                aria-label="Dự toán">📋</button>
+                data-i18n-aria="aria.budget" aria-label="Dự toán">📋</button>
         <button class="theme-btn" id="setBtn" onclick="openSettings()"
-                aria-label="Cài đặt">⚙️</button>
+                data-i18n-aria="aria.settings" aria-label="Cài đặt">⚙️</button>
       </div>
     </div>
-    <div class="hero-lbl">Chi tiêu hôm nay</div>
+    <div class="hero-lbl" data-i18n="hero.today">Chi tiêu hôm nay</div>
     <div class="hero-amt" id="todayTotal">0 đ</div>
     <div class="hero-stats" id="heroMeta"></div>
     <!-- Chạm vào là mở màn Dự toán: con số hạn mức đang hiện ngay đây,
@@ -1237,9 +1239,9 @@
        Safari co giãn thanh địa chỉ khi cuộn, phần tử fixed ở đáy nhảy theo
        nên bấm hay trượt. -->
   <div class="tabs" id="tabbar">
-    <div id="tab-ghi" class="sel" onclick="switchTab('ghi')"><span class="ti">✏️</span>Ghi</div>
-    <div id="tab-su"  onclick="switchTab('su')"><span class="ti">🧾</span>Lịch sử</div>
-    <div id="tab-tk"  onclick="switchTab('tk')"><span class="ti">📊</span>Thống kê</div>
+    <div id="tab-ghi" class="sel" onclick="switchTab('ghi')"><span class="ti">✏️</span><span data-i18n="tab.record">Ghi</span></div>
+    <div id="tab-su"  onclick="switchTab('su')"><span class="ti">🧾</span><span data-i18n="tab.ledger">Lịch sử</span></div>
+    <div id="tab-tk"  onclick="switchTab('tk')"><span class="ti">📊</span><span data-i18n="tab.analytics">Thống kê</span></div>
   </div>
 
   <!-- ---------- TAB GHI ---------- -->
@@ -1248,9 +1250,9 @@
     <!-- Giao dịch bóc từ email ngân hàng — chỉ hiện khi có việc để làm -->
     <div class="card hide" id="mailCard">
       <div class="head sb">
-        <b>📬 Từ email ngân hàng</b>
+        <b data-i18n="rec.bankMail">📬 Từ email ngân hàng</b>
         <div class="head-act">
-          <button class="sw" id="mailSw" role="switch" aria-label="Bật/tắt quét email"
+          <button class="sw" id="mailSw" role="switch" data-i18n-aria="aria.mailSw" aria-label="Bật/tắt quét email"
                   onclick="toggleMailOn()"><span class="sw-k"></span></button>
           <button class="icon-btn" id="mailBtn" aria-label="Quét hộp thư"
                   onclick="scanMail(true)"><span class="ib-g">↻</span></button>
@@ -1261,14 +1263,14 @@
 
     <div class="card hide" id="scCard">
       <div class="head sb">
-        <b>⚡ Phím tắt</b>
+        <b data-i18n="rec.quick">⚡ Phím tắt</b>
         <button class="sc-edit" id="scEditBtn" onclick="toggleScEdit()">Sửa</button>
       </div>
       <div class="scroll-row" id="scRow"></div>
     </div>
 
     <div class="card">
-      <div class="head"><b>Số tiền</b></div>
+      <div class="head"><b data-i18n="rec.amount">Số tiền</b></div>
       <div class="amt-box">
         <input id="amount" class="amt-in" type="text" inputmode="numeric"
                placeholder="0" autocomplete="off" oninput="onAmountInput()">
@@ -1278,33 +1280,33 @@
     </div>
 
     <div class="card">
-      <div class="head"><span class="dot"></span><b>Chi tiết</b></div>
+      <div class="head"><span class="dot"></span><b data-i18n="rec.detail">Chi tiết</b></div>
       <div class="mb">
-        <label class="lbl">Loại chi phí</label>
+        <label class="lbl" data-i18n="rec.group">Loại chi phí</label>
         <select id="hu" class="cat-edge" onchange="onHuChange()"></select>
       </div>
       <div class="mb">
-        <label class="lbl">Khoản mục</label>
+        <label class="lbl" data-i18n="rec.item">Khoản mục</label>
         <select id="item" onchange="onItemChange()"></select>
       </div>
       <div class="row mb row2">
         <div>
-          <label class="lbl">Ngày</label>
+          <label class="lbl" data-i18n="rec.date">Ngày</label>
           <input id="date" type="date" onchange="S.dateTouched=true">
         </div>
         <div>
-          <label class="lbl">Loại tiền</label>
+          <label class="lbl" data-i18n="rec.method">Loại tiền</label>
           <div class="seg" id="moneySeg"></div>
         </div>
       </div>
       <div>
-        <label class="lbl">Ghi chú</label>
+        <label class="lbl" data-i18n="rec.memo">Ghi chú</label>
         <input id="note" type="text" placeholder="VD: Siêu thị Kingfood · gõ henho / cv / family"
                autocomplete="off" oninput="onNoteInput()"
                onfocus="scrollIntoViewSoft(this)">
       </div>
       <div>
-        <label class="lbl">Nhãn <span class="lbl-opt">không bắt buộc · chạm lần nữa để bỏ chọn</span></label>
+        <label class="lbl" data-i18n="rec.tag">Nhãn <span class="lbl-opt">không bắt buộc · chạm lần nữa để bỏ chọn</span></label>
         <div class="tagpick" id="tagPick"></div>
       </div>
     </div>
@@ -1314,9 +1316,9 @@
   <div id="pane-su" class="hide">
     <div class="card">
       <div class="head sb">
-        <b id="histCount">Giao dịch</b>
+        <b id="histCount" data-i18n="led.title">Giao dịch</b>
         <div class="head-act">
-          <span class="sw-lbl" id="editLbl">Sửa</span>
+          <span class="sw-lbl" id="editLbl" data-i18n="common.edit">Sửa</span>
           <button class="sw" id="editSw" role="switch" aria-label="Bật/tắt sửa giao dịch"
                   onclick="toggleEditOn()"><span class="sw-k"></span></button>
           <button class="icon-btn" onclick="loadTx(true)">↻</button>
@@ -1326,10 +1328,10 @@
            không cần chúng chiếm chỗ sẵn. -->
       <div class="fold" id="fd-find">
         <div class="fhd fsub" onclick="toggleFold('find')">
-          <span>🔍 Tìm &amp; lọc</span><span class="fcar">⌄</span>
+          <span data-i18n="led.find">🔍 Tìm &amp; lọc</span><span class="fcar">⌄</span>
         </div>
         <div class="fbody"><div class="fwrap">
-          <input id="search" class="search" type="text" placeholder="Tìm ghi chú, khoản mục…"
+          <input id="search" class="search" type="text" data-i18n-ph="led.findPh" placeholder="Tìm ghi chú, khoản mục…"
                  autocomplete="off" oninput="renderHistory()">
           <div class="scroll-row" id="huFilter"></div>
         </div></div>
@@ -1338,9 +1340,9 @@
            mà không phải cuộn qua từng giao dịch. -->
       <div class="day-bar">
         <span class="day-bar-n" id="dayBarN"></span>
-        <button class="day-bar-b" id="dayAllBtn" onclick="toggleAllDays()">Thu gọn tất cả</button>
+        <button class="day-bar-b" id="dayAllBtn" onclick="toggleAllDays()" data-i18n="led.collapse">Thu gọn tất cả</button>
       </div>
-      <div id="histBody"><span class="empty">Đang tải…</span></div>
+      <div id="histBody"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
     </div>
   </div>
 
@@ -1348,8 +1350,8 @@
   <div id="pane-tk" class="hide">
 
     <div class="seg scope">
-      <div id="scope-month" class="sel" onclick="setScope('month')">Tháng này</div>
-      <div id="scope-year" onclick="setScope('year')">Cả năm</div>
+      <div id="scope-month" class="sel" data-i18n="an.thisMonth" onclick="setScope('month')">Tháng này</div>
+      <div id="scope-year" data-i18n="an.fullYear" onclick="setScope('year')">Cả năm</div>
     </div>
 
     <!-- ===== Phạm vi THÁNG ===== -->
@@ -1359,44 +1361,44 @@
            luôn cả khối. -->
       <div class="card fold" id="fd-kpi">
         <div class="head sb fhd" onclick="toggleFold('kpi')">
-          <b>Tổng quan tháng</b><span class="fcar">⌄</span>
+          <b data-i18n="an.overview">Tổng quan tháng</b><span class="fcar">⌄</span>
         </div>
         <div class="fbody"><div class="fwrap"><div class="kpis" id="kpis"></div></div></div>
       </div>
 
       <div class="card fold" id="fd-cmp">
         <div class="head sb fhd" onclick="toggleFold('cmp')">
-          <b>So với cùng kỳ tháng trước</b>
+          <b data-i18n="an.compare">So với cùng kỳ tháng trước</b>
           <span class="head-act">
             <button class="icon-btn" onclick="event.stopPropagation();loadCompare(true)"><span class="ib-g">↻</span></button>
             <span class="fcar">⌄</span>
           </span>
         </div>
-        <div class="fbody"><div class="fwrap"><div id="statCmp"><span class="empty">Đang tải…</span></div></div></div>
+        <div class="fbody"><div class="fwrap"><div id="statCmp"><span class="empty" data-i18n="common.loading">Đang tải…</span></div></div></div>
       </div>
 
       <div class="card fold" id="fd-day">
         <div class="head sb fhd" onclick="toggleFold('day')">
-          <b>Chi tiêu theo ngày</b><span class="fcar">⌄</span>
+          <b data-i18n="an.byDay">Chi tiêu theo ngày</b><span class="fcar">⌄</span>
         </div>
-        <div class="fbody"><div class="fwrap"><div id="statDay"><span class="empty">Đang tải…</span></div></div></div>
+        <div class="fbody"><div class="fwrap"><div id="statDay"><span class="empty" data-i18n="common.loading">Đang tải…</span></div></div></div>
       </div>
 
       <!-- Ba cách bổ nhỏ cùng một số tiền nên gộp một thẻ, chuyển bằng nút gạt -->
       <div class="card fold" id="fd-brk">
         <div class="head sb fhd" onclick="toggleFold('brk')">
-          <b>Bổ nhỏ chi tiêu</b>
+          <b data-i18n="an.breakdown">Bổ nhỏ chi tiêu</b>
           <span class="head-act">
             <span class="mini-seg" onclick="event.stopPropagation()">
-              <span id="bk-hu" class="sel" onclick="setBreak('hu')">Loại</span>
-              <span id="bk-item" onclick="setBreak('item')">Khoản mục</span>
-              <span id="bk-tag" onclick="setBreak('tag')">Nhãn</span>
+              <span id="bk-hu" class="sel" data-i18n="an.byGroup" onclick="setBreak('hu')">Loại</span>
+              <span id="bk-item" data-i18n="an.byItem" onclick="setBreak('item')">Khoản mục</span>
+              <span id="bk-tag" data-i18n="an.byTag" onclick="setBreak('tag')">Nhãn</span>
             </span>
             <span class="fcar">⌄</span>
           </span>
         </div>
         <div class="fbody"><div class="fwrap">
-          <div id="statHu"><span class="empty">Đang tải…</span></div>
+          <div id="statHu"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
           <div id="statItem" class="hide"></div>
           <div id="statTag" class="hide"></div>
         </div></div>
@@ -1410,25 +1412,25 @@
     <!-- ===== Phạm vi NĂM ===== -->
     <div id="tkYear" class="hide">
       <div class="card" id="yearPickCard">
-        <div class="head"><b>Chọn năm</b></div>
+        <div class="head"><b data-i18n="an.pickYear">Chọn năm</b></div>
         <div class="scroll-row" style="margin-top:0;" id="yearChips"></div>
       </div>
       <div class="kpis" id="yKpis"></div>
       <div class="card">
-        <div class="head"><b>Chi tiêu theo tháng</b></div>
-        <div id="yMonth"><span class="empty">Đang tải…</span></div>
+        <div class="head"><b data-i18n="an.byMonth">Chi tiêu theo tháng</b></div>
+        <div id="yMonth"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
       </div>
       <div class="card">
-        <div class="head"><b>Theo loại chi phí</b></div>
-        <div id="yHu"><span class="empty">Đang tải…</span></div>
+        <div class="head"><b data-i18n="an.byGroupYear">Theo loại chi phí</b></div>
+        <div id="yHu"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
       </div>
       <div class="card">
-        <div class="head"><b>Top khoản mục cả năm</b></div>
-        <div id="yItem"><span class="empty">Đang tải…</span></div>
+        <div class="head"><b data-i18n="an.topItems">Top khoản mục cả năm</b></div>
+        <div id="yItem"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
       </div>
       <div class="card">
-        <div class="head"><b>Theo nhãn cả năm</b></div>
-        <div id="yTag"><span class="empty">Đang tải…</span></div>
+        <div class="head"><b data-i18n="an.byTagYear">Theo nhãn cả năm</b></div>
+        <div id="yTag"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
       </div>
     </div>
 
@@ -1440,7 +1442,7 @@
 <div id="bar" class="hide">
   <div class="inner">
     <button class="btn" id="saveBtn" onclick="save()">
-      <span id="saveMain">Ghi chi tiêu</span>
+      <span id="saveMain" data-i18n="rec.save">Ghi chi tiêu</span>
       <span id="saveSub"></span>
     </button>
   </div>
@@ -1456,8 +1458,8 @@
   </div>
   <div class="ms-body" id="msBody"></div>
   <div class="ms-act">
-    <button class="ms-use"  id="msUse"  onclick="useFromSheet()">Dùng giao dịch này</button>
-    <button class="ms-skip" onclick="skipFromSheet()">Bỏ qua</button>
+    <button class="ms-use"  id="msUse"  onclick="useFromSheet()" data-i18n="led.use">Dùng giao dịch này</button>
+    <button class="ms-skip" onclick="skipFromSheet()" data-i18n="common.skip">Bỏ qua</button>
   </div>
 </div>
 
@@ -1466,38 +1468,38 @@
 <div id="edSheet" role="dialog" aria-modal="true" aria-label="Sửa giao dịch">
   <div class="ms-grip"></div>
   <div class="ms-head">
-    <div class="ms-amt">Sửa giao dịch</div>
+    <div class="ms-amt" data-i18n="led.editTx">Sửa giao dịch</div>
     <div class="ms-when" id="edWhen"></div>
   </div>
   <div class="ms-body">
-    <label class="lbl">Số tiền</label>
+    <label class="lbl" data-i18n="rec.amount">Số tiền</label>
     <div class="amt-box ed-amt">
       <input id="edAmount" class="amt-in" type="text" inputmode="numeric"
              placeholder="0" autocomplete="off" oninput="onEdAmountInput()">
       <span class="amt-cur">đ</span>
     </div>
 
-    <label class="lbl">Ngày</label>
+    <label class="lbl" data-i18n="rec.date">Ngày</label>
     <input id="edDate" type="date">
 
-    <label class="lbl">Loại chi phí</label>
+    <label class="lbl" data-i18n="rec.group">Loại chi phí</label>
     <select id="edHu" onchange="renderEdItems()"></select>
 
-    <label class="lbl">Khoản mục</label>
+    <label class="lbl" data-i18n="rec.item">Khoản mục</label>
     <select id="edItem"></select>
 
-    <label class="lbl">Loại tiền</label>
+    <label class="lbl" data-i18n="rec.method">Loại tiền</label>
     <select id="edMoney"></select>
 
-    <label class="lbl">Ghi chú</label>
+    <label class="lbl" data-i18n="rec.memo">Ghi chú</label>
     <input id="edNote" type="text" autocomplete="off" oninput="onEdNoteInput()">
 
-    <label class="lbl">Nhãn</label>
+    <label class="lbl" data-i18n="rec.tag">Nhãn</label>
     <div class="tagpick" id="edTagPick"></div>
   </div>
   <div class="ms-act">
-    <button class="ms-use" id="edSave" onclick="saveEdit()">Lưu thay đổi</button>
-    <button class="ms-skip" onclick="closeEdit()">Hủy</button>
+    <button class="ms-use" id="edSave" onclick="saveEdit()" data-i18n="led.saveTx">Lưu thay đổi</button>
+    <button class="ms-skip" onclick="closeEdit()" data-i18n="common.cancel">Hủy</button>
   </div>
 </div>
 
@@ -1505,18 +1507,18 @@
 <div id="nmBackdrop" onclick="closeNewMonth()"></div>
 <div id="nmSheet">
   <div class="ms-grip"></div>
-  <div class="ms-head"><b>Thêm tháng mới</b></div>
+  <div class="ms-head"><b data-i18n="nm.title">Thêm tháng mới</b></div>
   <div class="ms-body">
     <div class="sp-note" id="nmNote"></div>
-    <label class="lbl">Tháng</label>
+    <label class="lbl" data-i18n="common.month">Tháng</label>
     <select id="nmMonth"></select>
-    <label class="lbl">Năm</label>
+    <label class="lbl" data-i18n="common.year">Năm</label>
     <select id="nmYear"></select>
     <div class="set-note" id="nmWarn"></div>
   </div>
   <div class="ms-act">
-    <button class="ms-use" id="nmGo" onclick="doNewMonth()">Tạo tháng</button>
-    <button class="ms-skip" onclick="closeNewMonth()">Hủy</button>
+    <button class="ms-use" id="nmGo" onclick="doNewMonth()" data-i18n="nm.create">Tạo tháng</button>
+    <button class="ms-skip" onclick="closeNewMonth()" data-i18n="common.cancel">Hủy</button>
   </div>
 </div>
 
@@ -1526,20 +1528,20 @@
   <div class="ms-grip"></div>
   <div class="ms-head"><b id="scTitle">Phím tắt mới</b></div>
   <div class="ms-body">
-    <label class="lbl">Tên nút</label>
+    <label class="lbl" data-i18n="sc.name">Tên nút</label>
     <input id="scLabel" type="text" autocomplete="off" maxlength="24"
-           placeholder="Ví dụ: Cà phê sáng">
+           data-i18n-ph="sc.namePh" placeholder="Ví dụ: Cà phê sáng">
 
-    <label class="lbl">Biểu tượng</label>
+    <label class="lbl" data-i18n="sc.icon">Biểu tượng</label>
     <div class="scroll-row" id="scEmoji"></div>
 
-    <label class="lbl">Loại chi phí</label>
+    <label class="lbl" data-i18n="rec.group">Loại chi phí</label>
     <select id="scHu" onchange="renderScItems()"></select>
 
-    <label class="lbl">Khoản mục</label>
+    <label class="lbl" data-i18n="rec.item">Khoản mục</label>
     <select id="scItem"></select>
 
-    <label class="lbl">Số tiền mặc định <span class="lbl-opt">(không bắt buộc)</span></label>
+    <label class="lbl" data-i18n="sc.defAmount">Số tiền mặc định <span class="lbl-opt">(không bắt buộc)</span></label>
     <div class="amt-box"><input id="scAmount" class="amt-in" type="text"
          inputmode="numeric" placeholder="0" oninput="onScAmtInput()">
          <span class="amt-cur">đ</span></div>
@@ -1547,7 +1549,7 @@
       cho khoản mục này.</div>
   </div>
   <div class="ms-act">
-    <button class="ms-use" id="scSave" onclick="saveShortcut()">Lưu phím tắt</button>
+    <button class="ms-use" id="scSave" onclick="saveShortcut()" data-i18n="sc.save">Lưu phím tắt</button>
     <button class="ms-skip" id="scDel" onclick="deleteShortcut()">Xoá</button>
   </div>
 </div>
@@ -1561,17 +1563,17 @@
     <button class="sp-back" onclick="closePlan()" aria-label="Quay lại">‹</button>
     <span class="sp-ttl" id="dtTitle">Dự toán</span>
     <button class="sc-edit" id="dtEditBtn" style="margin-left:auto"
-            onclick="toggleDtEdit()" aria-label="Nhập dự toán">✎</button>
+            onclick="toggleDtEdit()" data-i18n-aria="aria.enterBud" aria-label="Nhập dự toán">✎</button>
     <button class="icon-btn" onclick="loadPlan(true)" aria-label="Tải lại">↻</button>
   </div>
-  <div class="sp-body" id="dtBody"><span class="empty">Đang tải…</span></div>
+  <div class="sp-body" id="dtBody"><span class="empty" data-i18n="common.loading">Đang tải…</span></div>
 </div>
 
 <!-- ==================== MÀN CÀI ĐẶT ==================== -->
 <div id="setPanel" role="dialog" aria-label="Cài đặt">
   <div class="sp-head">
     <button class="sp-back" onclick="closeSettings()" aria-label="Quay lại">‹</button>
-    <span class="sp-ttl">Cài đặt</span>
+    <span class="sp-ttl" data-i18n="set.title">Cài đặt</span>
   </div>
   <div class="sp-body" id="setBody"></div>
 </div>
@@ -1731,7 +1733,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v28';
+const BUILD = 'v37';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -2157,6 +2159,7 @@ window.addEventListener('load', () => {
   pmark('tải trang');
   checkStore();
   initTheme();
+  applyI18n();
   applyFolds();
   stampBuild();
   initSheetDrag();
@@ -2732,7 +2735,7 @@ function applyBootstrap(res, fromCache){
   ssel.innerHTML = (S.sheets.length
       ? S.sheets.map(n => `<option value="${esc(n)}">${esc(prettySheet(n))}</option>`).join('')
       : '<option value="">(không có)</option>')
-    + '<option value="__new__">＋ Thêm tháng mới…</option>';
+    + '<option value="__new__">' + esc(t('nm.option')) + '</option>';
   if (S.sheet) ssel.value = S.sheet;
 
   fillSelect('hu', S.hu.map(h => ({v:h.v, t:h.t})));
@@ -2888,7 +2891,7 @@ function renderMail(){
     box.innerHTML = '<span class="empty">'
       + (S.mailDidScan
           ? ('Không có giao dịch mới' + (when ? ' · quét lúc ' + when : ''))
-          : 'Bấm ↻ để quét hộp thư ngân hàng')
+          : t('mail.tapScan'))
       + '</span>' + restore;
     return;
   }
@@ -3134,11 +3137,12 @@ function renderBudget(){
   const left = b - used;
   let msg;
   if (left < 0) {
-    msg = 'Vượt hạn mức <b>' + fmt(-left) + ' đ</b> · đã dùng <b>' + pct + '%</b>';
+    msg = t('bg.over') + ' <b>' + fmt(-left) + ' đ</b> · ' + t('bg.used')
+        + ' <b>' + pct + '%</b>';
   } else {
     const perDay = S.daysLeft > 0 ? Math.floor(left / S.daysLeft) : left;
-    msg = 'Còn <b>' + fmt(left) + ' đ</b> / ' + fmt(b) + ' đ'
-        + (S.daysLeft > 0 ? ' · <b>' + fmt(perDay) + ' đ</b>/ngày' : '');
+    msg = t('bg.left') + ' <b>' + fmt(left) + ' đ</b> / ' + fmt(b) + ' đ'
+        + (S.daysLeft > 0 ? ' · <b>' + fmt(perDay) + '</b> ' + t('bg.perDay') : '');
   }
   document.getElementById('bgTxt').innerHTML = msg;
 }
@@ -3149,12 +3153,12 @@ function renderHero(){
   const lbl = document.querySelector('.hero-lbl');
   if (lbl) lbl.textContent = (FUN.enabled && !S.todayTotal)
     ? (S._zeroLine || (S._zeroLine = pick(FUN.emptyToday)))
-    : 'Chi tiêu hôm nay';
+    : t('hero.today');
   if (S.todayTotal) S._zeroLine = '';
-  const parts = ['Tháng <b>' + fmt(S.monthTotal) + ' đ</b>'];
-  if (S.txCount) parts.push('<b>' + S.txCount + '</b> giao dịch');
-  if (S.daysLeft > 0) parts.push('còn <b>' + S.daysLeft + '</b> ngày');
-  if (!S.sheetExists) parts.push('<span class="warnx">chưa có dữ liệu tháng này</span>');
+  const parts = [t('hero.month') + ' <b>' + fmt(S.monthTotal) + ' đ</b>'];
+  if (S.txCount) parts.push('<b>' + S.txCount + '</b> ' + t('hero.txCount'));
+  if (S.daysLeft > 0) parts.push(t('hero.daysLeft') + ' <b>' + S.daysLeft + '</b> ' + t('hero.days'));
+  if (!S.sheetExists) parts.push('<span class="warnx">' + t('hero.noData') + '</span>');
   document.getElementById('heroMeta').innerHTML =
     parts.join('<span class="sepdot">·</span>');
   renderBudget();
@@ -3200,7 +3204,7 @@ function setYear(y){
   S.year = y; S.yearData = null;
   renderYearChips();
   ['yKpis','yMonth','yHu','yItem','yTag'].forEach(id =>
-    document.getElementById(id).innerHTML = '<span class="empty">Đang tải…</span>');
+    document.getElementById(id).innerHTML = '<span class="empty" data-i18n="common.loading">Đang tải…</span>');
   loadYear(true);
 }
 
@@ -3244,7 +3248,7 @@ function fillSelect(id, arr){
 function renderItems(){
   const key = norm(document.getElementById('hu').value);
   const list = S.items.filter(it => it.huKey === key);
-  fillSelect('item', list.length ? list : [{v:'', t:'(Chưa có khoản mục)'}]);
+  fillSelect('item', list.length ? list : [{v:'', t:t('aria.noItem')}]);
 }
 
 function renderQuickAmounts(){
@@ -3276,7 +3280,7 @@ function renderHuFilter(){
     seen[k] = 1; used.push(r.hu.trim());
   });
   document.getElementById('huFilter').innerHTML =
-    `<div class="chip sm${S.filterHu===''?' sel':''}" onclick="setFilter('')">Tất cả</div>`
+    `<div class="chip sm${S.filterHu===''?' sel':''}" onclick="setFilter('')">${esc(t('led.all'))}</div>`
     + used.map(h => {
         const c = catColor(h);
         const on = S.filterHu === norm(h);
@@ -3337,7 +3341,7 @@ function renderHistory(){
   let total = 0;
   rows.forEach(r => total += r.amount);
   document.getElementById('histCount').textContent =
-    rows.length + ' giao dịch · ' + fmt(total) + ' đ';
+    rows.length + ' ' + t('led.title').toLowerCase() + ' · ' + fmt(total) + ' đ';
 
   if (!rows.length) {
     // Phân biệt "chưa ghi gì" với "lọc không ra" — hai tình huống khác nhau
@@ -3375,12 +3379,12 @@ function renderHistory(){
 
   // Cập nhật thanh điều khiển gập/mở
   const bar = document.getElementById('dayBarN');
-  if (bar) bar.textContent = groups.length + ' ngày';
+  if (bar) bar.textContent = groups.length + ' ' + t('led.days');
   const allBtn = document.getElementById('dayAllBtn');
   // Nút đổi nghĩa theo trạng thái thực tế: còn ngày nào đang mở thì nó là
   // "Thu gọn tất cả", mọi ngày đã gập thì thành "Mở tất cả".
   const anyOpen = groups.some(g => !S.dayFold[g.key]);
-  if (allBtn) allBtn.textContent = anyOpen ? 'Thu gọn tất cả' : 'Mở tất cả';
+  if (allBtn) allBtn.textContent = anyOpen ? t('led.collapse') : t('led.expand');
 
   box.innerHTML = groups.map(g => {
     const shut = !!S.dayFold[g.key];
@@ -3389,7 +3393,7 @@ function renderHistory(){
       <div class="day-l">
         <span class="day-cr">⌄</span>
         <span class="day-d">${esc(g.label||'—')}</span>
-        <span class="day-w">${esc(g.wd||'')}</span>
+        <span class="day-w">${esc(wd(g.wd))}</span>
         <span class="day-n">${g.list.length}</span>
       </div>
       <div class="day-t">${fmt(g.total)} đ</div>
@@ -3461,6 +3465,23 @@ function loadDayFold(){
 }
 
 /** Chữ cái đầu của khoản mục, dùng làm "icon" trong ô vuông màu */
+
+/**
+ * Thứ trong tuần theo ngôn ngữ đang dùng.
+ * Máy chủ gửi về mã ngắn tiếng Việt ('CN', 'T2'…), có chỗ dữ liệu cũ còn ghi
+ * 'Thứ 2'. Nhận cả hai dạng rồi đổi sang tiếng Anh khi cần — người đọc bản
+ * tiếng Anh nhìn 'T2' thì không đoán ra là thứ Hai.
+ */
+function wd(v){
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+  if (curLang() !== 'en') return raw.replace('Thứ ', 'T');
+  const m = { 'CN':'Sun', 'T2':'Mon', 'T3':'Tue', 'T4':'Wed',
+              'T5':'Thu', 'T6':'Fri', 'T7':'Sat' };
+  const k = raw.replace('Thứ ', 'T').toUpperCase();
+  return m[k] || raw;
+}
+
 function initial(s){
   const t = String(s||'').trim();
   return t ? t.charAt(0).toUpperCase() : '•';
@@ -3494,19 +3515,19 @@ function renderStats(){
   const avg = activeDays ? Math.round(total/activeDays) : 0;
 
   document.getElementById('kpis').innerHTML = `
-    <div class="kpi k1"><div class="kpi-l">Tổng chi</div>
+    <div class="kpi k1"><div class="kpi-l">${t('an.total')}</div>
       <div class="kpi-v">${fmt(total)} đ</div>
-      <div class="kpi-s">${rows.length} giao dịch</div></div>
-    <div class="kpi k2"><div class="kpi-l">TB mỗi ngày</div>
+      <div class="kpi-s">${rows.length} ${t('hero.txCount')}</div></div>
+    <div class="kpi k2"><div class="kpi-l">${t('an.avgDay')}</div>
       <div class="kpi-v">${fmt(avg)} đ</div>
-      <div class="kpi-s">${activeDays} ngày có chi</div></div>
+      <div class="kpi-s">${activeDays} ${t('an.activeDays')}</div></div>
     <div class="kpi k3${maxDay ? ' tap' : ''}"${maxDay ? ' onclick="openTopDay()"' : ''}>
-      <div class="kpi-l">Ngày cao nhất</div>
+      <div class="kpi-l">${t('an.topDay')}</div>
       <div class="kpi-v">${maxDay ? fmt(maxDay.total) + ' đ' : '—'}</div>
-      <div class="kpi-s">${maxDay ? esc(maxDay.label) + ' · xem ›' : '—'}</div></div>
-    <div class="kpi k4"><div class="kpi-l">Giao dịch TB</div>
+      <div class="kpi-s">${maxDay ? esc(maxDay.label) + ' · ' + t('an.view') + ' ›' : '—'}</div></div>
+    <div class="kpi k4"><div class="kpi-l">${t('an.avgTx')}</div>
       <div class="kpi-v">${rows.length ? fmt(Math.round(total/rows.length)) + ' đ' : '—'}</div>
-      <div class="kpi-s">mỗi lần chi</div></div>`;
+      <div class="kpi-s">${t('an.perTx')}</div></div>`;
 
   renderStatDay();
 
@@ -3791,12 +3812,12 @@ function renderSettings(){
 
   /* ---- 1. HẠN MỨC ---- */
   html += '<div class="sp-sec"><div class="sp-h">🎯 Hạn mức chi tiêu</div><div class="sp-card">'
-       + opt('plan', '📋 Theo sheet DỰ TOÁN 2026',
+       + opt('plan', t('set.srcPlan'),
              'Cộng các khoản <b>chi phí</b> và <b>nợ</b> bạn đã lên kế hoạch cho tháng. '
              + 'Sửa số trong sheet là app theo ngay.')
-       + opt('manual', '✍️ Tự nhập trong app',
+       + opt('manual', t('set.srcManual'),
              'Một con số cố định do bạn gõ, không đụng tới sheet.')
-       + opt('off', '🚫 Tắt',
+       + opt('off', t('set.srcOff'),
              'Ẩn thanh hạn mức ở đầu app.')
        + '</div>';
 
@@ -3807,14 +3828,14 @@ function renderSettings(){
           ? '<div class="sp-note" style="margin-bottom:9px">Sheet <b>DỰ TOÁN 2026</b> '
             + 'chưa có số nào cho tháng này, nên app đang tạm dùng số tự nhập.</div>'
           : '')
-      + '<label class="lbl">Số tiền mỗi tháng</label>'
+      + '<label class="lbl">' + esc(t('set.perMonth')) + '</label>'
       + '<div class="amt-box"><input id="bgInput" class="amt-in" type="text" '
       + 'inputmode="numeric" placeholder="0" oninput="onBgInput()">'
       + '<span class="amt-cur">đ</span></div>'
       + '<div class="set-row">'
-      + '<button class="set-btn" onclick="saveBudget(\'default\')">Mọi tháng</button>'
-      + '<button class="set-btn alt" onclick="saveBudget(\'month\')">Chỉ tháng này</button>'
-      + '<button class="set-btn ghost" onclick="clearBudget()">Bỏ</button></div>'
+      + '<button class="set-btn" onclick="saveBudget(\'default\')">' + esc(t('set.allMonths')) + '</button>'
+      + '<button class="set-btn alt" onclick="saveBudget(\'month\')">' + esc(t('set.thisMonth')) + '</button>'
+      + '<button class="set-btn ghost" onclick="clearBudget()">' + esc(t('set.clear')) + '</button></div>'
       + '<div class="set-note" id="bgNote"></div></div>';
   }
 
@@ -3832,9 +3853,19 @@ function renderSettings(){
   html += '<div class="sp-sec"><div class="sp-h">📋 Dự toán</div>'
        + '<div class="sp-card"><div class="sp-row" style="cursor:pointer" '
        + 'onclick="closeSettings();openPlan()">'
-       + '<span class="sp-lb">Xem dự toán ' + esc(prettySheet(S.sheet)) + '</span>'
+       + '<span class="sp-lb">' + esc(t('set.viewBudget') + ' ' + prettySheet(S.sheet)) + '</span>'
        + '<span class="icon-btn">›</span></div>'
        + '<div class="sp-note">' + planWhat() + '</div></div></div>';
+
+  /* ---- 2b. NGÔN NGỮ ----
+     Từ điển và hàm t() đã có sẵn từ trước nhưng KHÔNG có chỗ nào gọi
+     setLang(), nên tính năng nằm im như chưa tồn tại. Đây là mắt xích thiếu. */
+  const lg = curLang();
+  html += '<div class="sp-sec"><div class="sp-h">' + esc(t('set.lang')) + '</div>'
+       + '<div class="sp-card"><div class="mini-seg lang-seg">'
+       + '<span class="' + (lg === 'vi' ? 'sel' : '') + '" onclick="setLang(\'vi\')">Tiếng Việt</span>'
+       + '<span class="' + (lg === 'en' ? 'sel' : '') + '" onclick="setLang(\'en\')">English</span>'
+       + '</div></div></div>';
 
   /* ---- 3. BẢO MẬT ---- */
   html += '<div class="sp-sec"><div class="sp-h">🔒 Mở khoá</div>'
@@ -3843,7 +3874,7 @@ function renderSettings(){
   /* ---- 4. CHẨN ĐOÁN ---- */
   html += '<div class="sp-sec"><div class="sp-h">🔧 Kỹ thuật</div><div class="sp-card">'
        + '<div class="sp-row" onclick="togglePerf()" style="cursor:pointer">'
-       + '<span class="sp-lb">⏱ Tốc độ tải</span>'
+       + '<span class="sp-lb">' + esc(t('set.speed')) + '</span>'
        + '<span class="icon-btn" id="perfCaret">›</span></div>'
        + '<div id="perfBox" class="hide"></div></div></div>';
 
@@ -3897,24 +3928,25 @@ function renderPlanTab(){
   if (!box) return;
   if (!document.getElementById('planPanel').classList.contains('show')) return;
   const ttl = document.getElementById('dtTitle');
-  if (ttl) ttl.textContent = 'Dự toán ' + prettySheet(S.sheet);
+  if (ttl) ttl.textContent = t('bud.title') + ' ' + prettySheet(S.sheet);
 
   const eb = document.getElementById('dtEditBtn');
-  if (eb) { eb.textContent = S.dtEdit ? 'Xong' : '✎'; eb.classList.toggle('on', !!S.dtEdit); }
+  if (eb) { eb.textContent = S.dtEdit ? t('common.done') : '✎'; eb.classList.toggle('on', !!S.dtEdit); }
 
-  if (S.planLoading) { box.innerHTML = '<span class="empty">Đang đọc sheet DỰ TOÁN 2026…</span>'; return; }
+  if (S.planLoading) { box.innerHTML = '<span class="empty">' + esc(t('bud.reading')) + '</span>'; return; }
   if (S.planErr)     { box.innerHTML = '<span class="empty">' + esc(S.planErr) + '</span>'; return; }
 
   const p = S.plan;
-  if (!p || p.empty || !p.blocks) { box.innerHTML = '<span class="empty">Chưa đọc được dự toán.</span>'; return; }
+  if (!p || p.empty || !p.blocks) { box.innerHTML = '<span class="empty">' + esc(t('bud.cantRead')) + '</span>'; return; }
 
   /* Tháng trống: KHÔNG chỉ báo trống rồi để đó. Mở thẳng chế độ nhập, vì
      thứ duy nhất người dùng muốn làm lúc này là điền số. */
   if (!p.has && !p.debt && !p.save && !S.dtEdit) {
-    let h = '<div class="dt-empty">Tháng <b>' + p.month + '</b> chưa có dự toán — '
-      + 'cột <b>' + esc(p.col || '?') + '</b> trong sheet đang trống.';
+    let h = '<div class="dt-empty">' + esc(t('bud.emptyA')) + ' <b>' + p.month + '</b> '
+      + esc(t('bud.emptyB')) + ' <b>' + esc(p.col || '?') + '</b> '
+      + esc(t('bud.emptyC'));
     const ms = p.monthsWithPlan || [];
-    if (ms.length) h += ' Đã lập cho tháng <b>' + ms.join(', ') + '</b>.';
+    if (ms.length) h += ' ' + esc(t('bud.emptyD')) + ' <b>' + ms.join(', ') + '</b>.';
     h += '</div><button class="dt-cta" onclick="toggleDtEdit()">Nhập dự toán tháng '
        + p.month + '</button>'
        + '<div class="dt-intro">' + planWhat() + '</div>';
@@ -3926,7 +3958,10 @@ function renderPlanTab(){
   const rows = [];        // gom phẳng để sắp xếp được theo mức độ cấp bách
 
   p.blocks.forEach(b => {
-    if (b.kind === 'in') return;
+    /* Thu nhập không nằm trong phần so chi tiêu — nhưng KHI ĐANG NHẬP thì
+       phải có, vì nó cũng là một dòng của kế hoạch và dòng "tiền mặt còn
+       lại" trong sheet phụ thuộc vào nó. */
+    if (b.kind === 'in' && !S.dtEdit) return;
     const huSlug = slugVi(b.name);
     const real = A.byHu[huSlug] || 0;
     const plan = b.total || 0;
@@ -3952,7 +3987,7 @@ function renderPlanTab(){
     /* Nặng nhất lên đầu. Người ta mở màn này để tìm khoản đang vượt, không
        phải để đọc lại thứ tự dòng trong sheet. */
     items.sort((x, y) => pctOf(y) - pctOf(x));
-    if (noPlan > 0) items.push({ name:'Chưa có kế hoạch', plan:0, real:noPlan, row:0 });
+    if (noPlan > 0) items.push({ name:t('bud.noPlanRow'), plan:0, real:noPlan, row:0 });
 
     rows.push({ block:b, plan:plan, real:real, items:items,
                 nameMismatch: noPlan > 0 && matched === 0 && (b.items||[]).length > 0 });
@@ -3972,15 +4007,14 @@ function renderPlanTab(){
 
   h += '<div class="dt-hero">'
      + '<div class="dt-hp"><span class="dt-hpct' + barCls(pctAll, pace) + '">' + pctAll + '%</span>'
-     + '<span class="dt-hl">' + (leftAll < 0 ? 'vượt ' + fmt(-leftAll) : 'còn ' + fmt(leftAll)) + ' đ</span></div>'
+     + '<span class="dt-hl">' + (leftAll < 0 ? t('bud.over') + ' ' + fmt(-leftAll) : t('bud.left') + ' ' + fmt(leftAll)) + ' đ</span></div>'
      + '<div class="dt-bar big"><div class="dt-fill' + barCls(pctAll, pace) + '" style="width:'
      + Math.min(100, pctAll) + '%"></div>'
      + (pace < 100 ? '<div class="dt-pace" style="left:' + pace + '%"></div>' : '')
      + '</div>'
      + '<div class="dt-hs">Đã chi <b>' + fmt(realAll) + '</b> / ' + fmt(planAll) + ' đ'
-     + (S.daysLeft > 0 ? ' · còn <b>' + S.daysLeft + '</b> ngày' : '') + '</div>'
-     + '<div class="dt-hs dim">Vạch mờ là tiến độ thời gian — thanh vượt qua vạch '
-     + 'nghĩa là đang tiêu nhanh hơn nhịp tháng.</div>'
+     + (S.daysLeft > 0 ? ' · ' + t('hero.daysLeft') + ' <b>' + S.daysLeft + '</b> ' + t('hero.days') : '') + '</div>'
+     + '<div class="dt-hs dim">' + esc(t('bud.paceNote')) + '</div>'
      + '</div>';
 
   /* ---- 2. CẦN CHÚ Ý: chỉ hiện khi thật sự có vấn đề ---- */
@@ -3995,21 +4029,21 @@ function renderPlanTab(){
   hot.sort((a, b) => b.over - a.over);
   if (hot.length || unplanned > 0) {
     const parts = [];
-    if (hot.length) parts.push(hot.length + ' khoản vượt kế hoạch');
-    if (unplanned > 0) parts.push('có chi ngoài kế hoạch');
+    if (hot.length) parts.push(hot.length + ' ' + t('bud.overItems'));
+    if (unplanned > 0) parts.push(t('bud.hasUnplan'));
     h += '<div class="dt-alert"><div class="dt-at">⚠️ ' + parts.join(' · ') + '</div>'
        + hot.slice(0, 5).map(x =>
           '<div class="dt-ar"><span>' + esc(x.n) + '</span><b>+' + fmt(x.over) + ' đ</b></div>'
          ).join('')
-       + (hot.length > 5 ? '<div class="dt-ar dim">và ' + (hot.length - 5) + ' khoản nữa</div>' : '')
+       + (hot.length > 5 ? '<div class="dt-ar dim">' + esc(t('bud.and')) + ' ' + (hot.length - 5) + ' ' + esc(t('bud.andMore')) + '</div>' : '')
        + (unplanned > 0
-           ? '<div class="dt-ar"><span>Chi ngoài kế hoạch</span><b>'
+           ? '<div class="dt-ar"><span>' + esc(t('bud.unplanned')) + '</span><b>'
              + fmt(unplanned) + ' đ</b></div>' : '')
        + '</div>';
   }
 
   /* ---- 3. TỪNG LOẠI: gập lại, mở cái nào đang có vấn đề ---- */
-  h += '<div class="dt-sec">Theo loại chi phí</div>';
+  h += '<div class="dt-sec">' + esc(t('bud.byGroup')) + '</div>';
   rows.forEach(r => {
     const b = r.block;
     const pct = pctOf(r);
@@ -4020,7 +4054,10 @@ function renderPlanTab(){
        + '<div class="dt-bh" onclick="toggleDtBlock(\'' + esc(key) + '\')">'
        + '<div class="dt-bt"><span class="dt-cr">⌄</span>'
        + '<span class="dt-bn">' + esc(b.name) + '</span>'
-       + (b.inBudget ? '' : '<span class="pl-off">ngoài hạn mức</span>') + '</div>'
+       /* Nhãn "ngoài hạn mức" chỉ có nghĩa với khoản CHI. Gắn lên khối thu
+          nhập thì đọc vô lý — thu nhập không phải khoản chi để so hạn mức. */
+       + ((b.inBudget || b.kind === 'in') ? ''
+            : '<span class="pl-off">' + esc(t('bud.offLimit')) + '</span>') + '</div>'
        + '<span class="dt-bp' + barCls(pct, 101) + '">' + (r.plan > 0 ? pct + '%' : '—') + '</span>'
        + '</div>'
        + '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
@@ -4029,14 +4066,13 @@ function renderPlanTab(){
        + '<div class="dt-bb">'
        + r.items.map(it => dtItemHtml(it)).join('')
        + (r.nameMismatch
-           ? '<div class="dt-warn">Tên khoản mục trong sheet dự toán khác tên trong '
-             + 'giao dịch nên chỉ đối chiếu được ở mức loại. Đặt trùng tên là khớp từng dòng.</div>'
+           ? '<div class="dt-warn">' + esc(t('bud.nameMismatch')) + '</div>'
            : '')
        + '</div></div>';
   });
 
   if (S.dtEdit) {
-    h += '<button class="dt-cta" onclick="savePlanEdits()">Lưu dự toán</button>';
+    h += '<button class="dt-cta" onclick="savePlanEdits()">' + esc(t('bud.savePlan')) + '</button>';
   }
   h += '<div class="dt-intro">' + planWhat() + '</div>';
   box.innerHTML = h;
@@ -4213,11 +4249,11 @@ function dayStripHtml(){
     return `<button type="button" class="dchip${on ? ' on' : ''}"
               id="dchip-${esc(d.key)}" onclick="toggleDay('${esc(d.key)}')">
       <span class="dchip-d">${esc(dd)}</span>
-      <span class="dchip-w">${esc((d.wd || '').replace('Thứ ', 'T'))}</span>
+      <span class="dchip-w">${esc(wd(d.wd))}</span>
       <span class="dchip-a">${fmtShort(d.total)}</span>
     </button>`;
   }).join('');
-  return `<div class="dstrip-lbl">Chạm ngày để xem chi tiết</div>
+  return `<div class="dstrip-lbl">${t('an.tapDay')}</div>
           <div class="scroll-row dstrip" id="dstrip">${chips}</div>`;
 }
 
@@ -4291,7 +4327,7 @@ function renderYear(){
   document.getElementById('yKpis').innerHTML = `
     <div class="kpi k1"><div class="kpi-l">Tổng cả năm</div>
       <div class="kpi-v">${fmt(y.total)} đ</div>
-      <div class="kpi-s">${y.count} giao dịch</div></div>
+      <div class="kpi-s">${y.count} ${t('hero.txCount')}</div></div>
     <div class="kpi k2"><div class="kpi-l">TB mỗi tháng</div>
       <div class="kpi-v">${fmt(avgMonth)} đ</div>
       <div class="kpi-s">${y.activeMonths} tháng có chi</div></div>
@@ -4300,7 +4336,7 @@ function renderYear(){
       <div class="kpi-s">${best && best.total ? esc(best.name) : '—'}</div></div>
     <div class="kpi k4"><div class="kpi-l">Giao dịch TB</div>
       <div class="kpi-v">${y.count ? fmt(Math.round(y.total/y.count)) + ' đ' : '—'}</div>
-      <div class="kpi-s">mỗi lần chi</div></div>`;
+      <div class="kpi-s">${t('an.perTx')}</div></div>`;
 
   // --- Biểu đồ cột 12 tháng, chạm để mở tháng đó ---
   const max = y.months.reduce((m,x) => Math.max(m, x.total), 1);
@@ -4551,7 +4587,7 @@ function openEdit(row){
   S.editTagTouched = false;
 
   document.getElementById('edWhen').textContent =
-    (r.dateLabel || '') + (r.weekday ? ' · ' + r.weekday : '') + ' · dòng ' + r.row;
+    (r.dateLabel || '') + (r.weekday ? ' · ' + wd(r.weekday) : '') + ' · dòng ' + r.row;
   document.getElementById('edAmount').value = fmt(r.amount);
   document.getElementById('edDate').value = r.dateKey || '';
   document.getElementById('edNote').value = pt.clean;
@@ -4898,7 +4934,7 @@ function renderShortcuts(){
 
   const ed = !!S.scEdit;
   const btn = document.getElementById('scEditBtn');
-  if (btn) { btn.textContent = ed ? 'Xong' : 'Sửa'; btn.classList.toggle('on', ed); }
+  if (btn) { btn.textContent = ed ? t('common.done') : t('common.edit'); btn.classList.toggle('on', ed); }
 
   /* Phím hỏng (khoản mục đã bị đổi tên trong sheet) chỉ hiện khi đang sửa —
      lúc ghi thường mà bày ra thì bấm vào chỉ tổ báo lỗi. */
@@ -4939,7 +4975,7 @@ function editShortcut(key){
 
 function openScEdit(sc){
   S.scEditing = sc || null;
-  document.getElementById('scTitle').textContent = sc ? 'Sửa phím tắt' : 'Phím tắt mới';
+  document.getElementById('scTitle').textContent = sc ? (t('common.edit') + ' · ' + t('rec.quick').replace(/^\u26a1\s*/,'')) : t('sc.new');
   document.getElementById('scDel').style.display = sc ? '' : 'none';
   document.getElementById('scLabel').value = sc ? sc.label : '';
   document.getElementById('scAmount').value =
@@ -5101,6 +5137,334 @@ function applyShortcut(key){
 }
 
 
+
+
+/* ===================== NGÔN NGỮ / LANGUAGE =====================
+   Từ điển nằm ngay trong file, không tải ngoài: app phải mở được khi mất
+   mạng, mà chờ một file ngôn ngữ về mới vẽ được chữ thì hỏng mất cái lợi
+   tốc độ đã làm bao nhiêu vòng mới có.
+
+   Thuật ngữ tiếng Việt cũng được nâng theo chuẩn kế toán cá nhân, không chỉ
+   dịch sang tiếng Anh: "Ghi chú" → "Diễn giải", "Khoản mục" → "Hạng mục",
+   "Loại tiền" → "Phương thức thanh toán", "Bổ nhỏ chi tiêu" → "Cơ cấu chi
+   tiêu", "Dự toán" → "Ngân sách". */
+const I18N = {
+  vi: {
+    "bud.reading": "Đang đọc sheet DỰ TOÁN 2026…",
+    "bud.cantRead": "Chưa đọc được dự toán.",
+    "bud.emptyA": "Tháng",
+    "bud.emptyB": "chưa có dự toán — cột",
+    "bud.emptyC": "trong sheet đang trống.",
+    "bud.emptyD": "Đã lập cho tháng",
+    "bud.paceNote": "Vạch mờ là tiến độ thời gian — thanh vượt qua vạch nghĩa là đang tiêu nhanh hơn nhịp tháng.",
+    "bud.andMore": "khoản nữa",
+    "bud.and": "và",
+    "bud.nameMismatch": "Tên khoản mục trong sheet dự toán khác tên trong giao dịch nên chỉ đối chiếu được ở mức loại. Đặt trùng tên là khớp từng dòng.",
+    "an.view": "xem",
+    "an.total": "Tổng chi",
+    "an.avgDay": "TB mỗi ngày",
+    "an.topDay": "Ngày cao nhất",
+    "an.avgTx": "Giao dịch TB",
+    "an.perTx": "mỗi lần chi",
+    "an.activeDays": "ngày có chi",
+    "an.tapDay": "Chạm ngày để xem chi tiết",
+    "an.byItem": "Hạng mục",
+    "an.byTag": "Nhãn",
+    "led.all": "Tất cả",
+    "nm.option": "＋ Thêm kỳ mới…",
+    "hero.month": "Tháng",
+    "hero.txCount": "giao dịch",
+    "hero.daysLeft": "còn",
+    "hero.days": "ngày",
+    "hero.noData": "chưa có dữ liệu kỳ này",
+    "bg.left": "Còn",
+    "bg.over": "Vượt hạn mức",
+    "bg.used": "đã dùng",
+    "bg.perDay": "đ/ngày",
+    "mail.tapScan": "Bấm ↻ để quét hộp thư ngân hàng",
+    "sheet.month": "Tháng",
+    "app.name": "VÍ CHI TIÊU",
+    "app.tagline": "Quản lý tài chính cá nhân",
+    "common.loading": "Đang tải…",
+    "common.cancel": "Hủy",
+    "common.delete": "Xoá",
+    "common.edit": "Sửa",
+    "common.done": "Xong",
+    "common.skip": "Bỏ qua",
+    "common.optional": "(không bắt buộc)",
+    "common.month": "Tháng",
+    "common.year": "Năm",
+    "common.back": "Quay lại",
+    "common.reload": "Tải lại",
+    "tab.record": "Ghi sổ",
+    "tab.ledger": "Sổ giao dịch",
+    "tab.analytics": "Phân tích",
+    "hero.today": "Chi tiêu hôm nay",
+    "hero.pickMonth": "Chọn kỳ",
+    "rec.bankMail": "📬 Giao dịch từ ngân hàng",
+    "rec.quick": "⚡ Ghi nhanh",
+    "rec.amount": "Số tiền",
+    "rec.detail": "Chi tiết",
+    "rec.group": "Nhóm chi phí",
+    "rec.item": "Hạng mục",
+    "rec.date": "Ngày phát sinh",
+    "rec.method": "Phương thức thanh toán",
+    "rec.memo": "Diễn giải",
+    "rec.tag": "Nhãn",
+    "rec.tagHint": "không bắt buộc · chạm lần nữa để bỏ chọn",
+    "rec.save": "Ghi sổ",
+    "rec.memoPh": "VD: Siêu thị Kingfood · gõ henho / cv / family",
+    "led.title": "Giao dịch",
+    "led.find": "🔍 Tìm & lọc",
+    "led.findPh": "Tìm diễn giải, hạng mục…",
+    "led.collapse": "Thu gọn tất cả",
+    "led.expand": "Mở tất cả",
+    "led.days": "ngày",
+    "led.use": "Dùng giao dịch này",
+    "led.editTx": "Sửa giao dịch",
+    "led.saveTx": "Lưu thay đổi",
+    "an.thisMonth": "Kỳ này",
+    "an.fullYear": "Cả năm",
+    "an.overview": "Tổng quan kỳ",
+    "an.compare": "So với cùng kỳ tháng trước",
+    "an.byDay": "Chi tiêu theo ngày",
+    "an.breakdown": "Cơ cấu chi tiêu",
+    "an.byGroup": "Nhóm",
+    "an.pickYear": "Chọn năm",
+    "an.byMonth": "Chi tiêu theo tháng",
+    "an.byGroupYear": "Theo nhóm chi phí",
+    "an.topItems": "Hạng mục chi nhiều nhất",
+    "an.byTagYear": "Theo nhãn cả năm",
+    "bud.title": "Ngân sách",
+    "bud.plan": "Kế hoạch",
+    "bud.spent": "Đã chi",
+    "bud.left": "Còn lại",
+    "bud.over": "Vượt",
+    "bud.byGroup": "Theo nhóm chi phí",
+    "bud.enterFor": "Nhập ngân sách tháng",
+    "bud.savePlan": "Lưu ngân sách",
+    "bud.noPlanTag": "ngoài kế hoạch",
+    "bud.offLimit": "ngoài hạn mức",
+    "bud.overItems": "khoản vượt kế hoạch",
+    "bud.hasUnplan": "có chi ngoài kế hoạch",
+    "bud.unplanned": "Chi ngoài kế hoạch",
+    "bud.noPlanRow": "Chưa có kế hoạch",
+    "set.title": "Cài đặt",
+    "set.limit": "🎯 Hạn mức chi tiêu",
+    "set.srcPlan": "📋 Theo sheet DỰ TOÁN 2026",
+    "set.srcManual": "✍️ Tự nhập trong app",
+    "set.srcOff": "🚫 Tắt",
+    "set.unlock": "🔒 Mở khoá",
+    "set.tech": "🔧 Kỹ thuật",
+    "set.speed": "⏱ Tốc độ tải",
+    "set.lang": "🌐 Ngôn ngữ",
+    "set.perMonth": "Số tiền mỗi tháng",
+    "set.allMonths": "Mọi tháng",
+    "set.thisMonth": "Chỉ tháng này",
+    "set.clear": "Bỏ",
+    "set.viewBudget": "Xem ngân sách",
+    "nm.title": "Thêm kỳ mới",
+    "nm.create": "Tạo kỳ",
+    "sc.new": "Ghi nhanh mới",
+    "sc.name": "Tên nút",
+    "sc.icon": "Biểu tượng",
+    "sc.defAmount": "Số tiền mặc định",
+    "sc.defHint": "Để trống thì app tự gợi ý số tiền bạn hay chi nhất cho hạng mục này.",
+    "sc.save": "Lưu ghi nhanh",
+    "sc.namePh": "Ví dụ: Cà phê sáng",
+    "sc.add": "Thêm",
+    "aria.budget": "Ngân sách",
+    "aria.settings": "Cài đặt",
+    "aria.mailSw": "Bật/tắt quét email",
+    "aria.mailScan": "Quét hộp thư",
+    "aria.enterBud": "Nhập ngân sách",
+    "aria.noItem": "(Chưa có hạng mục)"
+  },
+  en: {
+    "bud.reading": "Reading the DỰ TOÁN 2026 sheet…",
+    "bud.cantRead": "Could not read the budget.",
+    "bud.emptyA": "Month",
+    "bud.emptyB": "has no budget yet — column",
+    "bud.emptyC": "in the sheet is empty.",
+    "bud.emptyD": "Already set for month",
+    "bud.paceNote": "The faint marker is time progress — a bar past it means you are spending faster than the month.",
+    "bud.andMore": "more",
+    "bud.and": "and",
+    "bud.nameMismatch": "Category names in the budget sheet differ from those in transactions, so matching only works at group level. Use identical names to match row by row.",
+    "an.view": "view",
+    "an.total": "Total spent",
+    "an.avgDay": "Avg per day",
+    "an.topDay": "Highest day",
+    "an.avgTx": "Avg transaction",
+    "an.perTx": "per entry",
+    "an.activeDays": "days with spending",
+    "an.tapDay": "Tap a day for details",
+    "an.byItem": "Category",
+    "an.byTag": "Label",
+    "led.all": "All",
+    "nm.option": "＋ Add new period…",
+    "hero.month": "Month",
+    "hero.txCount": "transactions",
+    "hero.daysLeft": "left",
+    "hero.days": "days",
+    "hero.noData": "no data for this period",
+    "bg.left": "Remaining",
+    "bg.over": "Over limit",
+    "bg.used": "used",
+    "bg.perDay": "đ/day",
+    "mail.tapScan": "Tap ↻ to scan your bank inbox",
+    "sheet.month": "Month",
+    "app.name": "MY WALLET",
+    "app.tagline": "Personal finance manager",
+    "common.loading": "Loading…",
+    "common.cancel": "Cancel",
+    "common.delete": "Delete",
+    "common.edit": "Edit",
+    "common.done": "Done",
+    "common.skip": "Skip",
+    "common.optional": "(optional)",
+    "common.month": "Month",
+    "common.year": "Year",
+    "common.back": "Back",
+    "common.reload": "Reload",
+    "tab.record": "Record",
+    "tab.ledger": "Ledger",
+    "tab.analytics": "Analytics",
+    "hero.today": "Today's spending",
+    "hero.pickMonth": "Select period",
+    "rec.bankMail": "📬 Bank transactions",
+    "rec.quick": "⚡ Quick entry",
+    "rec.amount": "Amount",
+    "rec.detail": "Details",
+    "rec.group": "Expense group",
+    "rec.item": "Category",
+    "rec.date": "Date",
+    "rec.method": "Payment method",
+    "rec.memo": "Description",
+    "rec.tag": "Label",
+    "rec.tagHint": "optional · tap again to deselect",
+    "rec.save": "Record expense",
+    "rec.memoPh": "e.g. Kingfood Market · type henho / cv / family",
+    "led.title": "Transactions",
+    "led.find": "🔍 Search & filter",
+    "led.findPh": "Search description, category…",
+    "led.collapse": "Collapse all",
+    "led.expand": "Expand all",
+    "led.days": "days",
+    "led.use": "Use this transaction",
+    "led.editTx": "Edit transaction",
+    "led.saveTx": "Save changes",
+    "an.thisMonth": "This period",
+    "an.fullYear": "Full year",
+    "an.overview": "Period overview",
+    "an.compare": "vs. same period last month",
+    "an.byDay": "Daily spending",
+    "an.breakdown": "Spending breakdown",
+    "an.byGroup": "Group",
+    "an.pickYear": "Select year",
+    "an.byMonth": "Monthly spending",
+    "an.byGroupYear": "By expense group",
+    "an.topItems": "Top categories",
+    "an.byTagYear": "By label, full year",
+    "bud.title": "Budget",
+    "bud.plan": "Planned",
+    "bud.spent": "Spent",
+    "bud.left": "Remaining",
+    "bud.over": "Over",
+    "bud.byGroup": "By expense group",
+    "bud.enterFor": "Enter budget for month",
+    "bud.savePlan": "Save budget",
+    "bud.noPlanTag": "unplanned",
+    "bud.offLimit": "excluded from limit",
+    "bud.overItems": "categories over budget",
+    "bud.hasUnplan": "unplanned spending",
+    "bud.unplanned": "Unplanned spending",
+    "bud.noPlanRow": "No budget set",
+    "set.title": "Settings",
+    "set.limit": "🎯 Spending limit",
+    "set.srcPlan": "📋 From the BUDGET 2026 sheet",
+    "set.srcManual": "✍️ Enter manually in app",
+    "set.srcOff": "🚫 Off",
+    "set.unlock": "🔒 Unlock",
+    "set.tech": "🔧 Technical",
+    "set.speed": "⏱ Load speed",
+    "set.lang": "🌐 Language",
+    "set.perMonth": "Amount per month",
+    "set.allMonths": "All months",
+    "set.thisMonth": "This month only",
+    "set.clear": "Clear",
+    "set.viewBudget": "View budget",
+    "nm.title": "Add new period",
+    "nm.create": "Create period",
+    "sc.new": "New quick entry",
+    "sc.name": "Button name",
+    "sc.icon": "Icon",
+    "sc.defAmount": "Default amount",
+    "sc.defHint": "Leave blank and the app suggests the amount you most often spend on this category.",
+    "sc.save": "Save quick entry",
+    "sc.namePh": "e.g. Morning coffee",
+    "sc.add": "Add",
+    "aria.budget": "Budget",
+    "aria.settings": "Settings",
+    "aria.mailSw": "Toggle email scanning",
+    "aria.mailScan": "Scan inbox",
+    "aria.enterBud": "Enter budget",
+    "aria.noItem": "(No category yet)"
+  }
+};
+
+function curLang(){
+  try { const v = localStorage.getItem('fin_lang'); if (v === 'en' || v === 'vi') return v; }
+  catch (e) {}
+  return 'vi';
+}
+
+/** Lấy chuỗi theo ngôn ngữ hiện tại. Thiếu khoá thì trả về chính khoá đó —
+    hiện ra xấu nhưng nhìn là biết thiếu chỗ nào, hơn là trả chuỗi rỗng rồi
+    để lại một ô trắng không ai lần ra nguyên nhân. */
+function t(key){
+  const L = I18N[curLang()] || I18N.vi;
+  return (L[key] != null) ? L[key] : (I18N.vi[key] != null ? I18N.vi[key] : key);
+}
+
+/** Áp ngôn ngữ vào markup tĩnh. Chạy lúc mở app và mỗi lần đổi ngôn ngữ. */
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph')));
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+  });
+  document.documentElement.setAttribute('lang', curLang());
+}
+
+function setLang(v){
+  if (v !== 'vi' && v !== 'en') return;
+  try { localStorage.setItem('fin_lang', v); } catch (e) {}
+  applyI18n();
+  /* Vẽ lại mọi thứ do JS dựng ra. Chỉ applyI18n là không đủ: phần lớn giao
+     diện (danh sách, thống kê, ngân sách) được nối chuỗi trong JS nên phải
+     chạy lại hàm vẽ thì chữ mới đổi. */
+  try {
+    /* Ô chọn tháng được dựng trong applyBootstrap chứ không có data-i18n,
+       nên không dựng lại thì nhãn "Tháng 10/2026" và mục "Thêm kỳ mới" vẫn
+       kẹt ở ngôn ngữ cũ. */
+    const ssel = document.getElementById('sheetSel');
+    if (ssel && S.sheets && S.sheets.length) {
+      ssel.innerHTML = S.sheets.map(n =>
+          `<option value="${esc(n)}">${esc(prettySheet(n))}</option>`).join('')
+        + '<option value="__new__">' + esc(t('nm.option')) + '</option>';
+      if (S.sheet) ssel.value = S.sheet;
+    }
+    renderHero(); renderShortcuts();
+    if (S.txLoaded) { renderHuFilter(); renderHistory(); renderStats(); }
+    if (S.yearData) renderYear();
+    renderSettings(); renderPlanTab(); renderMail();
+  } catch (e) { console.log('setLang render: ' + e.message); }
+}
 
 /* ===================== THÊM THÁNG MỚI ===================== */
 /* Tạo bằng cách NHÂN BẢN sheet mẫu rồi xoá sạch giao dịch, không dựng mới:
@@ -5306,7 +5670,7 @@ function uuid(){ return 'c' + Date.now() + '-' + Math.random().toString(36).slic
  */
 function prettySheet(name){
   const p = parseSheet(name);
-  return p ? ('Tháng ' + p.month + '/' + p.year) : String(name || '');
+  return p ? (t('sheet.month') + ' ' + p.month + '/' + p.year) : String(name || '');
 }
 
 function parseSheet(name){
