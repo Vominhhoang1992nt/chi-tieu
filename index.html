@@ -1733,7 +1733,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v39';
+const BUILD = 'v40';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -1936,7 +1936,22 @@ function warmConnection(){
    thay vì không lưu gì như hiện nay. Ai mở được điện thoại bạn thì vào được
    app. Vì vậy nó MẶC ĐỊNH TẮT, phải tự bật, và luôn còn đường gõ PIN tay.
 */
-const FACE = { CRED:'fin_fid_cred', PIN:'fin_fid_pin' };
+/* VER đánh dấu khoá được tạo bằng bộ tuỳ chọn nào.
+   Khoá tạo trước v27 là passkey "tìm-được", iOS coi đó là tài khoản đăng
+   nhập nên mở ra là hiện bảng "Use Passkey / More Options". Đổi tuỳ chọn
+   chỉ ảnh hưởng khoá MỚI — khoá cũ nằm trong iCloud Keychain vẫn y nguyên.
+   Có dấu phiên bản thì app tự biết và nói thẳng ra, thay vì để người dùng
+   ngồi đoán tại sao vẫn còn bảng hỏi. */
+const FACE = { CRED:'fin_fid_cred', PIN:'fin_fid_pin', VER:'fin_fid_ver' };
+const FACE_VER = '2';
+
+/** Khoá đang dùng có phải loại cũ (còn hiện bảng xác nhận) không */
+function faceStale(){
+  try {
+    return !!localStorage.getItem(FACE.CRED)
+        && localStorage.getItem(FACE.VER) !== FACE_VER;
+  } catch (e) { return false; }
+}
 
 async function faceAvailable(){
   try {
@@ -1966,6 +1981,10 @@ async function enableFace(pin){
       rp: { name: 'Ví Chi Tiêu' },
       user: { id: rnd(16), name: 'vi-chi-tieu', displayName: 'Ví Chi Tiêu' },
       pubKeyCredParams: [{ type:'public-key', alg:-7 }, { type:'public-key', alg:-257 }],
+      /* hints là trường mới của WebAuthn: nói thẳng "dùng thiết bị ngay
+         đây", giúp trình duyệt khỏi bày lựa chọn dùng máy khác. Trình duyệt
+         cũ không hiểu thì bỏ qua, không gây lỗi. */
+      hints: ['client-device'],
       authenticatorSelection: {
         authenticatorAttachment: 'platform',   // Face ID trên chính máy này
         userVerification: 'required',
@@ -1982,6 +2001,7 @@ async function enableFace(pin){
     if (!cred) throw new Error('Không tạo được khoá');
     localStorage.setItem(FACE.CRED, b64(cred.rawId));
     localStorage.setItem(FACE.PIN, pin);
+    localStorage.setItem(FACE.VER, FACE_VER);
     toast('Đã bật Face ID');
     return true;
   } catch (err) {
@@ -1990,8 +2010,23 @@ async function enableFace(pin){
   }
 }
 
+/**
+ * Tạo lại khoá Face ID bằng bộ tuỳ chọn mới.
+ * Phải XOÁ khoá cũ trước rồi mới tạo: giữ lại thì trong máy có hai khoá cùng
+ * tên, và iOS lại bày bảng chọn — đúng cái đang muốn bỏ.
+ */
+async function refreshFace(){
+  const pin = (typeof S !== 'undefined' && S.pin) || localStorage.getItem(FACE.PIN) || '';
+  if (!pin) { toast('Cần mở khoá bằng PIN trước', 'err'); return; }
+  try { localStorage.removeItem(FACE.CRED); localStorage.removeItem(FACE.VER); } catch (e) {}
+  const ok = await enableFace(pin);
+  if (ok) toast('Đã tạo lại khoá — lần sau quét thẳng, không hỏi nữa');
+  renderFaceSet(); renderFaceBtn();
+}
+
 function disableFace(){
-  try { localStorage.removeItem(FACE.CRED); localStorage.removeItem(FACE.PIN); } catch (e) {}
+  try { localStorage.removeItem(FACE.CRED); localStorage.removeItem(FACE.PIN);
+        localStorage.removeItem(FACE.VER); } catch (e) {}
   toast('Đã tắt Face ID');
   renderFaceBtn();
 }
@@ -2012,13 +2047,23 @@ async function faceUnlock(){
                            id: unb64(localStorage.getItem(FACE.CRED)),
                            transports: ['internal'] }],
       userVerification: 'required',
+      hints: ['client-device'],
       timeout: 60000
     }});
     const pin = localStorage.getItem(FACE.PIN) || '';
     if (!pin) throw new Error('Chưa lưu PIN');
     warmConnection();
     pinBuf = pin;
+    const stale = faceStale();
     submitPin();
+    /* Vừa phải bấm qua bảng "Use Passkey" thì mời sửa NGAY lúc đó, vì đó là
+       lúc duy nhất người dùng đang bực vì nó. Nút trong toast cũng là một cú
+       chạm của người dùng nên đủ điều kiện gọi credentials.create(). */
+    if (stale) {
+      setTimeout(() => toast('Bỏ được bước xác nhận Face ID', '', '', {
+        label: 'Tạo lại khoá', fn: refreshFace
+      }), 1800);
+    }
   } catch (err) {
     if (btn) { btn.disabled = false; btn.textContent = '􀎽 Mở bằng Face ID'; }
     renderFaceBtn();
@@ -4226,8 +4271,14 @@ async function renderFaceSet(){
   box.innerHTML = faceEnabled()
     ? '<div class="sp-row"><span class="sp-lb">Face ID</span>'
       + '<button class="set-btn ghost" onclick="disableFace()">Tắt</button></div>'
-      + '<div class="sp-note">Đang bật. PIN được lưu trong máy này và chỉ mở ra '
-      + 'khi Face ID khớp.</div>'
+      + (faceStale()
+          ? '<div class="sp-note" style="margin-top:7px">Khoá hiện tại tạo bằng '
+            + 'bản cũ nên iOS vẫn hỏi <b>“Use Passkey”</b> trước khi quét. '
+            + 'Tạo lại khoá là bỏ được bước đó.</div>'
+            + '<div class="set-row" style="margin-top:7px">'
+            + '<button class="set-btn" onclick="refreshFace()">Tạo lại khoá</button></div>'
+          : '<div class="sp-note">Đang bật. PIN được lưu trong máy này và chỉ mở ra '
+            + 'khi Face ID khớp.</div>')
     : '<div class="sp-row"><span class="sp-lb">Face ID</span>'
       + '<button class="set-btn" onclick="enableFace(S.pin).then(renderFaceSet)">Bật</button></div>'
       + '<div class="sp-note">Bật thì lần sau khỏi gõ PIN. Đổi lại, PIN sẽ được '
