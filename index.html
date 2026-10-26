@@ -226,8 +226,8 @@
     -webkit-user-select:none;user-select:none;
   }
   .tabs div{
-    flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
-    padding:9px 2px;border-radius:9px;
+    flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
+    gap:5px;padding:9px 2px;border-radius:9px;white-space:nowrap;
     font-size:13.5px;font-weight:650;color:var(--mut);cursor:pointer;transition:.15s;
   }
   .tabs div.sel{
@@ -574,17 +574,62 @@
              padding:2px 0 8px;display:block;}
 
 
+
+  /* ---- TAB DỰ TOÁN: so kế hoạch với thực chi ---- */
+  .dt-intro{font-size:12px;color:var(--mut);line-height:1.55;
+            padding:2px 0 10px;}
+  .dt-intro b{color:var(--txt);}
+  .dt-empty{font-size:13px;color:var(--mut);line-height:1.6;
+            background:var(--acc-weak);border-radius:11px;padding:12px 13px;}
+  .dt-empty b{color:var(--txt);}
+  /* Ba ô tổng quan: kế hoạch / đã chi / còn lại */
+  .dt-top{display:flex;gap:8px;margin:2px 0 14px;}
+  .dt-k{flex:1;background:var(--bg);border:1px solid var(--line-soft);
+        border-radius:11px;padding:9px 10px;min-width:0;}
+  .dt-kl{font-size:10.5px;font-weight:750;letter-spacing:.3px;
+         text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
+  .dt-kv{font-size:14px;font-weight:800;color:var(--txt);
+         font-variant-numeric:tabular-nums;white-space:nowrap;
+         overflow:hidden;text-overflow:ellipsis;}
+  .dt-kv.good{color:#067647;} .dt-kv.bad{color:var(--err,#d92d20);}
+
+  .dt-r{padding:9px 0;border-bottom:1px solid var(--line-soft);}
+  .dt-r:last-child{border-bottom:none;}
+  /* KHÔNG đặt tên lớp là "head": app đã có .head cho tiêu đề thẻ, với
+     display:flex — trùng tên thì dòng này bị ép thành hàng ngang, thanh
+     tiến độ co về 0px mà không báo lỗi gì. */
+  .dt-r.dt-hd{padding-top:13px;}
+  .dt-r:not(.dt-hd){padding-left:12px;}      /* khoản mục thụt vào */
+  .dt-l{display:flex;justify-content:space-between;align-items:baseline;
+        gap:10px;}
+  .dt-n{font-size:13px;font-weight:650;color:var(--txt);min-width:0;}
+  .dt-r.dt-hd .dt-n{font-size:13.5px;font-weight:800;}
+  .dt-v{font-size:12.5px;font-weight:750;color:var(--acc-text);
+        white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .dt-np{font-size:10px;font-weight:700;color:var(--dim);
+         background:var(--line-soft);border-radius:5px;padding:1px 5px;}
+  .dt-bar{height:5px;border-radius:99px;background:var(--line-soft);
+          margin-top:6px;overflow:hidden;}
+  .dt-fill{height:100%;border-radius:99px;background:var(--acc);
+           transition:width .3s ease;}
+  .dt-fill.warn{background:#f79009;} .dt-fill.over{background:#d92d20;}
+  .dt-sub{font-size:11px;color:var(--dim);font-weight:600;margin-top:4px;}
+  .dt-sub b{color:var(--mut);}
+  .dt-warn{font-size:11.5px;color:var(--mut);line-height:1.5;
+           background:var(--acc-weak);border-radius:9px;
+           padding:8px 10px;margin:6px 0 2px 12px;}
+
   /* ---- MÀN CÀI ĐẶT (trang riêng, trượt từ phải) ----
      Cố ý KHÔNG làm bottom-sheet như bảng sửa giao dịch: cài đặt là nơi
      người dùng dừng lại đọc và đổi nhiều thứ, sheet nửa màn hình sẽ phải
      cuộn trong cuộn. Trượt ngang cũng là quy ước iOS cho màn con. */
-  #setPanel{
+  #setPanel, #planPanel{
     position:fixed;inset:0;z-index:140;background:var(--bg);
     display:flex;flex-direction:column;
     transform:translateX(100%);transition:transform .26s cubic-bezier(.22,1,.36,1);
     visibility:hidden;
   }
-  #setPanel.show{transform:translateX(0);visibility:visible;}
+  #setPanel.show, #planPanel.show{transform:translateX(0);visibility:visible;}
   .sp-head{
     display:flex;align-items:center;gap:10px;flex:0 0 auto;
     padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
@@ -635,17 +680,20 @@
   .pl-off{font-size:10px;font-weight:700;color:var(--dim);
           background:var(--line-soft);border-radius:5px;padding:1px 5px;
           white-space:nowrap;}
+  .bg-go{float:right;opacity:.6;font-weight:800;padding-left:8px;}
+  #budgetWrap{cursor:pointer;border-radius:10px;transition:opacity .15s;}
+  #budgetWrap:active{opacity:.7;}
   .sp-ver{text-align:center;font-size:11px;color:var(--dim);
           padding:6px 0 2px;font-variant-numeric:tabular-nums;}
 
   /* ---- Bảng chi tiết giao dịch (bottom sheet) ---- */
-  #mailBackdrop, #edBackdrop{
+  #mailBackdrop, #edBackdrop, #scBackdrop{
     position:fixed;inset:0;background:rgba(12,17,29,.46);
     backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
     z-index:110;opacity:0;pointer-events:none;transition:opacity .2s ease;
   }
-  #mailBackdrop.show, #edBackdrop.show{opacity:1;pointer-events:auto;}
-  #mailSheet, #edSheet{
+  #mailBackdrop.show, #edBackdrop.show, #scBackdrop.show{opacity:1;pointer-events:auto;}
+  #mailSheet, #edSheet, #scSheet{
     position:fixed;left:0;right:0;bottom:0;z-index:111;
     background:var(--surface);border-radius:20px 20px 0 0;
     box-shadow:0 -8px 30px rgba(16,24,40,.22);
@@ -653,7 +701,7 @@
     transform:translateY(102%);transition:transform .26s cubic-bezier(.22,1,.36,1);
     padding-bottom:calc(10px + env(safe-area-inset-bottom));
   }
-  #mailSheet.show, #edSheet.show{transform:translateY(0);}
+  #mailSheet.show, #edSheet.show, #scSheet.show{transform:translateY(0);}
   /* Bảng sửa cao hơn vì có 6 ô nhập; phần thân tự cuộn */
   #edSheet{max-height:92vh;}
   #edSheet .lbl{margin-top:12px;}
@@ -801,6 +849,21 @@
   }
   .sc:active{transform:scale(.94);}
   .sc.on{background:var(--acc-weak);border-color:var(--acc);}
+  /* Nút "Sửa" trên tiêu đề thẻ phím tắt */
+  .sc-edit{background:none;border:none;font-family:inherit;cursor:pointer;
+           font-size:12px;font-weight:750;color:var(--acc-text);padding:6px 2px;}
+  .sc-edit.on{color:var(--err,#d92d20);}
+  /* Đang ở chế độ sửa: chip rung nhẹ để thấy rõ là đang sửa, không phải ghi */
+  .sc.ed{border-style:dashed;animation:scwob 1.4s ease-in-out infinite;}
+  @keyframes scwob{0%,100%{transform:rotate(-.6deg);}50%{transform:rotate(.6deg);}}
+  .sc.add{border-style:dashed;color:var(--acc-text);}
+  .sc.add .sc-t{color:var(--acc-text);font-weight:750;}
+  /* Phím tắt trỏ vào khoản mục không còn trong sheet */
+  .sc.bad{opacity:.55;border-color:var(--err,#d92d20);border-style:dashed;}
+  .lbl-opt{font-weight:600;color:var(--dim);text-transform:none;letter-spacing:0;}
+  .sc-em{flex:0 0 auto;width:40px;height:40px;border-radius:11px;border:1.5px solid var(--line);
+         background:var(--bg);font-size:19px;cursor:pointer;line-height:1;}
+  .sc-em.on{border-color:var(--acc);background:var(--acc-weak);}
   .sc-e{font-size:19px;line-height:1.1;}
   .sc-t{font-size:11.5px;font-weight:750;color:var(--mut);white-space:nowrap;}
   .sc.on .sc-t{color:var(--acc-text);}
@@ -1102,9 +1165,12 @@
     <div class="hero-lbl">Chi tiêu hôm nay</div>
     <div class="hero-amt" id="todayTotal">0 đ</div>
     <div class="hero-stats" id="heroMeta"></div>
-    <div id="budgetWrap" class="hide">
+    <!-- Chạm vào là mở màn Dự toán: con số hạn mức đang hiện ngay đây,
+         nên đây cũng là chỗ tự nhiên nhất để hỏi "số đó ở đâu ra". -->
+    <div id="budgetWrap" class="hide" onclick="openPlan()" role="button"
+         aria-label="Xem dự toán">
       <div class="bg-bar"><div class="bg-fill" id="bgFill"></div></div>
-      <div class="bg-txt" id="bgTxt"></div>
+      <div class="bg-txt"><span id="bgTxt"></span><span class="bg-go">›</span></div>
     </div>
   </div>
 
@@ -1135,7 +1201,10 @@
     </div>
 
     <div class="card hide" id="scCard">
-      <div class="head"><b>⚡ Phím tắt</b></div>
+      <div class="head sb">
+        <b>⚡ Phím tắt</b>
+        <button class="sc-edit" id="scEditBtn" onclick="toggleScEdit()">Sửa</button>
+      </div>
       <div class="scroll-row" id="scRow"></div>
     </div>
 
@@ -1373,6 +1442,52 @@
   </div>
 </div>
 
+<!-- ============ TẠO / SỬA PHÍM TẮT ============ -->
+<div id="scBackdrop" onclick="closeScEdit()"></div>
+<div id="scSheet">
+  <div class="ms-grip"></div>
+  <div class="ms-head"><b id="scTitle">Phím tắt mới</b></div>
+  <div class="ms-body">
+    <label class="lbl">Tên nút</label>
+    <input id="scLabel" type="text" autocomplete="off" maxlength="24"
+           placeholder="Ví dụ: Cà phê sáng">
+
+    <label class="lbl">Biểu tượng</label>
+    <div class="scroll-row" id="scEmoji"></div>
+
+    <label class="lbl">Loại chi phí</label>
+    <select id="scHu" onchange="renderScItems()"></select>
+
+    <label class="lbl">Khoản mục</label>
+    <select id="scItem"></select>
+
+    <label class="lbl">Số tiền mặc định <span class="lbl-opt">(không bắt buộc)</span></label>
+    <div class="amt-box"><input id="scAmount" class="amt-in" type="text"
+         inputmode="numeric" placeholder="0" oninput="onScAmtInput()">
+         <span class="amt-cur">đ</span></div>
+    <div class="set-note">Để trống thì app tự gợi ý số tiền bạn hay chi nhất
+      cho khoản mục này.</div>
+  </div>
+  <div class="ms-act">
+    <button class="ms-use" id="scSave" onclick="saveShortcut()">Lưu phím tắt</button>
+    <button class="ms-skip" id="scDel" onclick="deleteShortcut()">Xoá</button>
+  </div>
+</div>
+
+<!-- ==================== MÀN DỰ TOÁN ====================
+     Không để thành tab: đây là thứ xem vài lần một tháng, chiếm một ô trên
+     thanh tab thì vừa phí chỗ vừa làm ba tab chính chật lại. Lối vào chính
+     là chạm thanh hạn mức ở hero — nơi con số đó đang hiện ra. -->
+<div id="planPanel" role="dialog" aria-label="Dự toán">
+  <div class="sp-head">
+    <button class="sp-back" onclick="closePlan()" aria-label="Quay lại">‹</button>
+    <span class="sp-ttl" id="dtTitle">Dự toán</span>
+    <button class="icon-btn" style="margin-left:auto" onclick="loadPlan(true)"
+            aria-label="Tải lại">↻</button>
+  </div>
+  <div class="sp-body" id="dtBody"><span class="empty">Đang tải…</span></div>
+</div>
+
 <!-- ==================== MÀN CÀI ĐẶT ==================== -->
 <div id="setPanel" role="dialog" aria-label="Cài đặt">
   <div class="sp-head">
@@ -1513,6 +1628,7 @@ let S = {
   cmp:null, cmpLoading:false, txLoading:false, // dữ liệu so cùng kỳ / đang tải giao dịch
   budget:null,                                // hạn mức tháng
   shortcuts:[], scActive:'',                  // phím tắt khoản mục
+  scEdit:false, scEditing:null, scEmoji:'',   // chế độ sửa phím tắt
   topDayKey:'',                               // ngày chi cao nhất tháng
   dayFold:loadDayFold(),                      // ngày nào đang gập ở Lịch sử
   plan:null, planLoading:false, planErr:'',   // kế hoạch đọc từ sheet DỰ TOÁN
@@ -1535,7 +1651,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v17';
+const BUILD = 'v24';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -3494,6 +3610,20 @@ function toggleFold(k){
    Lý do: hạn mức, bảo mật và chẩn đoán tốc độ chẳng liên quan gì tới việc
    xem số liệu; nhét chung làm tab Thống kê dài ra mà vẫn khó tìm. */
 
+function openPlan(){
+  const el = document.getElementById('planPanel');
+  el.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  renderPlanTab();
+  loadTx(false);                      // cần giao dịch để tính thực chi
+  if (!S.plan && !S.planLoading) loadPlan();
+}
+
+function closePlan(){
+  document.getElementById('planPanel').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
 function openSettings(){
   const el = document.getElementById('setPanel');
   el.classList.add('show');
@@ -3509,18 +3639,21 @@ function closeSettings(){
 }
 
 /** Nạp kế hoạch tháng từ sheet DỰ TOÁN. Hỏng thì ghi nhận, không chặn gì. */
-function loadPlan(){
+function loadPlan(force){
+  if (S.planLoading) return Promise.resolve();
   S.planLoading = true;
-  renderSettings();
-  return api('getPlan', {pin:S.pin, sheetName:S.sheet})
+  if (force) { S.plan = null; S.planErr = ''; }
+  safeRender(renderPlanTab);
+  return api('getPlan', {pin:S.pin, sheetName:S.sheet, fresh:force ? 1 : 0})
     .then(res => {
       S.planLoading = false;
       if (res && res.ok) { S.plan = res.plan || {empty:true}; S.planErr = res.message || ''; }
       else S.planErr = (res && res.message) || 'Không đọc được sheet dự toán';
-      safeRender(renderSettings);
+      safeRender(renderPlanTab);
+      if (document.getElementById('setPanel').classList.contains('show')) safeRender(renderSettings);
     })
     .catch(() => { S.planLoading = false; S.planErr = 'Không gọi được máy chủ';
-                   safeRender(renderSettings); });
+                   safeRender(renderPlanTab); });
 }
 
 function onBgInput(){
@@ -3592,11 +3725,14 @@ function renderSettings(){
        + '</div></div></div>';
 
   /* ---- 2. KẾ HOẠCH ĐỌC TỪ SHEET ---- */
-  /* Ghi hẳn tên tháng vào tiêu đề. "Kế hoạch tháng này" nghe thì gọn nhưng
-     không nói được đang xem tháng nào — mà app có nút đổi tháng ở hero. */
-  html += '<div class="sp-sec"><div class="sp-h">📋 Dự toán '
-       + esc(prettySheet(S.sheet)) + '</div>'
-       + '<div class="sp-card">' + planHtml() + '</div></div>';
+  /* Bảng dự toán đã dời sang tab riêng. Ở đây chỉ còn một dòng dẫn sang —
+     giữ mạch cho người đang chỉnh hạn mức muốn xem số gốc. */
+  html += '<div class="sp-sec"><div class="sp-h">📋 Dự toán</div>'
+       + '<div class="sp-card"><div class="sp-row" style="cursor:pointer" '
+       + 'onclick="closeSettings();openPlan()">'
+       + '<span class="sp-lb">Xem dự toán ' + esc(prettySheet(S.sheet)) + '</span>'
+       + '<span class="icon-btn">›</span></div>'
+       + '<div class="sp-note">' + planWhat() + '</div></div></div>';
 
   /* ---- 3. BẢO MẬT ---- */
   html += '<div class="sp-sec"><div class="sp-h">🔒 Mở khoá</div>'
@@ -3629,54 +3765,151 @@ function planWhat(){
        + 'lại thành hạn mức của tháng.';
 }
 
-/** Bảng kế hoạch đọc từ sheet DỰ TOÁN, để đối chiếu app đọc có đúng không */
-function planHtml(){
-  if (S.planLoading) return '<div class="sp-note">Đang đọc sheet DỰ TOÁN 2026…</div>';
-  if (S.planErr)     return '<div class="sp-note">' + esc(S.planErr) + '</div>';
+/* ===================== TAB DỰ TOÁN ===================== */
+/**
+ * Bỏ dấu để so tên. Bản sao của slug_ bên máy chủ — bắt buộc phải giống
+ * nhau, vì hai bên cùng dùng kết quả này để ghép khoản mục trong sheet dự
+ * toán với khoản mục trong giao dịch.
+ */
+function slugVi(x){
+  return String(x == null ? '' : x)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** Thực chi tháng này, gom theo hũ và theo khoản mục (đã bỏ dấu) */
+function actualMap(){
+  const byHu = {}, byItem = {};
+  (S.all || []).forEach(r => {
+    const h = slugVi(r.hu), it = slugVi(r.item);
+    byHu[h] = (byHu[h] || 0) + r.amount;
+    if (!byItem[h]) byItem[h] = {};
+    byItem[h][it] = (byItem[h][it] || 0) + r.amount;
+  });
+  return { byHu: byHu, byItem: byItem };
+}
+
+function renderPlanTab(){
+  const box = document.getElementById('dtBody');
+  if (!box) return;
+  // Màn đang đóng thì khỏi dựng lại cả bảng — mở ra sẽ vẽ.
+  if (!document.getElementById('planPanel').classList.contains('show')) return;
+  const ttl = document.getElementById('dtTitle');
+  if (ttl) ttl.textContent = '📋 Dự toán ' + prettySheet(S.sheet);
+
+  if (S.planLoading) { box.innerHTML = '<span class="empty">Đang đọc sheet DỰ TOÁN 2026…</span>'; return; }
+  if (S.planErr)     { box.innerHTML = '<span class="empty">' + esc(S.planErr) + '</span>'; return; }
+
   const p = S.plan;
-  if (!p || p.empty || !p.blocks)
-    return '<div class="sp-note">Chưa đọc được kế hoạch.</div>';
+  if (!p || p.empty || !p.blocks) { box.innerHTML = '<span class="empty">Chưa đọc được dự toán.</span>'; return; }
+
+  // Tháng chưa lập kế hoạch: nói rõ ô nào cần điền thay vì để trống trơn
   if (!p.has && !p.debt && !p.save) {
-    /* Trống thì phải chỉ ĐÚNG Ô cần điền. "Điền vào cột tháng tương ứng"
-       bắt người dùng tự đếm 12 cột trong sheet — chỉ thẳng "cột O" là xong. */
-    let h = '<div class="sp-note">' + planWhat()
-      + '<br><br>Tháng <b>' + p.month + '</b> chưa có số nào: cột <b>'
-      + esc(p.col || '?') + '</b> trong sheet đang để trống.';
+    let h = '<div class="dt-intro">' + planWhat() + '</div>'
+      + '<div class="dt-empty">Tháng <b>' + p.month + '</b> chưa có số nào — '
+      + 'cột <b>' + esc(p.col || '?') + '</b> trong sheet đang để trống.';
     const ms = p.monthsWithPlan || [];
-    if (ms.length) {
-      h += ' Hiện mới có kế hoạch cho tháng <b>'
-         + ms.map(m => m).join(', ') + '</b>.';
-    }
-    h += '</div>';
-    return h;
+    if (ms.length) h += ' Hiện mới có kế hoạch cho tháng <b>' + ms.join(', ') + '</b>.';
+    box.innerHTML = h + '</div>';
+    return;
   }
 
-  const cls = {out:'pl-out', debt:'pl-debt', save:'pl-save', in:''};
-  let h = '<div class="sp-note" style="margin-bottom:10px">' + planWhat() + '</div>';
-  const out = [];          // tên các khối KHÔNG vào hạn mức, để ghi chú cho đúng
+  const A = actualMap();
+  let h = '';
+
+  /* --- Tổng quan: kế hoạch / thực chi / còn lại --- */
+  let planAll = 0, realAll = 0;
   p.blocks.forEach(b => {
-    if (!b.total && !(b.items||[]).length) return;
-    const skip = (b.kind !== 'in') && !b.inBudget;
-    if (skip) out.push(b.name);
-    /* Khối không vào hạn mức thì ghi rõ ngay trên dòng của nó, thay vì chỉ
-       nói ở chú thích cuối bảng — nhìn bảng là biết số nào đang được cộng. */
-    h += `<div class="pl-row"><span class="pl-n">${esc(b.name)}`
-       + (skip ? ' <span class="pl-off">ngoài hạn mức</span>' : '')
-       + `</span>`
-       + `<span class="pl-v ${cls[b.kind]||''}">${fmt(b.total)} đ</span></div>`;
-    (b.items||[]).forEach(it => {
-      h += `<div class="pl-row"><span class="pl-sub">${esc(it.name)}</span>`
-         + `<span class="pl-sub">${fmt(it.amount)} đ</span></div>`;
-    });
+    if (b.kind === 'in' || !b.inBudget) return;
+    planAll += b.total;
+    realAll += A.byHu[slugVi(b.name)] || 0;
   });
-  h += `<div class="pl-row pl-tot"><span class="pl-n">Vào hạn mức</span>`
-     + `<span class="pl-v pl-out">${fmt(p.budget)} đ</span></div>`;
-  if (out.length) {
-    h += '<div class="sp-note" style="margin-top:8px">'
-       + esc(out.join(' và ')) + ' không cộng vào thanh hạn mức — '
-       + 'đó là tiền chuyển sang chỗ khác chứ không mất đi.</div>';
-  }
-  return h;
+  const leftAll = planAll - realAll;
+  h += '<div class="dt-top">'
+     + '<div class="dt-k"><div class="dt-kl">Kế hoạch</div>'
+     + '<div class="dt-kv">' + fmt(planAll) + '</div></div>'
+     + '<div class="dt-k"><div class="dt-kl">Đã chi</div>'
+     + '<div class="dt-kv">' + fmt(realAll) + '</div></div>'
+     + '<div class="dt-k"><div class="dt-kl">' + (leftAll < 0 ? 'Vượt' : 'Còn lại') + '</div>'
+     + '<div class="dt-kv ' + (leftAll < 0 ? 'bad' : 'good') + '">'
+     + fmt(Math.abs(leftAll)) + '</div></div></div>';
+
+  /* --- Từng khối --- */
+  h += '<div class="sp-card">';            // nền thẻ, đồng bộ với màn Cài đặt
+  p.blocks.forEach(b => {
+    if (b.kind === 'in') return;                       // thu nhập không phải chi
+    const huSlug = slugVi(b.name);
+    const real = A.byHu[huSlug] || 0;
+    const plan = b.total || 0;
+    if (!plan && !real) return;
+
+    h += dtRow(b.name, plan, real, true, !b.inBudget);
+
+    /* Khoản mục có kế hoạch. Ghép theo tên đã bỏ dấu.
+       Khối NỢ ghi tên thật ở cột NOTE (TIỀN SHOPEE…) còn giao dịch ghi
+       KHOẢN MỤC khác hẳn (SPAYLATER SHOPEE) → phần lớn sẽ không ghép được.
+       Chỗ không ghép được thì để thực chi = 0 chứ KHÔNG bịa, và phần chênh
+       dồn hết xuống dòng "Chưa có kế hoạch" bên dưới. */
+    const seen = {};
+    let matched = 0;
+    (b.items || []).forEach(it => {
+      const sl = slugVi(it.item || it.name);
+      const r = (A.byItem[huSlug] || {})[sl] || 0;
+      if (r > 0) matched++;
+      seen[sl] = 1;
+      h += dtRow(it.name, it.amount, r, false, !b.inBudget);
+    });
+
+    // Thực chi trong hũ này mà không có dòng kế hoạch nào
+    let noPlan = 0;
+    Object.keys(A.byItem[huSlug] || {}).forEach(k => {
+      if (!seen[k]) noPlan += A.byItem[huSlug][k];
+    });
+    if (noPlan > 0) h += dtRow('Chưa có kế hoạch', 0, noPlan, false, !b.inBudget);
+
+    /* Có chi nhưng KHÔNG khoản mục kế hoạch nào khớp → gần như chắc chắn là
+       hai sheet đặt tên khác nhau (NỢ ghi "TIỀN SHOPEE" còn giao dịch ghi
+       "SPAYLATER SHOPEE"). Mọi con số ở trên đều đúng, nhưng nhìn thì như
+       hỏng, nên nói thẳng lý do thay vì để người dùng tự đoán. */
+    if (noPlan > 0 && matched === 0 && (b.items || []).length) {
+      h += '<div class="dt-warn">Tên khoản mục trong sheet dự toán khác với '
+         + 'tên trong giao dịch, nên chỉ đối chiếu được ở mức hũ. Đặt trùng '
+         + 'tên là từng dòng khớp theo.</div>';
+    }
+  });
+
+  h += '</div>';
+  h += '<div class="dt-intro" style="margin-top:12px">' + planWhat() + '</div>';
+  box.innerHTML = h;
+}
+
+/**
+ * Một dòng so sánh. Thanh tiến độ chỉ vẽ khi CÓ kế hoạch — không có kế hoạch
+ * thì tỉ lệ phần trăm là phép chia cho 0, vẽ ra chỉ gây hiểu nhầm.
+ */
+function dtRow(name, plan, real, isHead, offBudget){
+  const pct = plan > 0 ? Math.round(real / plan * 100) : null;
+  const left = plan - real;
+  const cls = pct === null ? '' : (pct > 100 ? ' over' : (pct > 85 ? ' warn' : ''));
+
+  let right;
+  if (plan > 0 && real > 0)      right = fmt(real) + ' / ' + fmt(plan);
+  else if (plan > 0)             right = '0 / ' + fmt(plan);
+  else                           right = fmt(real) + ' <span class="dt-np">ngoài kế hoạch</span>';
+
+  return '<div class="dt-r' + (isHead ? ' dt-hd' : '') + '">'
+    + '<div class="dt-l"><span class="dt-n">' + esc(name) + '</span>'
+    + (offBudget && isHead ? ' <span class="pl-off">ngoài hạn mức</span>' : '')
+    + '<span class="dt-v">' + right + '</span></div>'
+    + (plan > 0
+        ? '<div class="dt-bar"><div class="dt-fill' + cls + '" style="width:'
+          + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
+          + '<div class="dt-sub">' + (left < 0
+              ? 'vượt <b>' + fmt(-left) + ' đ</b>'
+              : 'còn <b>' + fmt(left) + ' đ</b>') + ' · ' + pct + '%</div>'
+        : '')
+    + '</div>';
 }
 
 function setBudgetSrc(src){
@@ -4432,22 +4665,161 @@ function onNoteInput(){ autoTag(); syncSaveBar(); }
    Số tiền gợi ý lấy từ CHÍNH lịch sử của bạn (số hay chi nhất cho khoản mục
    đó), nên nhiều lần chỉ còn 2 chạm là xong: phím tắt → Ghi. */
 
+/* Bộ biểu tượng để chọn. Cố tình ngắn: nhiều quá thì phải cuộn mãi mới
+   thấy cái cần, mà emoji nào cũng được nên không đáng bày hết. */
+const SC_EMOJI = ['🍚','🍜','🥖','☕','⛽','💈','📱','🛒','💊','🎬','🚕','🎁',
+                  '🏠','💡','👕','📚','🧾','💸','🍺','🏥','✈️','🐱','•'];
+
 function renderShortcuts(){
   const card = document.getElementById('scCard');
   const row = document.getElementById('scRow');
   if (!card || !row) return;
-  if (!S.shortcuts.length) { card.classList.add('hide'); return; }
-  card.classList.remove('hide');
-  row.innerHTML = S.shortcuts.map(sc => {
-    const on = S.scActive === sc.key;
-    const hint = suggestAmount(sc.item);
-    return `<button type="button" class="sc${on ? ' on' : ''}"
-              onclick="applyShortcut('${esc(sc.key)}')">
+  card.classList.remove('hide');          // luôn hiện: còn có nút "+" để tạo
+
+  const ed = !!S.scEdit;
+  const btn = document.getElementById('scEditBtn');
+  if (btn) { btn.textContent = ed ? 'Xong' : 'Sửa'; btn.classList.toggle('on', ed); }
+
+  /* Phím hỏng (khoản mục đã bị đổi tên trong sheet) chỉ hiện khi đang sửa —
+     lúc ghi thường mà bày ra thì bấm vào chỉ tổ báo lỗi. */
+  const list = S.shortcuts.filter(sc => ed || !sc.bad);
+
+  let html = list.map(sc => {
+    const on = !ed && S.scActive === sc.key;
+    const hint = Number(sc.amount) > 0 ? Number(sc.amount) : suggestAmount(sc.item);
+    const cls = 'sc' + (on ? ' on' : '') + (ed ? ' ed' : '') + (sc.bad ? ' bad' : '');
+    const act = ed ? `editShortcut('${esc(sc.key)}')` : `applyShortcut('${esc(sc.key)}')`;
+    return `<button type="button" class="${cls}" onclick="${act}">
       <span class="sc-e">${esc(sc.emoji)}</span>
       <span class="sc-t">${esc(sc.label)}</span>
-      ${hint ? `<span class="sc-a">${fmtShort(hint)}</span>` : ''}
+      ${sc.bad ? '<span class="sc-a">lỗi</span>'
+               : (hint ? `<span class="sc-a">${fmtShort(hint)}</span>` : '')}
     </button>`;
   }).join('');
+
+  if (ed || !S.shortcuts.length) {
+    html += `<button type="button" class="sc add" onclick="newShortcut()">
+      <span class="sc-e">＋</span><span class="sc-t">Thêm</span></button>`;
+  }
+  row.innerHTML = html;
+}
+
+function toggleScEdit(){
+  S.scEdit = !S.scEdit;
+  S.scActive = '';
+  renderShortcuts();
+  if (S.scEdit) toast('Chạm vào phím tắt để sửa, hoặc ＋ để thêm');
+}
+
+/* ---- Bảng tạo / sửa phím tắt ---- */
+function newShortcut(){ openScEdit(null); }
+function editShortcut(key){
+  openScEdit(S.shortcuts.filter(x => x.key === key)[0] || null);
+}
+
+function openScEdit(sc){
+  S.scEditing = sc || null;
+  document.getElementById('scTitle').textContent = sc ? 'Sửa phím tắt' : 'Phím tắt mới';
+  document.getElementById('scDel').style.display = sc ? '' : 'none';
+  document.getElementById('scLabel').value = sc ? sc.label : '';
+  document.getElementById('scAmount').value =
+    (sc && Number(sc.amount) > 0) ? fmt(sc.amount) : '';
+
+  /* Loại chi phí: dùng lại y nguyên danh sách của ô ghi chi tiêu.
+     S.hu là mảng {v,t} và S.items là {huKey,v,t} — KHÔNG phải chuỗi, cũng
+     không phải {hu,item}. Dùng sai hình dạng thì ô chọn ra rỗng trơn mà
+     không báo lỗi gì. */
+  fillSelect('scHu', S.hu.map(h => ({v:h.v, t:h.t})));
+  const huSel = document.getElementById('scHu');
+  if (sc && S.hu.some(h => h.v === sc.hu)) huSel.value = sc.hu;
+  renderScItems();
+  if (sc) {
+    const it = document.getElementById('scItem');
+    if ([...it.options].some(o => o.value === sc.item)) it.value = sc.item;
+  }
+
+  S.scEmoji = sc ? sc.emoji : SC_EMOJI[0];
+  renderScEmoji();
+
+  document.getElementById('scBackdrop').classList.add('show');
+  document.getElementById('scSheet').classList.add('show');
+}
+
+function closeScEdit(){
+  document.getElementById('scBackdrop').classList.remove('show');
+  document.getElementById('scSheet').classList.remove('show');
+  S.scEditing = null;
+}
+
+function renderScItems(){
+  const key = norm(document.getElementById('scHu').value);
+  const list = (S.items || []).filter(it => it.huKey === key);
+  fillSelect('scItem', list.length ? list : [{v:'', t:'(Chưa có khoản mục)'}]);
+}
+
+function renderScEmoji(){
+  const box = document.getElementById('scEmoji');
+  box.innerHTML = SC_EMOJI.map(e =>
+    `<button type="button" class="sc-em${e === S.scEmoji ? ' on' : ''}"
+       onclick="pickScEmoji('${e}')">${e}</button>`).join('');
+}
+function pickScEmoji(e){ S.scEmoji = e; renderScEmoji(); }
+
+function onScAmtInput(){
+  const el = document.getElementById('scAmount');
+  if (!/[a-zA-Z]/.test(el.value)) {
+    const d = el.value.replace(/\D/g,'');
+    el.value = d ? fmt(Number(d)) : '';
+  }
+}
+
+/**
+ * Lưu. Gửi lên CẢ danh sách chứ không chỉ phím vừa sửa — máy chủ ghi đè toàn
+ * bộ, nên không bao giờ có chuyện hai lần lưu chồng nhau làm mất một phím.
+ */
+function saveShortcut(){
+  const label = document.getElementById('scLabel').value.trim();
+  const hu = document.getElementById('scHu').value;
+  const item = document.getElementById('scItem').value;
+  if (!label) { toast('Chưa đặt tên nút','err'); return; }
+  if (!hu || !item) { toast('Chưa chọn khoản mục','err'); return; }
+
+  const one = { label: label, emoji: S.scEmoji || '•', hu: hu, item: item,
+                amount: parseAmtLocal(document.getElementById('scAmount').value) || 0 };
+
+  const items = S.shortcuts.map(x => ({ label:x.label, emoji:x.emoji, hu:x.hu,
+                                        item:x.item, amount:x.amount || 0 }));
+  if (S.scEditing) {
+    const i = S.shortcuts.findIndex(x => x.key === S.scEditing.key);
+    if (i >= 0) items[i] = one; else items.push(one);
+  } else {
+    items.push(one);
+  }
+  pushShortcuts(items, S.scEditing ? 'Đã sửa phím tắt' : 'Đã thêm phím tắt');
+}
+
+function deleteShortcut(){
+  if (!S.scEditing) { closeScEdit(); return; }
+  const items = S.shortcuts
+    .filter(x => x.key !== S.scEditing.key)
+    .map(x => ({ label:x.label, emoji:x.emoji, hu:x.hu, item:x.item, amount:x.amount || 0 }));
+  pushShortcuts(items, 'Đã xoá phím tắt');
+}
+
+function pushShortcuts(items, okMsg){
+  const btn = document.getElementById('scSave');
+  btn.disabled = true;
+  api('setShortcuts', {pin:S.pin, items:items, sheetName:S.sheet})
+    .then(res => {
+      btn.disabled = false;
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.shortcuts = res.shortcuts || [];
+      S.scActive = '';
+      closeScEdit();
+      safeRender(renderShortcuts);
+      toast(okMsg);
+    })
+    .catch(() => { btn.disabled = false; toast('Không gọi được máy chủ','err'); });
 }
 
 /**
@@ -4490,7 +4862,8 @@ function applyShortcut(key){
 
   // Chỉ điền số tiền khi ô đang trống — không ghi đè thứ bạn đã gõ
   const amtEl = document.getElementById('amount');
-  const sug = suggestAmount(sc.item);
+  // Số cố định của phím tắt được ưu tiên hơn số đoán từ lịch sử
+  const sug = Number(sc.amount) > 0 ? Number(sc.amount) : suggestAmount(sc.item);
   if (sug && !parseAmtLocal(amtEl.value)) amtEl.value = fmt(sug);
 
   S.scActive = key;
