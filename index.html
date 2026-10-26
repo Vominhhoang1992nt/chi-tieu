@@ -142,10 +142,14 @@
   }
   .hero-top{display:flex;justify-content:space-between;align-items:center;
             gap:8px;margin-bottom:14px;}
-  .hero-right{display:flex;align-items:center;gap:6px;}
+  /* Nhóm nút bên phải KHÔNG được co: thêm nút thứ ba là ⚙️ bị đẩy khuất
+     khỏi mép phải mà không có thanh cuộn nào báo. Phần co lại khi chật
+     phải là ô chọn tháng, vì nó cắt bớt chữ vẫn đọc được. */
+  .hero-right{display:flex;align-items:center;gap:5px;flex:0 0 auto;}
   .sheet-pick{
-    display:inline-flex;align-items:center;gap:6px;
-    background:rgba(255,255,255,.18);border-radius:9px;padding:0 4px 0 10px;
+    display:inline-flex;align-items:center;gap:6px;min-width:0;flex:0 1 auto;
+    overflow:hidden;
+    background:rgba(255,255,255,.18);border-radius:9px;padding:0 4px 0 6px;
   }
   .sheet-pick span{font-size:11px;color:rgba(255,255,255,.75);font-weight:650;
                    letter-spacing:.2px;text-transform:uppercase;}
@@ -157,12 +161,12 @@
     background-image:none;box-shadow:none;
   }
   .sheet-pick select:focus{outline:none;box-shadow:none;}
-  .net{font-size:11px;padding:5px 9px;border-radius:8px;font-weight:650;
+  .net{font-size:11px;padding:5px 7px;border-radius:8px;font-weight:650;
        white-space:nowrap;background:rgba(255,255,255,.18);color:#fff;}
   .net.off{background:rgba(255,255,255,.28);}
   .theme-btn{
     background:rgba(255,255,255,.18);border:none;color:#fff;
-    border-radius:9px;width:32px;height:30px;font-size:14px;cursor:pointer;
+    border-radius:9px;width:30px;height:30px;font-size:13.5px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
   }
 
@@ -1151,13 +1155,21 @@
 
   <div class="hero">
     <div class="hero-top">
+      <!-- Bỏ nhãn "THÁNG": ô chọn đã ghi sẵn "Tháng 10/2026" nên để thêm
+           nhãn thành ra "THÁNG Tháng 10/2026", thừa chữ mà lại ăn mất chỗ
+           khiến năm bị cắt cụt. -->
       <div class="sheet-pick">
-        <span>Tháng</span>
-        <select id="sheetSel" onchange="switchSheet()"></select>
+        <select id="sheetSel" onchange="switchSheet()" aria-label="Chọn tháng"></select>
       </div>
       <div class="hero-right">
         <span class="net" id="netBadge">•</span>
         <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+        <!-- Lối vào Dự toán PHẢI nằm ở đây, không chỉ dựa vào thanh hạn mức.
+             Thanh đó tự ẩn khi chưa có hạn mức (tháng chưa lập dự toán), mà
+             đúng lúc ấy mới là lúc người dùng cần vào xem nhất — giấu lối vào
+             sau một thứ biết tự biến mất là hỏng. -->
+        <button class="theme-btn" id="planBtn" onclick="openPlan()"
+                aria-label="Dự toán">📋</button>
         <button class="theme-btn" id="setBtn" onclick="openSettings()"
                 aria-label="Cài đặt">⚙️</button>
       </div>
@@ -1651,7 +1663,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v24';
+const BUILD = 'v26';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
