@@ -1663,7 +1663,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v26';
+const BUILD = 'v27';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -1899,7 +1899,13 @@ async function enableFace(pin){
       authenticatorSelection: {
         authenticatorAttachment: 'platform',   // Face ID trên chính máy này
         userVerification: 'required',
-        residentKey: 'preferred'
+        /* 'discouraged' chứ KHÔNG phải 'preferred'. 'preferred' tạo ra một
+           passkey tìm-được-, mà iOS coi passkey là tài khoản đăng nhập nên
+           mở ra là hiện bảng chọn tài khoản. Ở đây không cần tìm-được: app
+           đã nhớ sẵn mã khoá trong máy và truyền vào allowCredentials, nên
+           khoá thường là đủ, và iOS cho đi thẳng vào Face ID. */
+        residentKey: 'discouraged',
+        requireResidentKey: false
       },
       timeout: 60000
     }});
@@ -1928,7 +1934,13 @@ async function faceUnlock(){
   try {
     await navigator.credentials.get({ publicKey:{
       challenge: rnd(32),
-      allowCredentials: [{ type:'public-key', id: unb64(localStorage.getItem(FACE.CRED)) }],
+      /* transports:['internal'] là mấu chốt. Thiếu nó, Safari không loại trừ
+         được khả năng khoá nằm ở máy khác, nên phải hiện bảng "Sign In …
+         Use Passkey / More Options" để người dùng chọn. Khai rõ khoá nằm
+         NGAY TRONG máy này thì nó đi thẳng vào quét mặt. */
+      allowCredentials: [{ type:'public-key',
+                           id: unb64(localStorage.getItem(FACE.CRED)),
+                           transports: ['internal'] }],
       userVerification: 'required',
       timeout: 60000
     }});
@@ -2079,6 +2091,7 @@ window.addEventListener('load', () => {
   initTheme();
   applyFolds();
   stampBuild();
+  initSheetDrag();
   initKeyboardWatch();
   updateNet();
   if (FUN.enabled) {
@@ -4890,6 +4903,69 @@ function applyShortcut(key){
   } else {
     toast(sc.label + ' · ' + fmt(sug) + ' đ — sửa số nếu cần rồi bấm Ghi');
   }
+}
+
+
+/* ===================== VUỐT XUỐNG ĐỂ ĐÓNG BẢNG =====================
+   Cái gạch nhỏ ở đầu bảng (.ms-grip) là quy ước iOS cho "kéo được" — bày ra
+   mà không kéo được thì còn tệ hơn không có, vì người dùng vuốt, không thấy
+   gì xảy ra, rồi tưởng app treo.
+
+   CHỈ gắn vào phần đầu bảng (gạch + tiêu đề), KHÔNG gắn vào thân: thân bảng
+   phải cuộn được, gắn vào đó thì vuốt để đọc lại thành vuốt để đóng. */
+
+function attachSheetDrag(sheetId, closeFn){
+  const sheet = document.getElementById(sheetId);
+  if (!sheet) return;
+  const handle = sheet.querySelector('.ms-grip');
+  const head   = sheet.querySelector('.ms-head');
+  let y0 = 0, dy = 0, dragging = false;
+
+  const start = e => {
+    const t = e.touches ? e.touches[0] : e;
+    y0 = t.clientY; dy = 0; dragging = true;
+    sheet.style.transition = 'none';        // bám tay, không trễ
+  };
+  const move = e => {
+    if (!dragging) return;
+    const t = e.touches ? e.touches[0] : e;
+    dy = t.clientY - y0;
+    if (dy < 0) dy = dy / 4;                // kéo lên thì ghì lại, không cho bay lên
+    sheet.style.transform = 'translateY(' + dy + 'px)';
+    if (e.cancelable) e.preventDefault();   // chặn trang nền cuộn theo
+  };
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+    /* 90px là ngưỡng: thấp hơn thì chạm nhẹ cũng đóng nhầm, cao hơn thì phải
+       kéo gần nửa màn hình mới ăn. */
+    if (dy > 90) closeFn();
+  };
+
+  [handle, head].forEach(el => {
+    if (!el) return;
+    el.addEventListener('touchstart', start, {passive:true});
+    el.addEventListener('touchmove',  move,  {passive:false});
+    el.addEventListener('touchend',   end);
+    el.addEventListener('touchcancel',end);
+  });
+  // Kéo bằng chuột, để thử trên máy tính
+  if (handle) handle.addEventListener('mousedown', e => {
+    start(e);
+    const mm = ev => move(ev);
+    const mu = () => { end(); document.removeEventListener('mousemove', mm);
+                             document.removeEventListener('mouseup', mu); };
+    document.addEventListener('mousemove', mm);
+    document.addEventListener('mouseup', mu);
+  });
+}
+
+function initSheetDrag(){
+  attachSheetDrag('edSheet',   closeEdit);
+  attachSheetDrag('mailSheet', closeMailDetail);
+  attachSheetDrag('scSheet',   closeScEdit);
 }
 
 /* ===================== OFFLINE QUEUE ===================== */
