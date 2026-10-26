@@ -19,7 +19,7 @@
    ĐỔI CACHE_VERSION mỗi lần sửa index.html, nếu không máy vẫn chạy bản cũ.
    ============================================================ */
 
-const CACHE_VERSION = 'vi-chi-tieu-v27';
+const CACHE_VERSION = 'vi-chi-tieu-v28';
 
 /* Chỉ khung app. KHÔNG đưa sw.js hay manifest vào đây — trình duyệt tự quản
    lý chúng theo cách riêng, cache thêm chỉ gây lệch phiên bản. */

@@ -51,6 +51,7 @@
     --ok:#067647;   --ok-weak:#e7f6ee;
     --warn:#b54708; --warn-weak:#fdf3e8;
     --err:#d92d20;
+    --err-bg:#fee4e2;
     --track:#e8ecf4;
 
     /* 4 tông cho 4 thẻ KPI */
@@ -88,6 +89,7 @@
     --ok:#47cd89;   --ok-weak:#102419;
     --warn:#f5a524; --warn-weak:#2a1f10;
     --err:#f97066;
+    --err-bg:#2e1413;
     --track:#222936;
 
     --t1-bg:#161e36; --t1-fg:#9dbcff;
@@ -579,49 +581,94 @@
 
 
 
-  /* ---- TAB DỰ TOÁN: so kế hoạch với thực chi ---- */
-  .dt-intro{font-size:12px;color:var(--mut);line-height:1.55;
-            padding:2px 0 10px;}
+  /* ---- MÀN DỰ TOÁN ---- */
+  .dt-intro{font-size:11.5px;color:var(--mut);line-height:1.55;padding:14px 2px 2px;}
   .dt-intro b{color:var(--txt);}
   .dt-empty{font-size:13px;color:var(--mut);line-height:1.6;
-            background:var(--acc-weak);border-radius:11px;padding:12px 13px;}
+            background:var(--acc-weak);border-radius:12px;padding:13px 14px;}
   .dt-empty b{color:var(--txt);}
-  /* Ba ô tổng quan: kế hoạch / đã chi / còn lại */
-  .dt-top{display:flex;gap:8px;margin:2px 0 14px;}
-  .dt-k{flex:1;background:var(--bg);border:1px solid var(--line-soft);
-        border-radius:11px;padding:9px 10px;min-width:0;}
-  .dt-kl{font-size:10.5px;font-weight:750;letter-spacing:.3px;
-         text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
-  .dt-kv{font-size:14px;font-weight:800;color:var(--txt);
-         font-variant-numeric:tabular-nums;white-space:nowrap;
-         overflow:hidden;text-overflow:ellipsis;}
-  .dt-kv.good{color:#067647;} .dt-kv.bad{color:var(--err,#d92d20);}
+  .dt-cta{width:100%;margin-top:12px;padding:14px;border:none;border-radius:13px;
+          background:var(--acc);color:#fff;font-family:inherit;font-size:15px;
+          font-weight:750;cursor:pointer;}
+  .dt-cta:active{transform:scale(.985);}
 
-  .dt-r{padding:9px 0;border-bottom:1px solid var(--line-soft);}
-  .dt-r:last-child{border-bottom:none;}
-  /* KHÔNG đặt tên lớp là "head": app đã có .head cho tiêu đề thẻ, với
-     display:flex — trùng tên thì dòng này bị ép thành hàng ngang, thanh
-     tiến độ co về 0px mà không báo lỗi gì. */
-  .dt-r.dt-hd{padding-top:13px;}
-  .dt-r:not(.dt-hd){padding-left:12px;}      /* khoản mục thụt vào */
-  .dt-l{display:flex;justify-content:space-between;align-items:baseline;
-        gap:10px;}
-  .dt-n{font-size:13px;font-weight:650;color:var(--txt);min-width:0;}
-  .dt-r.dt-hd .dt-n{font-size:13.5px;font-weight:800;}
-  .dt-v{font-size:12.5px;font-weight:750;color:var(--acc-text);
-        white-space:nowrap;font-variant-numeric:tabular-nums;}
+  /* Tổng quan — khối đầu tiên, trả lời ngay "tháng này ổn không" */
+  .dt-hero{background:var(--surface);border:1px solid var(--line);
+           border-radius:14px;padding:14px;margin-bottom:12px;}
+  .dt-hp{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .dt-hpct{font-size:26px;font-weight:800;letter-spacing:-.5px;color:var(--acc-text);
+           font-variant-numeric:tabular-nums;}
+  .dt-hpct.warn{color:#b54708;} .dt-hpct.over{color:var(--err);}
+  .dt-hl{font-size:13px;font-weight:700;color:var(--mut);}
+  .dt-hs{font-size:12px;color:var(--mut);margin-top:7px;line-height:1.5;}
+  .dt-hs b{color:var(--txt);}
+  .dt-hs.dim{font-size:11px;color:var(--dim);margin-top:4px;}
+
+  /* Cần chú ý — chỉ hiện khi có khoản vượt */
+  .dt-alert{background:var(--err-bg);border-radius:13px;
+            padding:12px 13px;margin-bottom:12px;}
+  .dt-at{font-size:13px;font-weight:800;color:var(--err);margin-bottom:7px;}
+  .dt-ar{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;
+         color:var(--txt);padding:3px 0;}
+  .dt-ar b{color:var(--err);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .dt-ar.dim{color:var(--mut);font-size:11.5px;}
+
+  .dt-sec{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+          color:var(--dim);margin:0 4px 8px;}
+
+  /* Khối theo loại — gập được */
+  .dt-blk{background:var(--surface);border:1px solid var(--line);
+          border-radius:13px;padding:12px 13px;margin-bottom:9px;}
+  .dt-bh{display:flex;align-items:center;justify-content:space-between;gap:10px;
+         cursor:pointer;min-height:26px;-webkit-user-select:none;user-select:none;}
+  .dt-bt{display:flex;align-items:center;gap:6px;min-width:0;}
+  .dt-cr{font-size:15px;line-height:1;color:var(--dim);width:12px;text-align:center;
+         display:inline-block;transition:transform .2s ease;}
+  .dt-blk.closed .dt-cr{transform:rotate(-90deg);}
+  .dt-bn{font-size:13.5px;font-weight:800;color:var(--txt);}
+  .dt-bp{font-size:13px;font-weight:800;color:var(--acc-text);white-space:nowrap;
+         font-variant-numeric:tabular-nums;}
+  .dt-bp.warn{color:#b54708;} .dt-bp.over{color:var(--err);}
+  .dt-bs{font-size:11.5px;color:var(--mut);margin-top:5px;
+         font-variant-numeric:tabular-nums;}
+  .dt-bb{display:grid;grid-template-rows:1fr;
+         transition:grid-template-rows .22s ease,opacity .18s ease,margin .22s ease;
+         margin-top:8px;}
+  .dt-bb > *{min-height:0;overflow:hidden;}
+  .dt-blk.closed .dt-bb{grid-template-rows:0fr;opacity:0;margin-top:0;}
+
+  /* Dòng khoản mục — 2 dòng thay vì 3, gọn hơn một phần ba */
+  .dt-it{padding:7px 0 7px 12px;}
+  .dt-il{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .dt-in{font-size:12.5px;font-weight:650;color:var(--txt);min-width:0;}
+  .dt-iv{font-size:12px;font-weight:700;color:var(--mut);white-space:nowrap;
+         font-variant-numeric:tabular-nums;}
   .dt-np{font-size:10px;font-weight:700;color:var(--dim);
          background:var(--line-soft);border-radius:5px;padding:1px 5px;}
+
+  /* Thanh tiến độ: 3 cỡ cho 3 cấp thông tin */
   .dt-bar{height:5px;border-radius:99px;background:var(--line-soft);
-          margin-top:6px;overflow:hidden;}
-  .dt-fill{height:100%;border-radius:99px;background:var(--acc);
-           transition:width .3s ease;}
+          margin-top:6px;overflow:hidden;position:relative;}
+  .dt-bar.big{height:9px;margin-top:9px;}
+  .dt-bar.thin{height:3px;margin-top:5px;}
+  .dt-fill{height:100%;border-radius:99px;background:var(--acc);transition:width .3s ease;}
   .dt-fill.warn{background:#f79009;} .dt-fill.over{background:#d92d20;}
-  .dt-sub{font-size:11px;color:var(--dim);font-weight:600;margin-top:4px;}
-  .dt-sub b{color:var(--mut);}
+  /* Vạch tiến độ thời gian: so nhịp chi với nhịp tháng, không chỉ so tổng */
+  .dt-pace{position:absolute;top:-2px;bottom:-2px;width:2px;
+           background:var(--txt);opacity:.3;border-radius:2px;}
+
   .dt-warn{font-size:11.5px;color:var(--mut);line-height:1.5;
            background:var(--acc-weak);border-radius:9px;
            padding:8px 10px;margin:6px 0 2px 12px;}
+
+  /* Chế độ nhập dự toán */
+  .dt-ed{display:flex;align-items:center;gap:10px;padding:6px 0 6px 12px;}
+  .dt-en{flex:1;min-width:0;font-size:12.5px;font-weight:650;color:var(--txt);}
+  .dt-ei{flex:0 0 118px;padding:9px 10px;border-radius:10px;
+         border:1.5px solid var(--line);background:var(--bg);color:var(--txt);
+         font-family:inherit;font-size:15px;font-weight:700;text-align:right;
+         font-variant-numeric:tabular-nums;}
+  .dt-ei:focus{border-color:var(--acc);outline:none;}
 
   /* ---- MÀN CÀI ĐẶT (trang riêng, trượt từ phải) ----
      Cố ý KHÔNG làm bottom-sheet như bảng sửa giao dịch: cài đặt là nơi
@@ -691,13 +738,13 @@
           padding:6px 0 2px;font-variant-numeric:tabular-nums;}
 
   /* ---- Bảng chi tiết giao dịch (bottom sheet) ---- */
-  #mailBackdrop, #edBackdrop, #scBackdrop{
+  #mailBackdrop, #edBackdrop, #scBackdrop, #nmBackdrop{
     position:fixed;inset:0;background:rgba(12,17,29,.46);
     backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
     z-index:110;opacity:0;pointer-events:none;transition:opacity .2s ease;
   }
-  #mailBackdrop.show, #edBackdrop.show, #scBackdrop.show{opacity:1;pointer-events:auto;}
-  #mailSheet, #edSheet, #scSheet{
+  #mailBackdrop.show, #edBackdrop.show, #scBackdrop.show, #nmBackdrop.show{opacity:1;pointer-events:auto;}
+  #mailSheet, #edSheet, #scSheet, #nmSheet{
     position:fixed;left:0;right:0;bottom:0;z-index:111;
     background:var(--surface);border-radius:20px 20px 0 0;
     box-shadow:0 -8px 30px rgba(16,24,40,.22);
@@ -705,7 +752,7 @@
     transform:translateY(102%);transition:transform .26s cubic-bezier(.22,1,.36,1);
     padding-bottom:calc(10px + env(safe-area-inset-bottom));
   }
-  #mailSheet.show, #edSheet.show, #scSheet.show{transform:translateY(0);}
+  #mailSheet.show, #edSheet.show, #scSheet.show, #nmSheet.show{transform:translateY(0);}
   /* Bảng sửa cao hơn vì có 6 ô nhập; phần thân tự cuộn */
   #edSheet{max-height:92vh;}
   #edSheet .lbl{margin-top:12px;}
@@ -1454,6 +1501,25 @@
   </div>
 </div>
 
+<!-- ============ TẠO THÁNG MỚI ============ -->
+<div id="nmBackdrop" onclick="closeNewMonth()"></div>
+<div id="nmSheet">
+  <div class="ms-grip"></div>
+  <div class="ms-head"><b>Thêm tháng mới</b></div>
+  <div class="ms-body">
+    <div class="sp-note" id="nmNote"></div>
+    <label class="lbl">Tháng</label>
+    <select id="nmMonth"></select>
+    <label class="lbl">Năm</label>
+    <select id="nmYear"></select>
+    <div class="set-note" id="nmWarn"></div>
+  </div>
+  <div class="ms-act">
+    <button class="ms-use" id="nmGo" onclick="doNewMonth()">Tạo tháng</button>
+    <button class="ms-skip" onclick="closeNewMonth()">Hủy</button>
+  </div>
+</div>
+
 <!-- ============ TẠO / SỬA PHÍM TẮT ============ -->
 <div id="scBackdrop" onclick="closeScEdit()"></div>
 <div id="scSheet">
@@ -1494,8 +1560,9 @@
   <div class="sp-head">
     <button class="sp-back" onclick="closePlan()" aria-label="Quay lại">‹</button>
     <span class="sp-ttl" id="dtTitle">Dự toán</span>
-    <button class="icon-btn" style="margin-left:auto" onclick="loadPlan(true)"
-            aria-label="Tải lại">↻</button>
+    <button class="sc-edit" id="dtEditBtn" style="margin-left:auto"
+            onclick="toggleDtEdit()" aria-label="Nhập dự toán">✎</button>
+    <button class="icon-btn" onclick="loadPlan(true)" aria-label="Tải lại">↻</button>
   </div>
   <div class="sp-body" id="dtBody"><span class="empty">Đang tải…</span></div>
 </div>
@@ -1644,6 +1711,7 @@ let S = {
   topDayKey:'',                               // ngày chi cao nhất tháng
   dayFold:loadDayFold(),                      // ngày nào đang gập ở Lịch sử
   plan:null, planLoading:false, planErr:'',   // kế hoạch đọc từ sheet DỰ TOÁN
+  dtEdit:false, dtOpen:{},                    // màn Dự toán: chế độ nhập & khối đang mở
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
   editTagTouched:false,
   scope:'month', brk:'hu',                    // phạm vi thống kê & cách bổ nhỏ
@@ -1663,7 +1731,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v27';
+const BUILD = 'v28';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -2615,9 +2683,15 @@ function loadYear(force){
 }
 
 function switchSheet(){
+  const sel = document.getElementById('sheetSel');
+  /* Chọn "Thêm tháng mới" thì KHÔNG đổi sheet: trả ô chọn về tháng cũ rồi
+     mở bảng tạo. Không trả về thì ô chọn kẹt ở một giá trị không phải sheet
+     nào cả, và mọi lời gọi sau đó đều hỏng. */
+  if (sel.value === '__new__') { sel.value = S.sheet || ''; openNewMonth(); return; }
+
   // Kế hoạch gắn với TỪNG THÁNG — giữ lại là hiện số của tháng trước
   S.plan = null; S.planErr = '';
-  S.sheet = document.getElementById('sheetSel').value;
+  S.sheet = sel.value;
   localStorage.setItem(LS.SHEET, S.sheet);
   S.txLoaded = false; S.openDay = ''; S.all = []; S.cmp = null;
   reload();
@@ -2653,9 +2727,12 @@ function applyBootstrap(res, fromCache){
 
   const ssel = document.getElementById('sheetSel');
   // value giữ nguyên tên sheet gốc, chỉ phần chữ hiện ra là đổi
-  ssel.innerHTML = S.sheets.length
-    ? S.sheets.map(n => `<option value="${esc(n)}">${esc(prettySheet(n))}</option>`).join('')
-    : '<option value="">(không có)</option>';
+  /* Mục "Thêm tháng mới" nằm ngay trong ô chọn tháng — đó là chỗ người dùng
+     đã mở ra khi phát hiện thiếu tháng mình cần, nên không phải đi tìm đâu xa. */
+  ssel.innerHTML = (S.sheets.length
+      ? S.sheets.map(n => `<option value="${esc(n)}">${esc(prettySheet(n))}</option>`).join('')
+      : '<option value="">(không có)</option>')
+    + '<option value="__new__">＋ Thêm tháng mới…</option>';
   if (S.sheet) ssel.value = S.sheet;
 
   fillSelect('hu', S.hu.map(h => ({v:h.v, t:h.t})));
@@ -3818,10 +3895,12 @@ function actualMap(){
 function renderPlanTab(){
   const box = document.getElementById('dtBody');
   if (!box) return;
-  // Màn đang đóng thì khỏi dựng lại cả bảng — mở ra sẽ vẽ.
   if (!document.getElementById('planPanel').classList.contains('show')) return;
   const ttl = document.getElementById('dtTitle');
-  if (ttl) ttl.textContent = '📋 Dự toán ' + prettySheet(S.sheet);
+  if (ttl) ttl.textContent = 'Dự toán ' + prettySheet(S.sheet);
+
+  const eb = document.getElementById('dtEditBtn');
+  if (eb) { eb.textContent = S.dtEdit ? 'Xong' : '✎'; eb.classList.toggle('on', !!S.dtEdit); }
 
   if (S.planLoading) { box.innerHTML = '<span class="empty">Đang đọc sheet DỰ TOÁN 2026…</span>'; return; }
   if (S.planErr)     { box.innerHTML = '<span class="empty">' + esc(S.planErr) + '</span>'; return; }
@@ -3829,53 +3908,31 @@ function renderPlanTab(){
   const p = S.plan;
   if (!p || p.empty || !p.blocks) { box.innerHTML = '<span class="empty">Chưa đọc được dự toán.</span>'; return; }
 
-  // Tháng chưa lập kế hoạch: nói rõ ô nào cần điền thay vì để trống trơn
-  if (!p.has && !p.debt && !p.save) {
-    let h = '<div class="dt-intro">' + planWhat() + '</div>'
-      + '<div class="dt-empty">Tháng <b>' + p.month + '</b> chưa có số nào — '
-      + 'cột <b>' + esc(p.col || '?') + '</b> trong sheet đang để trống.';
+  /* Tháng trống: KHÔNG chỉ báo trống rồi để đó. Mở thẳng chế độ nhập, vì
+     thứ duy nhất người dùng muốn làm lúc này là điền số. */
+  if (!p.has && !p.debt && !p.save && !S.dtEdit) {
+    let h = '<div class="dt-empty">Tháng <b>' + p.month + '</b> chưa có dự toán — '
+      + 'cột <b>' + esc(p.col || '?') + '</b> trong sheet đang trống.';
     const ms = p.monthsWithPlan || [];
-    if (ms.length) h += ' Hiện mới có kế hoạch cho tháng <b>' + ms.join(', ') + '</b>.';
-    box.innerHTML = h + '</div>';
+    if (ms.length) h += ' Đã lập cho tháng <b>' + ms.join(', ') + '</b>.';
+    h += '</div><button class="dt-cta" onclick="toggleDtEdit()">Nhập dự toán tháng '
+       + p.month + '</button>'
+       + '<div class="dt-intro">' + planWhat() + '</div>';
+    box.innerHTML = h;
     return;
   }
 
   const A = actualMap();
-  let h = '';
+  const rows = [];        // gom phẳng để sắp xếp được theo mức độ cấp bách
 
-  /* --- Tổng quan: kế hoạch / thực chi / còn lại --- */
-  let planAll = 0, realAll = 0;
   p.blocks.forEach(b => {
-    if (b.kind === 'in' || !b.inBudget) return;
-    planAll += b.total;
-    realAll += A.byHu[slugVi(b.name)] || 0;
-  });
-  const leftAll = planAll - realAll;
-  h += '<div class="dt-top">'
-     + '<div class="dt-k"><div class="dt-kl">Kế hoạch</div>'
-     + '<div class="dt-kv">' + fmt(planAll) + '</div></div>'
-     + '<div class="dt-k"><div class="dt-kl">Đã chi</div>'
-     + '<div class="dt-kv">' + fmt(realAll) + '</div></div>'
-     + '<div class="dt-k"><div class="dt-kl">' + (leftAll < 0 ? 'Vượt' : 'Còn lại') + '</div>'
-     + '<div class="dt-kv ' + (leftAll < 0 ? 'bad' : 'good') + '">'
-     + fmt(Math.abs(leftAll)) + '</div></div></div>';
-
-  /* --- Từng khối --- */
-  h += '<div class="sp-card">';            // nền thẻ, đồng bộ với màn Cài đặt
-  p.blocks.forEach(b => {
-    if (b.kind === 'in') return;                       // thu nhập không phải chi
+    if (b.kind === 'in') return;
     const huSlug = slugVi(b.name);
     const real = A.byHu[huSlug] || 0;
     const plan = b.total || 0;
-    if (!plan && !real) return;
+    if (!plan && !real && !S.dtEdit) return;
 
-    h += dtRow(b.name, plan, real, true, !b.inBudget);
-
-    /* Khoản mục có kế hoạch. Ghép theo tên đã bỏ dấu.
-       Khối NỢ ghi tên thật ở cột NOTE (TIỀN SHOPEE…) còn giao dịch ghi
-       KHOẢN MỤC khác hẳn (SPAYLATER SHOPEE) → phần lớn sẽ không ghép được.
-       Chỗ không ghép được thì để thực chi = 0 chứ KHÔNG bịa, và phần chênh
-       dồn hết xuống dòng "Chưa có kế hoạch" bên dưới. */
+    const items = [];
     const seen = {};
     let matched = 0;
     (b.items || []).forEach(it => {
@@ -3883,58 +3940,196 @@ function renderPlanTab(){
       const r = (A.byItem[huSlug] || {})[sl] || 0;
       if (r > 0) matched++;
       seen[sl] = 1;
-      h += dtRow(it.name, it.amount, r, false, !b.inBudget);
+      /* Chưa chi mà cũng chưa có kế hoạch thì không có gì để nói — ẩn khi
+         chỉ xem. Vẫn giữ khi đang nhập, vì đó chính là dòng cần điền. */
+      if (it.amount > 0 || r > 0 || S.dtEdit) {
+        items.push({ name: it.name, plan: it.amount, real: r, row: it.row });
+      }
     });
-
-    // Thực chi trong hũ này mà không có dòng kế hoạch nào
     let noPlan = 0;
-    Object.keys(A.byItem[huSlug] || {}).forEach(k => {
-      if (!seen[k]) noPlan += A.byItem[huSlug][k];
-    });
-    if (noPlan > 0) h += dtRow('Chưa có kế hoạch', 0, noPlan, false, !b.inBudget);
+    Object.keys(A.byItem[huSlug] || {}).forEach(x => { if (!seen[x]) noPlan += A.byItem[huSlug][x]; });
 
-    /* Có chi nhưng KHÔNG khoản mục kế hoạch nào khớp → gần như chắc chắn là
-       hai sheet đặt tên khác nhau (NỢ ghi "TIỀN SHOPEE" còn giao dịch ghi
-       "SPAYLATER SHOPEE"). Mọi con số ở trên đều đúng, nhưng nhìn thì như
-       hỏng, nên nói thẳng lý do thay vì để người dùng tự đoán. */
-    if (noPlan > 0 && matched === 0 && (b.items || []).length) {
-      h += '<div class="dt-warn">Tên khoản mục trong sheet dự toán khác với '
-         + 'tên trong giao dịch, nên chỉ đối chiếu được ở mức hũ. Đặt trùng '
-         + 'tên là từng dòng khớp theo.</div>';
-    }
+    /* Nặng nhất lên đầu. Người ta mở màn này để tìm khoản đang vượt, không
+       phải để đọc lại thứ tự dòng trong sheet. */
+    items.sort((x, y) => pctOf(y) - pctOf(x));
+    if (noPlan > 0) items.push({ name:'Chưa có kế hoạch', plan:0, real:noPlan, row:0 });
+
+    rows.push({ block:b, plan:plan, real:real, items:items,
+                nameMismatch: noPlan > 0 && matched === 0 && (b.items||[]).length > 0 });
   });
 
-  h += '</div>';
-  h += '<div class="dt-intro" style="margin-top:12px">' + planWhat() + '</div>';
+  rows.sort((x, y) => pctOf(y) - pctOf(x));
+
+  let h = '';
+
+  /* ---- 1. TỔNG QUAN: một thanh, trả lời ngay "tháng này ổn không" ---- */
+  let planAll = 0, realAll = 0;
+  rows.forEach(r => { if (r.block.inBudget) { planAll += r.plan; realAll += r.real; } });
+  const pctAll = planAll > 0 ? Math.round(realAll / planAll * 100) : 0;
+  const leftAll = planAll - realAll;
+  const inM = S.daysInMonth || 30;
+  const pace = Math.round(Math.max(1, inM - (S.daysLeft || 0)) / inM * 100);
+
+  h += '<div class="dt-hero">'
+     + '<div class="dt-hp"><span class="dt-hpct' + barCls(pctAll, pace) + '">' + pctAll + '%</span>'
+     + '<span class="dt-hl">' + (leftAll < 0 ? 'vượt ' + fmt(-leftAll) : 'còn ' + fmt(leftAll)) + ' đ</span></div>'
+     + '<div class="dt-bar big"><div class="dt-fill' + barCls(pctAll, pace) + '" style="width:'
+     + Math.min(100, pctAll) + '%"></div>'
+     + (pace < 100 ? '<div class="dt-pace" style="left:' + pace + '%"></div>' : '')
+     + '</div>'
+     + '<div class="dt-hs">Đã chi <b>' + fmt(realAll) + '</b> / ' + fmt(planAll) + ' đ'
+     + (S.daysLeft > 0 ? ' · còn <b>' + S.daysLeft + '</b> ngày' : '') + '</div>'
+     + '<div class="dt-hs dim">Vạch mờ là tiến độ thời gian — thanh vượt qua vạch '
+     + 'nghĩa là đang tiêu nhanh hơn nhịp tháng.</div>'
+     + '</div>';
+
+  /* ---- 2. CẦN CHÚ Ý: chỉ hiện khi thật sự có vấn đề ---- */
+  const hot = [];
+  let unplanned = 0;
+  rows.forEach(r => r.items.forEach(it => {
+    if (it.plan > 0 && it.real > it.plan) hot.push({ n:it.name, over:it.real - it.plan });
+    /* Chi mà KHÔNG có dòng kế hoạch cũng là chuyện cần biết, nhưng không phải
+       "vượt" — không có mốc nào để vượt. Gộp riêng thành một dòng tổng. */
+    else if (it.plan <= 0 && it.real > 0) unplanned += it.real;
+  }));
+  hot.sort((a, b) => b.over - a.over);
+  if (hot.length || unplanned > 0) {
+    const parts = [];
+    if (hot.length) parts.push(hot.length + ' khoản vượt kế hoạch');
+    if (unplanned > 0) parts.push('có chi ngoài kế hoạch');
+    h += '<div class="dt-alert"><div class="dt-at">⚠️ ' + parts.join(' · ') + '</div>'
+       + hot.slice(0, 5).map(x =>
+          '<div class="dt-ar"><span>' + esc(x.n) + '</span><b>+' + fmt(x.over) + ' đ</b></div>'
+         ).join('')
+       + (hot.length > 5 ? '<div class="dt-ar dim">và ' + (hot.length - 5) + ' khoản nữa</div>' : '')
+       + (unplanned > 0
+           ? '<div class="dt-ar"><span>Chi ngoài kế hoạch</span><b>'
+             + fmt(unplanned) + ' đ</b></div>' : '')
+       + '</div>';
+  }
+
+  /* ---- 3. TỪNG LOẠI: gập lại, mở cái nào đang có vấn đề ---- */
+  h += '<div class="dt-sec">Theo loại chi phí</div>';
+  rows.forEach(r => {
+    const b = r.block;
+    const pct = pctOf(r);
+    const key = slugVi(b.name);
+    // Mở sẵn khối đang vượt; khối ổn thì gập cho gọn mắt
+    const open = (S.dtOpen[key] != null) ? S.dtOpen[key] : (pct > 100 || S.dtEdit);
+    h += '<div class="dt-blk' + (open ? '' : ' closed') + '">'
+       + '<div class="dt-bh" onclick="toggleDtBlock(\'' + esc(key) + '\')">'
+       + '<div class="dt-bt"><span class="dt-cr">⌄</span>'
+       + '<span class="dt-bn">' + esc(b.name) + '</span>'
+       + (b.inBudget ? '' : '<span class="pl-off">ngoài hạn mức</span>') + '</div>'
+       + '<span class="dt-bp' + barCls(pct, 101) + '">' + (r.plan > 0 ? pct + '%' : '—') + '</span>'
+       + '</div>'
+       + '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
+       + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
+       + '<div class="dt-bs">' + fmt(r.real) + ' / ' + fmt(r.plan) + ' đ</div>'
+       + '<div class="dt-bb">'
+       + r.items.map(it => dtItemHtml(it)).join('')
+       + (r.nameMismatch
+           ? '<div class="dt-warn">Tên khoản mục trong sheet dự toán khác tên trong '
+             + 'giao dịch nên chỉ đối chiếu được ở mức loại. Đặt trùng tên là khớp từng dòng.</div>'
+           : '')
+       + '</div></div>';
+  });
+
+  if (S.dtEdit) {
+    h += '<button class="dt-cta" onclick="savePlanEdits()">Lưu dự toán</button>';
+  }
+  h += '<div class="dt-intro">' + planWhat() + '</div>';
   box.innerHTML = h;
 }
 
-/**
- * Một dòng so sánh. Thanh tiến độ chỉ vẽ khi CÓ kế hoạch — không có kế hoạch
- * thì tỉ lệ phần trăm là phép chia cho 0, vẽ ra chỉ gây hiểu nhầm.
- */
-function dtRow(name, plan, real, isHead, offBudget){
-  const pct = plan > 0 ? Math.round(real / plan * 100) : null;
-  const left = plan - real;
-  const cls = pct === null ? '' : (pct > 100 ? ' over' : (pct > 85 ? ' warn' : ''));
+/** % đã dùng của một dòng hoặc một khối. Không có kế hoạch → -1 để xuống cuối. */
+function pctOf(x){
+  const plan = Number(x.plan) || 0, real = Number(x.real) || 0;
+  if (plan <= 0) return real > 0 ? 999 : -1;   // tiêu mà không có kế hoạch = rất đáng chú ý
+  return Math.round(real / plan * 100);
+}
 
-  let right;
-  if (plan > 0 && real > 0)      right = fmt(real) + ' / ' + fmt(plan);
-  else if (plan > 0)             right = '0 / ' + fmt(plan);
-  else                           right = fmt(real) + ' <span class="dt-np">ngoài kế hoạch</span>';
+/** Màu theo mức độ: quá hạn mức → đỏ, sắp chạm → cam, còn lại → xanh */
+function barCls(pct, pace){
+  if (pct > 100) return ' over';
+  if (pct > Math.min(85, pace)) return ' warn';
+  return '';
+}
 
-  return '<div class="dt-r' + (isHead ? ' dt-hd' : '') + '">'
-    + '<div class="dt-l"><span class="dt-n">' + esc(name) + '</span>'
-    + (offBudget && isHead ? ' <span class="pl-off">ngoài hạn mức</span>' : '')
-    + '<span class="dt-v">' + right + '</span></div>'
-    + (plan > 0
-        ? '<div class="dt-bar"><div class="dt-fill' + cls + '" style="width:'
+/** Một dòng khoản mục. Ở chế độ nhập thì thành ô nhập số. */
+function dtItemHtml(it){
+  const pct = pctOf(it);
+  if (S.dtEdit && it.row) {
+    return '<div class="dt-ed"><span class="dt-en">' + esc(it.name) + '</span>'
+      + '<input class="dt-ei" type="text" inputmode="numeric" data-row="' + it.row + '" '
+      + 'value="' + (it.plan > 0 ? fmt(it.plan) : '') + '" placeholder="0" '
+      + 'oninput="onDtAmt(this)"></div>';
+  }
+  const right = it.plan > 0
+    ? fmt(it.real) + ' / ' + fmt(it.plan)
+    : fmt(it.real) + ' <span class="dt-np">ngoài kế hoạch</span>';
+  return '<div class="dt-it">'
+    + '<div class="dt-il"><span class="dt-in">' + esc(it.name) + '</span>'
+    + '<span class="dt-iv">' + right + '</span></div>'
+    + (it.plan > 0
+        ? '<div class="dt-bar thin"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
           + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
-          + '<div class="dt-sub">' + (left < 0
-              ? 'vượt <b>' + fmt(-left) + ' đ</b>'
-              : 'còn <b>' + fmt(left) + ' đ</b>') + ' · ' + pct + '%</div>'
         : '')
     + '</div>';
+}
+
+function toggleDtBlock(key){
+  const cur = S.dtOpen[key];
+  // Chưa đụng tới thì trạng thái đang là mặc định → lần chạm đầu phải đảo đúng cái đang thấy
+  const nowOpen = (cur != null) ? cur : !!document.querySelector('.dt-blk:not(.closed)');
+  S.dtOpen[key] = (cur != null) ? !cur : false;
+  if (cur == null) {
+    const el = [...document.querySelectorAll('.dt-bh')]
+      .find(e => slugVi(e.querySelector('.dt-bn').textContent) === key);
+    S.dtOpen[key] = el ? !!el.closest('.dt-blk').classList.contains('closed') : true;
+  }
+  renderPlanTab();
+}
+
+function toggleDtEdit(){
+  S.dtEdit = !S.dtEdit;
+  renderPlanTab();
+  if (S.dtEdit) toast('Nhập số dự toán cho từng khoản mục rồi bấm Lưu');
+}
+
+function onDtAmt(el){
+  if (!/[a-zA-Z]/.test(el.value)) {
+    const d = el.value.replace(/\D/g,'');
+    el.value = d ? fmt(Number(d)) : '';
+  }
+}
+
+/** Gửi mọi ô đã đổi. So với số đang có để chỉ gửi phần thật sự khác. */
+function savePlanEdits(){
+  const p = S.plan;
+  if (!p) return;
+  const cur = {};
+  (p.blocks || []).forEach(b => (b.items || []).forEach(it => { cur[it.row] = it.amount || 0; }));
+
+  const edits = [];
+  document.querySelectorAll('.dt-ei').forEach(el => {
+    const row = Number(el.getAttribute('data-row'));
+    const v = parseAmtLocal(el.value) || 0;
+    if (row && v !== (cur[row] || 0)) edits.push({ row: row, amount: v });
+  });
+  if (!edits.length) { S.dtEdit = false; renderPlanTab(); toast('Không có gì thay đổi'); return; }
+
+  toast('Đang lưu ' + edits.length + ' khoản mục…');
+  api('setPlanAmounts', {pin:S.pin, month:p.month, edits:edits, sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) { toast(res.message,'err'); return; }
+      S.plan = res.plan || S.plan;
+      S.dtEdit = false;
+      safeRender(renderPlanTab);
+      reload();                             // hạn mức ở hero lấy từ dự toán nên phải nạp lại
+      toast(res.message);
+    })
+    .catch(() => toast('Không gọi được máy chủ','err'));
 }
 
 function setBudgetSrc(src){
@@ -4906,6 +5101,73 @@ function applyShortcut(key){
 }
 
 
+
+/* ===================== THÊM THÁNG MỚI ===================== */
+/* Tạo bằng cách NHÂN BẢN sheet mẫu rồi xoá sạch giao dịch, không dựng mới:
+   mỗi sheet tháng có hàng chục bảng công thức ở cột K→BK, dựng tay thì
+   không đời nào khớp. */
+
+function openNewMonth(){
+  const now = new Date();
+  // Mặc định là tháng kế tiếp tháng mới nhất đang có — thứ hay cần nhất
+  let m = now.getMonth() + 1, y = now.getFullYear();
+  if (S.sheets && S.sheets.length) {
+    const last = S.sheets[S.sheets.length - 1].match(/^T(\d{1,2})\/(\d{4})$/);
+    if (last) {
+      m = Number(last[1]) + 1; y = Number(last[2]);
+      if (m > 12) { m = 1; y++; }
+    }
+  }
+  const ms = document.getElementById('nmMonth');
+  ms.innerHTML = Array.from({length:12}, (_, i) =>
+    `<option value="${i+1}">Tháng ${i+1}</option>`).join('');
+  ms.value = String(m);
+  const ys = document.getElementById('nmYear');
+  const base = now.getFullYear();
+  ys.innerHTML = [base-1, base, base+1, base+2].map(v =>
+    `<option value="${v}">${v}</option>`).join('');
+  ys.value = String(y);
+
+  document.getElementById('nmNote').innerHTML =
+    'Sheet mới sẽ được nhân bản từ mẫu, giữ nguyên mọi bảng công thức, '
+    + 'và <b>không có giao dịch nào</b>.';
+  document.getElementById('nmWarn').textContent = '';
+  document.getElementById('nmBackdrop').classList.add('show');
+  document.getElementById('nmSheet').classList.add('show');
+}
+
+function closeNewMonth(){
+  document.getElementById('nmBackdrop').classList.remove('show');
+  document.getElementById('nmSheet').classList.remove('show');
+}
+
+function doNewMonth(){
+  const m = Number(document.getElementById('nmMonth').value);
+  const y = Number(document.getElementById('nmYear').value);
+  const name = 'T' + m + '/' + y;
+  if ((S.sheets || []).indexOf(name) >= 0) {
+    document.getElementById('nmWarn').textContent = name + ' đã có rồi.';
+    return;
+  }
+  const btn = document.getElementById('nmGo');
+  btn.disabled = true; btn.textContent = 'Đang tạo…';
+  api('createMonth', {pin:S.pin, month:m, year:y})
+    .then(res => {
+      btn.disabled = false; btn.textContent = 'Tạo tháng';
+      if (!res.ok) { document.getElementById('nmWarn').textContent = res.message; return; }
+      if (res.sheets) S.sheets = res.sheets;
+      closeNewMonth();
+      // Nhảy luôn sang tháng vừa tạo — người dùng tạo là để dùng ngay
+      S.sheet = res.sheetName;
+      try { localStorage.setItem(LS.SHEET, S.sheet); } catch (e) {}
+      S.plan = null; S.txLoaded = false; S.all = []; S.cmp = null;
+      reload();
+      toast(res.message);
+    })
+    .catch(() => { btn.disabled = false; btn.textContent = 'Tạo tháng';
+                   document.getElementById('nmWarn').textContent = 'Không gọi được máy chủ'; });
+}
+
 /* ===================== VUỐT XUỐNG ĐỂ ĐÓNG BẢNG =====================
    Cái gạch nhỏ ở đầu bảng (.ms-grip) là quy ước iOS cho "kéo được" — bày ra
    mà không kéo được thì còn tệ hơn không có, vì người dùng vuốt, không thấy
@@ -4966,6 +5228,7 @@ function initSheetDrag(){
   attachSheetDrag('edSheet',   closeEdit);
   attachSheetDrag('mailSheet', closeMailDetail);
   attachSheetDrag('scSheet',   closeScEdit);
+  attachSheetDrag('nmSheet',   closeNewMonth);
 }
 
 /* ===================== OFFLINE QUEUE ===================== */
