@@ -1733,7 +1733,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v40';
+const BUILD = 'v41';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -4268,17 +4268,22 @@ async function renderFaceSet(){
                   + 'cho web. Vẫn gõ PIN như thường.</div>';
     return;
   }
+  /* Nút "Tạo lại khoá" LUÔN hiện khi Face ID đang bật, không ẩn theo
+     faceStale(). Trước đây chỉ hiện khi app đoán là khoá cũ — mà dấu phiên
+     bản chỉ được ghi từ v40, nên ở mọi bản trước đó app không có cách nào
+     biết, và nút thành ra vô hình đúng lúc cần nhất. Tạo lại khoá chẳng hại
+     gì, nên không đáng giấu sau một phép đoán. */
   box.innerHTML = faceEnabled()
     ? '<div class="sp-row"><span class="sp-lb">Face ID</span>'
       + '<button class="set-btn ghost" onclick="disableFace()">Tắt</button></div>'
       + (faceStale()
           ? '<div class="sp-note" style="margin-top:7px">Khoá hiện tại tạo bằng '
-            + 'bản cũ nên iOS vẫn hỏi <b>“Use Passkey”</b> trước khi quét. '
-            + 'Tạo lại khoá là bỏ được bước đó.</div>'
-            + '<div class="set-row" style="margin-top:7px">'
-            + '<button class="set-btn" onclick="refreshFace()">Tạo lại khoá</button></div>'
-          : '<div class="sp-note">Đang bật. PIN được lưu trong máy này và chỉ mở ra '
-            + 'khi Face ID khớp.</div>')
+            + 'bản cũ nên iOS vẫn hỏi <b>“Use Passkey”</b> trước khi quét.</div>'
+          : '<div class="sp-note" style="margin-top:7px">Đang bật. PIN được lưu '
+            + 'trong máy này và chỉ mở ra khi Face ID khớp.</div>')
+      + '<div class="set-row" style="margin-top:8px">'
+      + '<button class="set-btn" onclick="refreshFace()">Tạo lại khoá</button></div>'
+      + '<div class="set-note">Tạo lại nếu iOS còn hỏi “Use Passkey” trước khi quét.</div>'
     : '<div class="sp-row"><span class="sp-lb">Face ID</span>'
       + '<button class="set-btn" onclick="enableFace(S.pin).then(renderFaceSet)">Bật</button></div>'
       + '<div class="sp-note">Bật thì lần sau khỏi gõ PIN. Đổi lại, PIN sẽ được '
