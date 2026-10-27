@@ -612,6 +612,8 @@
          color:var(--txt);padding:3px 0;}
   .dt-ar b{color:var(--err);white-space:nowrap;font-variant-numeric:tabular-nums;}
   .dt-ar.dim{color:var(--mut);font-size:11.5px;}
+  .dt-anear{color:#b54708;font-weight:750;white-space:nowrap;
+            font-variant-numeric:tabular-nums;}
 
   .dt-sec{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
           color:var(--dim);margin:0 4px 8px;}
@@ -731,6 +733,12 @@
   .pl-off{font-size:10px;font-weight:700;color:var(--dim);
           background:var(--line-soft);border-radius:5px;padding:1px 5px;
           white-space:nowrap;}
+  /* Huy hiệu trên nút 📋 — số khoản mục đang chạm ngưỡng */
+  #planBtn{position:relative;overflow:visible;}
+  .hbadge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;
+          padding:0 4px;border-radius:99px;background:#d92d20;color:#fff;
+          font-size:10px;font-weight:800;line-height:16px;text-align:center;
+          box-shadow:0 0 0 2px var(--h1);font-variant-numeric:tabular-nums;}
   .bg-go{float:right;opacity:.6;font-weight:800;padding-left:8px;}
   #budgetWrap{cursor:pointer;border-radius:10px;transition:opacity .15s;}
   #budgetWrap:active{opacity:.7;}
@@ -1714,6 +1722,7 @@ let S = {
   dayFold:loadDayFold(),                      // ngày nào đang gập ở Lịch sử
   plan:null, planLoading:false, planErr:'',   // kế hoạch đọc từ sheet DỰ TOÁN
   dtEdit:false, dtOpen:{},                    // màn Dự toán: chế độ nhập & khối đang mở
+  alertPct:80,                                // ngưỡng cảnh báo (% dự toán)
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
   editTagTouched:false,
   scope:'month', brk:'hu',                    // phạm vi thống kê & cách bổ nhỏ
@@ -1733,7 +1742,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v41';
+const BUILD = 'v45';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -1944,6 +1953,60 @@ function warmConnection(){
    ngồi đoán tại sao vẫn còn bảng hỏi. */
 const FACE = { CRED:'fin_fid_cred', PIN:'fin_fid_pin', VER:'fin_fid_ver' };
 const FACE_VER = '2';
+
+/* ===================== NHỚ MÁY NÀY =====================
+   Vì sao có cái này: trên web iOS, navigator.credentials.get() LUÔN hiện một
+   bảng xác nhận của hệ thống trước khi quét mặt. Không có cờ nào bỏ được —
+   đã thử khoá không-tìm-được, allowCredentials kèm transports:['internal'],
+   và cả hints:['client-device']; máy thật vẫn hỏi. Vậy nên muốn mở app không
+   phải thao tác gì thì phải bỏ WebAuthn, không vòng vo thêm.
+
+   Đánh đổi phải nói thẳng: bật cái này thì app KHÔNG còn cửa riêng nữa, ai
+   mở được điện thoại là vào được app. Nhưng Face ID của app cũng đã gần như
+   vậy rồi — nó chỉ mở ra mã PIN cất sẵn trong chính máy đó. Mặc định TẮT. */
+const TRUST = { PIN:'fin_trust_pin', EXP:'fin_trust_exp', DAYS:'fin_trust_days' };
+
+/** Số ngày đang đặt. 0 = tắt. */
+function trustDays(){
+  try { return Number(localStorage.getItem(TRUST.DAYS) || 0) || 0; }
+  catch (e) { return 0; }
+}
+
+/** PIN đã nhớ, chỉ trả về khi CHƯA hết hạn. Hết hạn thì tự dọn luôn. */
+function trustedPin(){
+  try {
+    const exp = Number(localStorage.getItem(TRUST.EXP) || 0);
+    if (!exp || Date.now() > exp) { clearTrust(); return ''; }
+    return localStorage.getItem(TRUST.PIN) || '';
+  } catch (e) { return ''; }
+}
+
+function clearTrust(){
+  try { localStorage.removeItem(TRUST.PIN); localStorage.removeItem(TRUST.EXP); }
+  catch (e) {}
+}
+
+/** Gia hạn mỗi lần vào app, để người dùng đều đặn thì không bao giờ phải gõ lại */
+function renewTrust(pin){
+  const d = trustDays();
+  if (!d || !pin) return;
+  try {
+    localStorage.setItem(TRUST.PIN, pin);
+    localStorage.setItem(TRUST.EXP, String(Date.now() + d * 86400000));
+  } catch (e) {}
+}
+
+/** Đặt số ngày. 0 = tắt và xoá sạch những gì đã nhớ. */
+function setTrust(days){
+  const d = Number(days) || 0;
+  try {
+    if (d > 0) localStorage.setItem(TRUST.DAYS, String(d));
+    else localStorage.removeItem(TRUST.DAYS);
+  } catch (e) {}
+  if (d > 0) { renewTrust(S.pin || ''); toast('Sẽ nhớ máy này ' + d + ' ngày'); }
+  else { clearTrust(); toast('Đã tắt — lần sau phải gõ PIN'); }
+  renderFaceSet();
+}
 
 /** Khoá đang dùng có phải loại cũ (còn hiện bảng xác nhận) không */
 function faceStale(){
@@ -2223,6 +2286,15 @@ window.addEventListener('load', () => {
        mạng khỏi mỗi lần mở app. */
     try { localStorage.removeItem(LS.PIN); localStorage.removeItem(LS.BOOT); }
     catch (e) { /* không xoá được cũng không sao, dưới đây không đọc tới */ }
+    /* Đã bật "nhớ máy này" và còn hạn → vào thẳng, không hiện màn khóa.
+       Đặt TRƯỚC phần vẽ màn khóa để khỏi nháy một cái rồi mới chuyển. */
+    const tp = trustedPin();
+    if (tp) {
+      pmark('vào bằng máy đã nhớ');
+      pinBuf = tp;
+      submitPin();
+      return;
+    }
     pmark('hiện màn khóa');
     show('lock');
     renderKeypad();
@@ -2288,6 +2360,7 @@ function submitPin(){
       // Chế độ bắt buộc gõ PIN: KHÔNG lưu PIN xuống máy, chỉ giữ trong bộ nhớ
       // phiên làm việc. Đóng app là mất, đúng ý đồ bảo mật.
       if (!ALWAYS_ASK_PIN) { try { localStorage.setItem(LS.PIN, v); } catch (e) {} }
+      renewTrust(v);          // dùng đều thì không bao giờ phải gõ lại
       offerFace(v);
       err.textContent = '';
       // Để ví kịp nhảy mừng rồi mới vào app
@@ -2760,6 +2833,11 @@ function applyBootstrap(res, fromCache){
   if (typeof res.mailOn === 'boolean') S.mailOn = res.mailOn;
   if (typeof res.editOn === 'boolean') S.editOn = res.editOn;
   if (res.budget) S.budget = res.budget;
+  if (res.alertPct) S.alertPct = Number(res.alertPct) || 80;
+  /* Nạp kế hoạch ở NỀN, không chặn gì: cảnh báo cần cả kế hoạch lẫn giao
+     dịch, mà nhét kế hoạch vào bootstrap thì phình gói mở app — chặng đã
+     tốn bao nhiêu vòng tối ưu mới xuống được dưới nửa giây. */
+  if (!S.plan && !S.planLoading) setTimeout(() => loadPlan(), 900);
   S.sheets = res.sheets || []; S.sheet = res.activeSheet || '';
   S.years = res.years || [];
   S.todayTotal = res.todayTotal || 0; S.monthTotal = res.monthTotal || 0;
@@ -3818,6 +3896,7 @@ function loadPlan(force){
       if (res && res.ok) { S.plan = res.plan || {empty:true}; S.planErr = res.message || ''; }
       else S.planErr = (res && res.message) || 'Không đọc được sheet dự toán';
       safeRender(renderPlanTab);
+      safeRender(renderAlertBadge);
       if (document.getElementById('setPanel').classList.contains('show')) safeRender(renderSettings);
     })
     .catch(() => { S.planLoading = false; S.planErr = 'Không gọi được máy chủ';
@@ -3902,6 +3981,21 @@ function renderSettings(){
        + '<span class="icon-btn">›</span></div>'
        + '<div class="sp-note">' + planWhat() + '</div></div></div>';
 
+  /* ---- 2c. NGƯỠNG CẢNH BÁO ---- */
+  const ap = alertPct();
+  html += '<div class="sp-sec"><div class="sp-h">🔔 Cảnh báo vượt dự toán</div>'
+       + '<div class="sp-card">'
+       + '<div class="sp-row"><span class="sp-lb">Bắt đầu cảnh báo khi chạm</span></div>'
+       + '<div class="mini-seg lang-seg" style="margin-top:7px">'
+       + [70, 80, 90, 100].map(v =>
+           '<span class="' + (ap === v ? 'sel' : '') + '" onclick="saveAlertPct(' + v + ')">'
+           + v + '%</span>').join('')
+       + '</div>'
+       + '<div class="set-note">Tính trên dự toán của <b>từng khoản mục</b>, không '
+       + 'phải tổng tháng. Báo ngay khi ghi giao dịch làm khoản đó chạm mốc, và '
+       + 'hiện số trên nút 📋 ở đầu app.</div>'
+       + '</div></div>';
+
   /* ---- 2b. NGÔN NGỮ ----
      Từ điển và hàm t() đã có sẵn từ trước nhưng KHÔNG có chỗ nào gọi
      setLang(), nên tính năng nằm im như chưa tồn tại. Đây là mắt xích thiếu. */
@@ -3968,6 +4062,21 @@ function actualMap(){
   return { byHu: byHu, byItem: byItem };
 }
 
+/**
+ * Thực chi của một khoản mục trong một hũ.
+ * Thử tên HIỂN THỊ trước rồi mới tới tên cột D: khối NỢ ghi cột D = "NỢ" cho
+ * mọi dòng, tên thật nằm ở cột NOTE. Tra mỗi cột D là bỏ sót toàn bộ thực chi
+ * của khối đó — đã kiểm trên dữ liệu thật, sót 3,5 triệu.
+ */
+function realOf(A, groupName, it){
+  const g = slugVi(groupName);
+  const a = (A.byItem[g] || {});
+  const k1 = slugVi(it.name), k2 = slugVi(it.item || '');
+  if (a[k1]) return a[k1];
+  if (k2 && k2 !== k1 && a[k2]) return a[k2];
+  return 0;
+}
+
 function renderPlanTab(){
   const box = document.getElementById('dtBody');
   if (!box) return;
@@ -4016,10 +4125,14 @@ function renderPlanTab(){
     const seen = {};
     let matched = 0;
     (b.items || []).forEach(it => {
-      const sl = slugVi(it.item || it.name);
-      const r = (A.byItem[huSlug] || {})[sl] || 0;
+      const sl = slugVi(it.name);
+      const r = realOf(A, b.name, it);
       if (r > 0) matched++;
+      /* Đánh dấu CẢ HAI tên: realOf() có thể đã khớp qua tên cột D, không
+         đánh dấu nốt thì phần đó bị tính lại một lần nữa ở dòng "Chưa có
+         kế hoạch", thành ra cộng đôi. */
       seen[sl] = 1;
+      if (it.item) seen[slugVi(it.item)] = 1;
       /* Chưa chi mà cũng chưa có kế hoạch thì không có gì để nói — ẩn khi
          chỉ xem. Vẫn giữ khi đang nhập, vì đó chính là dòng cần điền. */
       if (it.amount > 0 || r > 0 || S.dtEdit) {
@@ -4063,24 +4176,39 @@ function renderPlanTab(){
      + '</div>';
 
   /* ---- 2. CẦN CHÚ Ý: chỉ hiện khi thật sự có vấn đề ---- */
-  const hot = [];
+  const pct0 = alertPct();
+  const over = [], near = [];
   let unplanned = 0;
   rows.forEach(r => r.items.forEach(it => {
-    if (it.plan > 0 && it.real > it.plan) hot.push({ n:it.name, over:it.real - it.plan });
+    if (it.plan > 0) {
+      const pc = Math.round(it.real / it.plan * 100);
+      /* Tách hai mức: đã vượt thì nói số tiền vượt, sắp chạm thì nói còn bao
+         nhiêu. Gộp chung một rổ sẽ làm khoản sắp chạm trông như đã hỏng. */
+      if (pc > 100)       over.push({ n:it.name, v:it.real - it.plan, pc:pc });
+      else if (pc >= pct0) near.push({ n:it.name, v:it.plan - it.real, pc:pc });
+    }
     /* Chi mà KHÔNG có dòng kế hoạch cũng là chuyện cần biết, nhưng không phải
        "vượt" — không có mốc nào để vượt. Gộp riêng thành một dòng tổng. */
-    else if (it.plan <= 0 && it.real > 0) unplanned += it.real;
+    else if (it.real > 0) unplanned += it.real;
   }));
-  hot.sort((a, b) => b.over - a.over);
-  if (hot.length || unplanned > 0) {
+  over.sort((a, b) => b.v - a.v);
+  near.sort((a, b) => b.pc - a.pc);
+  if (over.length || near.length || unplanned > 0) {
     const parts = [];
-    if (hot.length) parts.push(hot.length + ' ' + t('bud.overItems'));
+    if (over.length) parts.push(over.length + ' ' + t('bud.overItems'));
+    if (near.length) parts.push(near.length + ' khoản sắp chạm ' + pct0 + '%');
     if (unplanned > 0) parts.push(t('bud.hasUnplan'));
     h += '<div class="dt-alert"><div class="dt-at">⚠️ ' + parts.join(' · ') + '</div>'
-       + hot.slice(0, 5).map(x =>
-          '<div class="dt-ar"><span>' + esc(x.n) + '</span><b>+' + fmt(x.over) + ' đ</b></div>'
+       + over.slice(0, 4).map(x =>
+          '<div class="dt-ar"><span>🔴 ' + esc(x.n) + '</span><b>+' + fmt(x.v) + ' đ</b></div>'
          ).join('')
-       + (hot.length > 5 ? '<div class="dt-ar dim">' + esc(t('bud.and')) + ' ' + (hot.length - 5) + ' ' + esc(t('bud.andMore')) + '</div>' : '')
+       + near.slice(0, 4).map(x =>
+          '<div class="dt-ar"><span>🟠 ' + esc(x.n) + ' · ' + x.pc + '%</span>'
+          + '<span class="dt-anear">còn ' + fmt(x.v) + ' đ</span></div>'
+         ).join('')
+       + (over.length + near.length > 8
+           ? '<div class="dt-ar dim">' + esc(t('bud.and')) + ' '
+             + (over.length + near.length - 8) + ' ' + esc(t('bud.andMore')) + '</div>' : '')
        + (unplanned > 0
            ? '<div class="dt-ar"><span>' + esc(t('bud.unplanned')) + '</span><b>'
              + fmt(unplanned) + ' đ</b></div>' : '')
@@ -4142,9 +4270,118 @@ function pctOf(x){
 }
 
 /** Màu theo mức độ: quá hạn mức → đỏ, sắp chạm → cam, còn lại → xanh */
+
+/* ===================== CẢNH BÁO VƯỢT DỰ TOÁN =====================
+   Cảnh báo chỉ có giá trị nếu nó tới ĐÚNG LÚC còn đổi được hành vi. Nên có
+   hai đường:
+     1. Ngay sau khi ghi một giao dịch làm khoản mục đó chạm ngưỡng — lúc
+        duy nhất người dùng còn đang nghĩ về khoản chi vừa rồi.
+     2. Một con số trên nút 📋 ở hero — thấy được mà không phải mở gì.
+   Riêng việc đổi màu trong màn Dự toán thì không tính là cảnh báo: phải mở
+   màn đó ra mới thấy, mà mở ra thì đã biết là muốn xem rồi. */
+
+/** Ngưỡng đang dùng (máy chủ trả về trong bootstrap). */
+function alertPct(){
+  const v = Number(S.alertPct);
+  return (v >= 50 && v <= 100) ? v : 80;
+}
+
+/**
+ * Các khoản mục đang chạm/vượt ngưỡng.
+ * Trả [] khi chưa có đủ dữ liệu — KHÔNG đoán: thiếu kế hoạch hoặc thiếu
+ * giao dịch mà vẫn kêu thì là báo động giả, và báo động giả vài lần là người
+ * dùng thôi để ý luôn.
+ */
+function alertList(){
+  const p = S.plan;
+  if (!p || !p.blocks || !S.txLoaded) return [];
+  const A = actualMap();
+  const pct0 = alertPct();
+  const out = [];
+  p.blocks.forEach(b => {
+    if (b.kind === 'in') return;              // thu nhập không phải khoản chi
+    const huSlug = slugVi(b.name);
+    (b.items || []).forEach(it => {
+      if (!(it.amount > 0)) return;           // chưa lên kế hoạch thì không có mốc
+      const real = realOf(A, b.name, it);
+      const pct = Math.round(real / it.amount * 100);
+      if (pct >= pct0) {
+        out.push({ name: it.name, group: b.name, plan: it.amount,
+                   real: real, pct: pct, over: real - it.amount });
+      }
+    });
+  });
+  out.sort((x, y) => y.pct - x.pct);
+  return out;
+}
+
+/** Huy hiệu trên nút 📋: số khoản mục đang cần chú ý */
+function renderAlertBadge(){
+  const btn = document.getElementById('planBtn');
+  if (!btn) return;
+  const n = alertList().length;
+  let dot = document.getElementById('planDot');
+  if (!n) { if (dot) dot.remove(); return; }
+  if (!dot) {
+    dot = document.createElement('span');
+    dot.id = 'planDot';
+    dot.className = 'hbadge';
+    btn.appendChild(dot);
+  }
+  dot.textContent = n > 9 ? '9+' : String(n);
+}
+
+/**
+ * Sau khi ghi xong: khoản mục vừa ghi có làm nó chạm ngưỡng không.
+ * So TRƯỚC và SAU để chỉ kêu đúng lần VƯỢT QUA mốc, không kêu lại mỗi lần
+ * ghi thêm vào một khoản đã vượt từ trước — kêu lại thì thành phiền.
+ */
+function alertAfterSave(item, amount){
+  const p = S.plan;
+  if (!p || !p.blocks || !item || !(amount > 0)) return;
+  const sl = slugVi(item);
+  let plan = 0, group = '', planItem = null;
+  p.blocks.forEach(b => {
+    if (b.kind === 'in') return;
+    (b.items || []).forEach(it => {
+      // Khớp theo tên hiển thị HOẶC tên cột D — xem chú thích ở realOf()
+      if (it.amount > 0 && (slugVi(it.name) === sl || slugVi(it.item || '') === sl)) {
+        plan = it.amount; group = b.name; planItem = it;
+      }
+    });
+  });
+  if (!plan) return;                 // khoản mục này không có dự toán
+
+  const A = actualMap();
+  const after = realOf(A, group, planItem);
+  const before = after - amount;
+  const pct0 = alertPct();
+  const pAfter  = Math.round(after / plan * 100);
+  const pBefore = Math.round(before / plan * 100);
+
+  /* CÓ HAI MỐC, không phải một: ngưỡng cảnh báo (80%) và mốc vượt hẳn (100%).
+     Chỉ canh mỗi ngưỡng thì khoản đã qua 80% rồi sẽ im lặng lúc vượt 100% —
+     mà đó mới là lúc đáng báo nhất. Thử 90% → 110% là lộ ra ngay. */
+  const crossWarn = pBefore <  pct0 && pAfter >= pct0;
+  const crossOver = pBefore <= 100  && pAfter >  100;
+  if (!crossWarn && !crossOver) return;
+
+  const over = after - plan;
+  setTimeout(() => {
+    toast(
+      (over > 0 ? '🔴 ' : '🟠 ') + item + ' · ' + pAfter + '% dự toán',
+      over > 0 ? 'err' : '',
+      over > 0 ? ('Vượt ' + fmt(over) + ' đ so với kế hoạch')
+               : ('Còn ' + fmt(plan - after) + ' đ trong kế hoạch'),
+      { label: 'Xem dự toán', fn: openPlan }
+    );
+  }, 2200);   // để lọt thông báo "đã ghi" trước, không chồng lên nhau
+}
+
 function barCls(pct, pace){
   if (pct > 100) return ' over';
-  if (pct > Math.min(85, pace)) return ' warn';
+  // Cùng một ngưỡng với cảnh báo, không để màu và cảnh báo nói hai chuyện khác nhau
+  if (pct >= Math.min(alertPct(), pace)) return ' warn';
   return '';
 }
 
@@ -4224,6 +4461,28 @@ function savePlanEdits(){
     .catch(() => toast('Không gọi được máy chủ','err'));
 }
 
+/** Lưu ngưỡng cảnh báo. Đổi xong vẽ lại mọi chỗ đang dùng tới nó. */
+function saveAlertPct(v){
+  if (v === alertPct()) return;
+  const old = S.alertPct;
+  S.alertPct = v;                       // đổi ngay cho đỡ giật, hỏng thì trả lại
+  safeRender(() => { renderSettings(); renderAlertBadge(); renderPlanTab(); });
+  api('setAlertPct', {pin:S.pin, pct:v, sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) {
+        S.alertPct = old;
+        safeRender(() => { renderSettings(); renderAlertBadge(); renderPlanTab(); });
+        toast(res.message, 'err'); return;
+      }
+      toast(res.message);
+    })
+    .catch(() => {
+      S.alertPct = old;
+      safeRender(() => { renderSettings(); renderAlertBadge(); renderPlanTab(); });
+      toast('Không gọi được máy chủ', 'err');
+    });
+}
+
 function setBudgetSrc(src){
   if (src === bgSrc()) return;
   api('setBudgetSource', {pin:S.pin, source:src, sheetName:S.sheet})
@@ -4283,11 +4542,32 @@ async function renderFaceSet(){
             + 'trong máy này và chỉ mở ra khi Face ID khớp.</div>')
       + '<div class="set-row" style="margin-top:8px">'
       + '<button class="set-btn" onclick="refreshFace()">Tạo lại khoá</button></div>'
-      + '<div class="set-note">Tạo lại nếu iOS còn hỏi “Use Passkey” trước khi quét.</div>'
+      + '<div class="set-note">iOS luôn hiện bảng xác nhận trước khi quét — đó là '
+      + 'quy định của hệ thống, web không bỏ được. Muốn mở app không thao tác '
+      + 'gì thì dùng “Nhớ máy này” bên dưới.</div>'
     : '<div class="sp-row"><span class="sp-lb">Face ID</span>'
       + '<button class="set-btn" onclick="enableFace(S.pin).then(renderFaceSet)">Bật</button></div>'
-      + '<div class="sp-note">Bật thì lần sau khỏi gõ PIN. Đổi lại, PIN sẽ được '
-      + 'lưu trong máy này — ai mở được máy thì vào được app.</div>';
+      + '<div class="sp-note">Bật thì đỡ phải gõ PIN, nhưng iOS vẫn hiện một bảng '
+      + 'xác nhận trước khi quét.</div>';
+
+  /* Lối ra thật cho chuyện "đừng hỏi nữa": bỏ hẳn WebAuthn, nhớ máy một
+     khoảng thời gian. Mặc định TẮT vì người dùng từng nói rõ muốn bắt buộc
+     gõ PIN — đây là lựa chọn của họ, không phải mặc định tôi tự đặt. */
+  const td = trustDays();
+  box.innerHTML += '<div class="sp-hr"></div>'
+    + '<div class="sp-row"><span class="sp-lb">Nhớ máy này</span></div>'
+    + '<div class="mini-seg lang-seg" style="margin-top:7px">'
+    + [[0,'Tắt'],[7,'7 ngày'],[30,'30 ngày']].map(o =>
+        '<span class="' + (td === o[0] ? 'sel' : '') + '" onclick="setTrust(' + o[0] + ')">'
+        + o[1] + '</span>').join('')
+    + '</div>'
+    + '<div class="set-note">'
+    + (td > 0
+        ? 'Đang bật: mở app là vào thẳng, không hỏi gì trong ' + td + ' ngày. '
+          + '<b>Đổi lại, app không còn cửa riêng — ai mở được điện thoại là vào được.</b>'
+        : 'Bật thì mở app vào thẳng, không PIN không Face ID. Đổi lại, app không '
+          + 'còn cửa riêng — ai mở được điện thoại là vào được.')
+    + '</div>';
 }
 
 function setBreak(v){
@@ -4536,6 +4816,7 @@ function save(){
       }
       S.yearData = null;   // tổng hợp năm đã cũ, lần sau mở sẽ tải lại
       S.cmp = null;        // so cùng kỳ cũng vậy
+      safeRender(renderAlertBadge);
 
       /* Giao dịch đến từ email: máy chủ ĐÃ tự đánh dấu trong cùng lời gọi
          addExpense (xem trường orderId ở trên), nên ở đây chỉ việc gỡ khỏi
@@ -4555,6 +4836,8 @@ function save(){
       const line = funSaveLine(amtNum);
       toast(line || res.message, '', line ? res.message : '',
             { label:'Hoàn tác', fn: () => undoSave(undo) });
+      // Khoản mục vừa ghi có làm nó chạm ngưỡng dự toán không
+      alertAfterSave(tx.item, amtNum);
     })
     .catch(() => {
       document.getElementById('todayTotal').classList.remove('pending');
