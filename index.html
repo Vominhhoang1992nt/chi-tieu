@@ -583,6 +583,15 @@
 
   /* ---- MÀN DỰ TOÁN ---- */
   /* Tóm tắt kế hoạch trên màn Ngân sách */
+  /* Nhãn "cố định" + khối thông tin khoản cố định lệch kế hoạch */
+  .fx-tag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.3px;
+          text-transform:uppercase;color:var(--mut);background:var(--surface-2);
+          border-radius:5px;padding:2px 5px;vertical-align:1px;white-space:nowrap;}
+  .pl-off.fx{color:var(--mut);background:var(--surface-2);}
+  .dt-fx{background:var(--surface);border:1px dashed var(--line);border-radius:13px;
+         padding:11px 13px;margin-bottom:12px;}
+  .dt-fxt{font-size:12px;font-weight:800;color:var(--mut);margin-bottom:6px;}
+  .dt-fx .dt-ar b{color:var(--txt);}
   /* Gợi ý khi đổi tháng ghi sổ trong form sửa */
   .ed-hint{font-size:11.5px;line-height:1.5;color:var(--warn);
            background:var(--warn-weak);border-radius:10px;padding:9px 11px;margin-top:-4px;}
@@ -1766,6 +1775,10 @@ let S = {
   dtEdit:false, dtOpen:{},                    // màn Ngân sách: chế độ nhập & khối đang mở
   trkOpen:{},                                 // thẻ theo dõi (tab Phân tích): khối đang mở — RIÊNG với dtOpen
   alertPct:80,                                // ngưỡng cảnh báo (% dự toán)
+  alertSkip:['TIỀN THUÊ NHÀ'],                // khoản cố định: không cảnh báo
+  alertSkipKinds:['debt','save'],             // cả khối NỢ và TIẾT KIỆM cũng vậy
+                                              // (tiết kiệm là mục tiêu phải đạt,
+                                              //  không phải trần không được chạm)
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
   editTagTouched:false,
   scope:'month', brk:'hu',                    // phạm vi thống kê & cách bổ nhỏ
@@ -1785,7 +1798,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v46';
+const BUILD = 'v47';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -2880,6 +2893,12 @@ function applyBootstrap(res, fromCache){
   if (typeof res.editOn === 'boolean') S.editOn = res.editOn;
   if (res.budget) S.budget = res.budget;
   if (res.alertPct) S.alertPct = Number(res.alertPct) || 80;
+  /* Danh sách khoản cố định do MÁY CHỦ giữ, không phải máy này: đổi một lần
+     là mọi thiết bị theo, và email tối phải lọc đúng y như trong app.
+     Mảng rỗng là một lựa chọn hợp lệ ("cảnh báo tất"), nên chỉ kiểm tra có
+     phải mảng không — dùng `||` ở đây sẽ nuốt mất mảng rỗng. */
+  if (Array.isArray(res.alertSkip)) S.alertSkip = res.alertSkip;
+  if (Array.isArray(res.alertSkipKinds)) S.alertSkipKinds = res.alertSkipKinds;
   /* Nạp kế hoạch ở NỀN, không chặn gì: cảnh báo cần cả kế hoạch lẫn giao
      dịch, mà nhét kế hoạch vào bootstrap thì phình gói mở app — chặng đã
      tốn bao nhiêu vòng tối ưu mới xuống được dưới nửa giây. */
@@ -4056,6 +4075,16 @@ function renderSettings(){
        + 'hiện số trên nút 📋 ở đầu app.</div>'
        + '</div></div>';
 
+  /* ---- 2d. KHOẢN CỐ ĐỊNH — KHÔNG CẢNH BÁO ----
+     Khoản phải trả đủ 100% (thuê nhà, nợ) thì chạm mốc là đương nhiên.
+     Khối NỢ loại sẵn theo LOẠI khối nên không liệt kê từng dòng ở đây —
+     thêm khoản nợ mới cũng tự được loại, khỏi phải nhớ vào đây bật tay. */
+  html += '<div class="sp-sec"><div class="sp-h">📌 ' + esc(t('set.fixedTitle')) + '</div>'
+       + '<div class="sp-card">'
+       + '<div class="set-note">' + esc(t('set.fixedNote')) + '</div>'
+       + '<div id="fxList" style="margin-top:8px"></div>'
+       + '</div></div>';
+
   /* ---- 2b. NGÔN NGỮ ----
      Từ điển và hàm t() đã có sẵn từ trước nhưng KHÔNG có chỗ nào gọi
      setLang(), nên tính năng nằm im như chưa tồn tại. Đây là mắt xích thiếu. */
@@ -4081,6 +4110,7 @@ function renderSettings(){
 
   box.innerHTML = html;
   renderFaceSet();
+  renderFixedList();
 }
 
 /**
@@ -4291,7 +4321,11 @@ function budgetRows(forEdit){
       /* Chưa chi mà cũng chưa có kế hoạch thì không có gì để nói — ẩn khi
          chỉ xem. Vẫn giữ khi đang nhập, vì đó chính là dòng cần điền. */
       if (it.amount > 0 || r > 0 || forEdit) {
-        items.push({ name: it.name, plan: it.amount, real: r, row: it.row });
+        /* Gắn cờ ngay tại đây để mọi nơi vẽ về sau không phải tự đoán lại —
+           đoán lại ở ba chỗ là ba cơ hội để ba chỗ hiểu khác nhau. */
+        items.push({ name: it.name, plan: it.amount, real: r, row: it.row,
+                     fixed: isFixed(b.kind, it.name, it.item),
+                     fxTag: fxTag(b.kind) });
       }
     });
     let noPlan = 0;
@@ -4300,9 +4334,16 @@ function budgetRows(forEdit){
     /* Nặng nhất lên đầu. Người ta mở màn này để tìm khoản đang vượt, không
        phải để đọc lại thứ tự dòng trong sheet. */
     items.sort((x, y) => pctOf(y) - pctOf(x));
-    if (noPlan > 0) items.push({ name:t('bud.noPlanRow'), plan:0, real:noPlan, row:0 });
+    if (noPlan > 0) items.push({ name:t('bud.noPlanRow'), plan:0, real:noPlan, row:0,
+                                 fixed:false });
 
-    rows.push({ block:b, plan:plan, real:real, items:items,
+    /* Khối "cố định" = mọi dòng CÓ KẾ HOẠCH trong khối đều cố định (khối NỢ,
+       hoặc một khối mà người dùng đã đánh dấu hết). Khối như vậy chạm 100%
+       là đúng kế hoạch, nên thanh tiến độ không được tô đỏ. */
+    const planned = items.filter(x => x.plan > 0);
+    const allFixed = planned.length > 0 && planned.every(x => x.fixed);
+
+    rows.push({ block:b, plan:plan, real:real, items:items, fixed:allFixed,
                 nameMismatch: noPlan > 0 && matched === 0 && (b.items||[]).length > 0 });
   });
 
@@ -4355,11 +4396,19 @@ function budgetTrackHtml(){
 
   /* ---- 2. CẦN CHÚ Ý: chỉ hiện khi thật sự có vấn đề ---- */
   const pct0 = alertPct();
-  const over = [], near = [];
+  const over = [], near = [], fixedOver = [];
   let unplanned = 0;
   rows.forEach(r => r.items.forEach(it => {
     if (it.plan > 0) {
       const pc = Math.round(it.real / it.plan * 100);
+      /* PHÍ CỐ ĐỊNH (thuê nhà, nợ): phải trả đủ 100% nên chạm mốc là đương
+         nhiên — không đưa vào "cần chú ý". Chỉ tách riêng phần chi VƯỢT kế
+         hoạch: hoá đơn tăng hay trả nợ nhiều hơn dự định thì vẫn cần biết,
+         nhưng là thông tin, không phải báo động. */
+      if (it.fixed) {
+        if (it.real > it.plan) fixedOver.push({ n:it.name, v:it.real - it.plan, pc:pc });
+        return;
+      }
       /* Tách hai mức: đã vượt thì nói số tiền vượt, sắp chạm thì nói còn bao
          nhiêu. Gộp chung một rổ sẽ làm khoản sắp chạm trông như đã hỏng. */
       if (pc > 100)       over.push({ n:it.name, v:it.real - it.plan, pc:pc });
@@ -4371,6 +4420,7 @@ function budgetTrackHtml(){
   }));
   over.sort((a, b) => b.v - a.v);
   near.sort((a, b) => b.pc - a.pc);
+  fixedOver.sort((a, b) => b.v - a.v);
   if (over.length || near.length || unplanned > 0) {
     const parts = [];
     if (over.length) parts.push(over.length + ' ' + t('bud.overItems'));
@@ -4393,6 +4443,17 @@ function budgetTrackHtml(){
        + '</div>';
   }
 
+  /* Khoản cố định chi khác kế hoạch: để NGOÀI khối cảnh báo đỏ, màu trung
+     tính. Giấu hẳn thì mất một tín hiệu thật (hoá đơn tăng); để trong khối
+     đỏ thì lại thành đúng cái báo động đã bỏ đi. */
+  if (fixedOver.length) {
+    h += '<div class="dt-fx"><div class="dt-fxt">' + esc(t('bud.fixedOver')) + '</div>'
+       + fixedOver.slice(0, 5).map(x =>
+          '<div class="dt-ar"><span>' + esc(x.n) + ' · ' + x.pc + '%</span>'
+          + '<b>+' + fmt(x.v) + ' đ</b></div>').join('')
+       + '</div>';
+  }
+
   /* ---- 3. TỪNG LOẠI: gập lại, mở cái nào đang có vấn đề ---- */
   h += '<div class="dt-sec">' + esc(t('bud.byGroup')) + '</div>';
   rows.forEach(r => {
@@ -4402,20 +4463,30 @@ function budgetTrackHtml(){
     /* Trạng thái gập của thẻ theo dõi là RIÊNG (S.trkOpen), không dùng chung
        S.dtOpen với màn Ngân sách. Dùng chung thì chạm vào khối ở đây sẽ vẽ
        lại màn kia — hai màn giờ là hai nơi khác nhau. */
-    const open = (S.trkOpen[key] != null) ? S.trkOpen[key] : (pct > 100);
+    /* Khối cố định không "mở sẵn vì vượt": nó chạm 100% theo kế hoạch, mở
+       sẵn thì tháng nào cũng mở mà chẳng có gì để xem. */
+    const open = (S.trkOpen[key] != null) ? S.trkOpen[key]
+                                          : (pct > 100 && !r.fixed);
+    const cls = r.fixed ? '' : barCls(pct, 101);
     h += '<div class="dt-blk' + (open ? '' : ' closed') + '">'
        + '<div class="dt-bh" onclick="toggleTrkBlock(\'' + esc(key) + '\')">'
        + '<div class="dt-bt"><span class="dt-cr">⌄</span>'
        + '<span class="dt-bn">' + esc(b.name) + '</span>'
        /* Nhãn "ngoài hạn mức" chỉ có nghĩa với khoản CHI. Gắn lên khối thu
           nhập thì đọc vô lý — thu nhập không phải khoản chi để so hạn mức. */
-       + ((b.inBudget || b.kind === 'in') ? ''
-            : '<span class="pl-off">' + esc(t('bud.offLimit')) + '</span>') + '</div>'
-       + '<span class="dt-bp' + barCls(pct, 101) + '">'
+       /* MỘT nhãn mỗi dòng. Gắn cả "ngoài hạn mức" lẫn "cố định" lên TIẾT
+          KIỆM thì tên khối bị đẩy xuống hai dòng trên màn 392px, mà hai nhãn
+          đó nói gần như một chuyện. Nhãn cụ thể hơn thắng. */
+       + (r.fixed
+            ? '<span class="pl-off fx">' + esc(fxTag(b.kind)) + '</span>'
+            : ((b.inBudget || b.kind === 'in') ? ''
+                 : '<span class="pl-off">' + esc(t('bud.offLimit')) + '</span>'))
+       + '</div>'
+       + '<span class="dt-bp' + cls + '">'
        + (r.plan > 0 ? pct + '%' : '—')
        + '</span>'
        + '</div>'
-       + '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
+       + '<div class="dt-bar"><div class="dt-fill' + cls + '" style="width:'
        + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
        + '<div class="dt-bs">' + fmt(r.real) + ' / ' + fmt(r.plan) + ' đ</div>'
        /* Bọc nội dung trong ĐÚNG MỘT .fwrap. Mẹo gập bằng grid chỉ co được
@@ -4440,14 +4511,19 @@ function budgetTrackHtml(){
 /** Một dòng khoản mục trong thẻ theo dõi: chỉ xem, không có ô nhập. */
 function trkItemHtml(it){
   const pct = pctOf(it);
+  /* Phí cố định: thanh để màu trung tính. Tô cam/đỏ ở đây thì mắt vẫn đọc ra
+     "có chuyện" dù đã tắt cảnh báo — tắt tiếng mà vẫn nháy đèn thì bằng thừa. */
+  const cls = it.fixed ? '' : barCls(pct, 101);
   const right = it.plan > 0
     ? fmt(it.real) + ' / ' + fmt(it.plan)
     : fmt(it.real) + ' <span class="dt-np">' + esc(t('bud.noPlanTag')) + '</span>';
   return '<div class="dt-it">'
-    + '<div class="dt-il"><span class="dt-in">' + esc(it.name) + '</span>'
+    + '<div class="dt-il"><span class="dt-in">' + esc(it.name)
+    + (it.fixed ? ' <span class="fx-tag">' + esc(it.fxTag || t('bud.fixedTag')) + '</span>' : '')
+    + '</span>'
     + '<span class="dt-iv">' + right + '</span></div>'
     + (it.plan > 0
-        ? '<div class="dt-bar thin"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
+        ? '<div class="dt-bar thin"><div class="dt-fill' + cls + '" style="width:'
           + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
         : '')
     + '</div>';
@@ -4497,6 +4573,33 @@ function alertPct(){
 }
 
 /**
+ * Khoản mục này có phải PHÍ CỐ ĐỊNH (không cảnh báo) không.
+ * Tiền thuê nhà và nợ phải trả đủ 100%, nên chạm mốc là đương nhiên chứ
+ * không phải sự cố. Đây là MỘT nơi quyết định duy nhất cho cả ba đường cảnh
+ * báo trong app (huy hiệu, toast lúc ghi, mục "cần chú ý") — và nó dùng đúng
+ * danh sách máy chủ dùng để lọc email, nên hai bên không bao giờ nói khác nhau.
+ */
+/**
+ * Chữ trên nhãn: TIẾT KIỆM không phải "phí cố định" mà là MỤC TIÊU cần đạt.
+ * Gọi chung một tên thì nhãn nói sai bản chất khoản mục.
+ */
+function fxTag(blockKind){
+  return blockKind === 'save' ? t('bud.goalTag') : t('bud.fixedTag');
+}
+
+function isFixed(blockKind, name, label){
+  if ((S.alertSkipKinds || []).indexOf(blockKind) >= 0) return true;
+  const list = S.alertSkip || [];
+  for (let i = 0; i < list.length; i++) {
+    const k = slugVi(list[i]);
+    if (!k) continue;
+    if (name && slugVi(name) === k) return true;
+    if (label && slugVi(label) === k) return true;
+  }
+  return false;
+}
+
+/**
  * Các khoản mục đang chạm/vượt ngưỡng.
  * Trả [] khi chưa có đủ dữ liệu — KHÔNG đoán: thiếu kế hoạch hoặc thiếu
  * giao dịch mà vẫn kêu thì là báo động giả, và báo động giả vài lần là người
@@ -4513,6 +4616,7 @@ function alertList(){
     const huSlug = slugVi(b.name);
     (b.items || []).forEach(it => {
       if (!(it.amount > 0)) return;           // chưa lên kế hoạch thì không có mốc
+      if (isFixed(b.kind, it.name, it.item)) return;   // phí cố định: không cảnh báo
       const real = realOf(A, b.name, it);
       const pct = Math.round(real / it.amount * 100);
       if (pct >= pct0) {
@@ -4550,17 +4654,19 @@ function alertAfterSave(item, amount){
   const p = S.plan;
   if (!p || !p.blocks || !item || !(amount > 0)) return;
   const sl = slugVi(item);
-  let plan = 0, group = '', planItem = null;
+  let plan = 0, group = '', planItem = null, fixed = false;
   p.blocks.forEach(b => {
     if (b.kind === 'in') return;
     (b.items || []).forEach(it => {
       // Khớp theo tên hiển thị HOẶC tên cột D — xem chú thích ở realOf()
       if (it.amount > 0 && (slugVi(it.name) === sl || slugVi(it.item || '') === sl)) {
         plan = it.amount; group = b.name; planItem = it;
+        fixed = isFixed(b.kind, it.name, it.item);
       }
     });
   });
   if (!plan) return;                 // khoản mục này không có dự toán
+  if (fixed) return;                 // phí cố định phải trả đủ — không báo
 
   const A = actualMap();
   const after = realOf(A, group, planItem);
@@ -4670,6 +4776,74 @@ function savePlanEdits(){
 }
 
 /** Lưu ngưỡng cảnh báo. Đổi xong vẽ lại mọi chỗ đang dùng tới nó. */
+/**
+ * Danh sách khoản mục để bật/tắt "cố định".
+ * Chỉ liệt kê khoản mục CÓ TRONG KẾ HOẠCH tháng đang xem, và bỏ qua những
+ * khối đã loại sẵn theo loại (NỢ) — bày ra một nút gạt không làm gì được là
+ * cách nhanh nhất khiến người dùng nghi ngờ mọi nút gạt khác.
+ */
+function renderFixedList(){
+  const box = document.getElementById('fxList');
+  if (!box) return;
+  const p = S.plan;
+  if (S.planLoading) { box.innerHTML = '<span class="empty">' + esc(t('bud.reading')) + '</span>'; return; }
+  if (!p || !p.blocks) { box.innerHTML = '<span class="empty">' + esc(t('set.fixedNoPlan')) + '</span>'; return; }
+
+  const rowsHtml = [];
+  (p.blocks || []).forEach(b => {
+    if (b.kind === 'in') return;
+    // Khối loại sẵn theo loại: nói rõ một dòng thay vì bày nút gạt vô dụng
+    if ((S.alertSkipKinds || []).indexOf(b.kind) >= 0) {
+      rowsHtml.push('<div class="sp-row"><span class="sp-lb">' + esc(b.name)
+        + '</span><span class="fx-tag">' + esc(t('set.fixedWhole')) + '</span></div>');
+      return;
+    }
+    (b.items || []).forEach(it => {
+      if (!(it.amount > 0)) return;          // chưa có số thì chưa có gì để cảnh báo
+      const on = isFixed(b.kind, it.name, it.item);
+      rowsHtml.push('<div class="sp-row"><span class="sp-lb">' + esc(it.name) + '</span>'
+        + '<span class="sw' + (on ? ' on' : '') + '" role="switch" aria-checked="' + on + '" '
+        + 'onclick="toggleFixed(' + JSON.stringify(it.name).replace(/"/g, '&quot;') + ')">'
+        + '<i></i></span></div>');
+    });
+  });
+  box.innerHTML = rowsHtml.length ? rowsHtml.join('')
+    : '<span class="empty">' + esc(t('set.fixedNoPlan')) + '</span>';
+}
+
+/** Bật/tắt một khoản mục trong danh sách cố định rồi lưu lên máy chủ. */
+function toggleFixed(name){
+  if (!name) return;
+  const k = slugVi(name);
+  const cur = (S.alertSkip || []).slice();
+  const i = cur.findIndex(x => slugVi(x) === k);
+  if (i >= 0) cur.splice(i, 1); else cur.push(name);
+
+  const old = S.alertSkip;
+  S.alertSkip = cur;                 // đổi ngay cho đỡ giật, hỏng thì trả lại
+  renderFixedList();
+  safeRender(renderAlertBadge);
+  safeRender(renderBudgetTrack);
+
+  api('setAlertSkip', {pin:S.pin, items:JSON.stringify(cur), sheetName:S.sheet})
+    .then(res => {
+      if (!res.ok) {
+        S.alertSkip = old;
+        renderFixedList(); safeRender(renderAlertBadge); safeRender(renderBudgetTrack);
+        toast(res.message, 'err');
+        return;
+      }
+      if (Array.isArray(res.alertSkip)) S.alertSkip = res.alertSkip;
+      renderFixedList();
+      toast(res.message);
+    })
+    .catch(() => {
+      S.alertSkip = old;
+      renderFixedList(); safeRender(renderAlertBadge); safeRender(renderBudgetTrack);
+      toast('Không lưu được — kiểm tra mạng', 'err');
+    });
+}
+
 function saveAlertPct(v){
   if (v === alertPct()) return;
   const old = S.alertPct;
@@ -5921,6 +6095,13 @@ const I18N = {
     "bud.filledRows": "khoản mục đã có số",
     "bud.notSet": "chưa đặt",
     "bud.blockEmpty": "Nhóm này chưa có khoản mục nào được đặt số.",
+    "bud.fixedTag": "cố định",
+    "bud.goalTag": "mục tiêu",
+    "bud.fixedOver": "Khoản cố định chi khác kế hoạch",
+    "set.fixedTitle": "Khoản cố định — không cảnh báo",
+    "set.fixedNote": "Khoản phải trả đủ 100% (thuê nhà, nợ) thì chạm mốc là đúng kế hoạch, không phải sự cố. Bật ở đây để khoản đó không vào huy hiệu, không báo lúc ghi và không vào email tối. Nếu chi vượt kế hoạch thì vẫn hiện, nhưng ở dạng thông tin.",
+    "set.fixedWhole": "cả nhóm",
+    "set.fixedNoPlan": "Chưa đọc được dự toán tháng này.",
     "set.title": "Cài đặt",
     "set.limit": "🎯 Hạn mức chi tiêu",
     "set.srcPlan": "📋 Theo sheet DỰ TOÁN 2026",
@@ -6068,6 +6249,13 @@ const I18N = {
     "bud.filledRows": "categories with a number",
     "bud.notSet": "not set",
     "bud.blockEmpty": "No category in this group has a number yet.",
+    "bud.fixedTag": "fixed",
+    "bud.goalTag": "goal",
+    "bud.fixedOver": "Fixed costs that differ from plan",
+    "set.fixedTitle": "Fixed costs — no alerts",
+    "set.fixedNote": "Costs that must be paid in full (rent, debt) reach 100% by plan, not by accident. Turn one on here and it stays out of the badge, the save-time alert and the nightly email. If it goes over plan it still shows, but as information.",
+    "set.fixedWhole": "whole group",
+    "set.fixedNoPlan": "Could not read this month's budget.",
     "set.title": "Settings",
     "set.limit": "🎯 Spending limit",
     "set.srcPlan": "📋 From the BUDGET 2026 sheet",
