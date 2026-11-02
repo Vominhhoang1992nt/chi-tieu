@@ -582,6 +582,27 @@
 
 
   /* ---- MÀN DỰ TOÁN ---- */
+  /* Tóm tắt kế hoạch trên màn Ngân sách */
+  /* Gợi ý khi đổi tháng ghi sổ trong form sửa */
+  .ed-hint{font-size:11.5px;line-height:1.5;color:var(--warn);
+           background:var(--warn-weak);border-radius:10px;padding:9px 11px;margin-top:-4px;}
+  .dt-sum{background:var(--surface);border:1px solid var(--line);border-radius:13px;
+          padding:2px 13px;margin-bottom:12px;}
+  .dt-sr{display:flex;justify-content:space-between;align-items:center;gap:10px;
+         padding:9px 0;font-size:13px;color:var(--mut);}
+  .dt-sr b{font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;}
+  .dt-sr + .dt-sr{border-top:1px solid var(--line);}
+  .dt-sr.tot span{font-weight:700;color:var(--txt);}
+  .dt-sr.tot b{color:var(--ok,#067647);}
+  .dt-sr.tot.neg b{color:var(--err);}
+  .dt-none{font-style:normal;font-weight:600;color:var(--mut);opacity:.65;}
+  .dt-it.plain{padding:9px 0 9px 12px;}
+  /* Lối đi qua lại giữa màn Ngân sách và thẻ theo dõi */
+  .dt-link{display:block;width:100%;margin-top:12px;padding:12px;border:1px solid var(--line);
+           border-radius:13px;background:transparent;color:var(--acc-text);
+           font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;
+           touch-action:manipulation;}
+  .dt-link:active{transform:scale(.985);}
   .dt-intro{font-size:11.5px;color:var(--mut);line-height:1.55;padding:14px 2px 2px;}
   .dt-intro b{color:var(--txt);}
   .dt-empty{font-size:13px;color:var(--mut);line-height:1.6;
@@ -1374,6 +1395,20 @@
         <div class="fbody"><div class="fwrap"><div class="kpis" id="kpis"></div></div></div>
       </div>
 
+      <!-- Theo dõi thực chi so với ngân sách. Trước đây nằm trong màn Ngân
+           sách (màn ẩn), nên muốn xem số đang vượt phải mở hai lớp. Giờ nằm
+           ngay trong tab Phân tích, cạnh các số liệu khác. -->
+      <div class="card fold" id="fd-trk">
+        <div class="head sb fhd" onclick="toggleFold('trk')">
+          <b data-i18n="bud.trackTitle">Thực chi so với ngân sách</b>
+          <span class="head-act">
+            <button class="icon-btn" onclick="event.stopPropagation();loadPlan(true)"><span class="ib-g">↻</span></button>
+            <span class="fcar">⌄</span>
+          </span>
+        </div>
+        <div class="fbody"><div class="fwrap"><div id="trkBody"><span class="empty" data-i18n="common.loading">Đang tải…</span></div></div></div>
+      </div>
+
       <div class="card fold" id="fd-cmp">
         <div class="head sb fhd" onclick="toggleFold('cmp')">
           <b data-i18n="an.compare">So với cùng kỳ tháng trước</b>
@@ -1489,6 +1524,13 @@
 
     <label class="lbl" data-i18n="rec.date">Ngày</label>
     <input id="edDate" type="date">
+
+    <!-- Tháng ghi sổ: tách khỏi NGÀY CHI. Có khoản chi vào ngày cuối tháng
+         nhưng thuộc về tháng sau; đổi ô này là app chuyển dòng sang sheet
+         tháng đó, ngày chi thật được ghi kèm vào diễn giải. -->
+    <label class="lbl" data-i18n="led.bookMonth">Tháng ghi sổ</label>
+    <select id="edSheetSel" onchange="onEdSheetChange()"></select>
+    <div class="ed-hint hide" id="edMoveHint"></div>
 
     <label class="lbl" data-i18n="rec.group">Loại chi phí</label>
     <select id="edHu" onchange="renderEdItems()"></select>
@@ -1721,7 +1763,8 @@ let S = {
   topDayKey:'',                               // ngày chi cao nhất tháng
   dayFold:loadDayFold(),                      // ngày nào đang gập ở Lịch sử
   plan:null, planLoading:false, planErr:'',   // kế hoạch đọc từ sheet DỰ TOÁN
-  dtEdit:false, dtOpen:{},                    // màn Dự toán: chế độ nhập & khối đang mở
+  dtEdit:false, dtOpen:{},                    // màn Ngân sách: chế độ nhập & khối đang mở
+  trkOpen:{},                                 // thẻ theo dõi (tab Phân tích): khối đang mở — RIÊNG với dtOpen
   alertPct:80,                                // ngưỡng cảnh báo (% dự toán)
   tagRules:{}, tagTouched:false, autoWhy:null, // nhãn tự động
   editTagTouched:false,
@@ -1742,7 +1785,7 @@ const API_TOKEN = 'mk7Qz2Rv9LpX4aT8nE3wY6bHs0dJ';
 
 /* Phải khớp với CACHE_VERSION trong sw.js. Hiện ở chân màn hình PIN để
    biết máy đang chạy bản nào — không khớp nghĩa là cache còn giữ bản cũ. */
-const BUILD = 'v45';
+const BUILD = 'v46';
 
 /* ===================== NHÃN (TAG) =====================
    Nhãn là chiều phân loại THỨ HAI, cắt ngang qua HŨ → KHOẢN MỤC.
@@ -2652,7 +2695,7 @@ function copyPerf(){
 const API_WRITE = {
   addExpense:1, addExpenseBatch:1, updateExpense:1, deleteExpense:1,
   markMailDone:1, undoMailSkip:1, restoreSkippedMail:1, purgeSkippedMail:1,
-  setMailEnabled:1, setEditEnabled:1
+  setMailEnabled:1, setEditEnabled:1, moveExpense:1
 };
 
 function api(method, payload){
@@ -2770,7 +2813,10 @@ function loadTx(force){
   }
 
   // 2) Gọi server làm mới
-  api('getTransactions', {pin:S.pin, sheetName:S.sheet})
+  /* force (bấm ↻) phải gửi fresh=1. Máy chủ cache bảng giao dịch 5 phút và
+     chỉ tự xóa khi CHÍNH APP ghi/xóa — sửa tay trong Google Sheets thì nó
+     không biết. Thiếu cờ này thì ↻ chỉ gọi lại để nhận đúng bản cũ. */
+  api('getTransactions', {pin:S.pin, sheetName:S.sheet, fresh: force ? 1 : 0})
     .then(res => {
       S.txLoading = false;
       if (!res.ok) { toast(res.message,'err'); return; }
@@ -2791,7 +2837,7 @@ function loadYear(force){
   if (S.yearLoading) return;
   if (S.yearData && S.yearData.year === S.year && !force) return;
   S.yearLoading = true;
-  api('getYearSummary', {pin:S.pin, year:S.year})
+  api('getYearSummary', {pin:S.pin, year:S.year, fresh: force ? 1 : 0})
     .then(res => {
       S.yearLoading = false;
       if (!res.ok) { toast(res.message,'err'); return; }
@@ -3307,6 +3353,7 @@ function switchTab(t){
       loadTx(false);
       // Chỉ tải khi khối đang mở — gập thì khỏi tốn một vòng mạng ~2 giây
       if (foldState().cmp) loadCompare(false);
+      if (foldState().trk && !S.plan && !S.planLoading) loadPlan();
     }
   }
 }
@@ -3319,7 +3366,11 @@ function setScope(s){
   document.getElementById('tkYear').classList.toggle('hide', s!=='year');
   window.scrollTo({top:0, behavior:'smooth'});
   if (s === 'year') loadYear(false);
-  else { loadTx(false); if (foldState().cmp) loadCompare(false); }
+  else {
+    loadTx(false);
+    if (foldState().cmp) loadCompare(false);
+    if (foldState().trk && !S.plan && !S.planLoading) loadPlan();
+  }
 }
 
 function setYear(y){
@@ -3653,6 +3704,7 @@ function renderStats(){
       <div class="kpi-s">${t('an.perTx')}</div></div>`;
 
   renderStatDay();
+  renderBudgetTrack();        // thực chi thay đổi theo giao dịch → vẽ lại cùng lúc
 
   if (!rows.length) {
     ['statHu','statItem','statTag'].forEach(id =>
@@ -3817,7 +3869,7 @@ function dayChartHtml(){
    vô nghĩa. */
 
 /* Mặc định: mở những khối bạn nhìn mỗi lần, gập những khối chỉ xem khi cần. */
-const FOLD_DEFAULT = { kpi:1, cmp:0, day:1, brk:1, find:0, set:0 };
+const FOLD_DEFAULT = { kpi:1, trk:1, cmp:0, day:1, brk:1, find:0, set:0 };
 
 function foldState(){
   let st = {};
@@ -3848,6 +3900,12 @@ function toggleFold(k){
   /* Mở khối "So với cùng kỳ" lần đầu mới gọi máy chủ — gập thì khỏi tốn
      một vòng mạng ~2 giây cho thứ không ai nhìn. */
   if (k === 'cmp' && st[k] && !S.cmp) loadCompare(false);
+  /* Thẻ theo dõi cần sheet DỰ TOÁN. Chỉ gọi khi thật sự mở ra — gập thì khỏi
+     tốn một vòng mạng cho thứ không ai nhìn. */
+  if (k === 'trk' && st[k]) {
+    if (!S.plan && !S.planLoading) loadPlan();
+    else safeRender(renderBudgetTrack);
+  }
 }
 
 
@@ -3890,17 +3948,19 @@ function loadPlan(force){
   S.planLoading = true;
   if (force) { S.plan = null; S.planErr = ''; }
   safeRender(renderPlanTab);
+  safeRender(renderBudgetTrack);
   return api('getPlan', {pin:S.pin, sheetName:S.sheet, fresh:force ? 1 : 0})
     .then(res => {
       S.planLoading = false;
       if (res && res.ok) { S.plan = res.plan || {empty:true}; S.planErr = res.message || ''; }
       else S.planErr = (res && res.message) || 'Không đọc được sheet dự toán';
       safeRender(renderPlanTab);
+      safeRender(renderBudgetTrack);
       safeRender(renderAlertBadge);
       if (document.getElementById('setPanel').classList.contains('show')) safeRender(renderSettings);
     })
     .catch(() => { S.planLoading = false; S.planErr = 'Không gọi được máy chủ';
-                   safeRender(renderPlanTab); });
+                   safeRender(renderPlanTab); safeRender(renderBudgetTrack); });
 }
 
 function onBgInput(){
@@ -4108,18 +4168,113 @@ function renderPlanTab(){
     return;
   }
 
+  /* Luôn lấy đủ mọi dòng (forEdit = true): màn này là bản KẾ HOẠCH, dòng
+     chưa điền số cũng phải thấy — đó mới là dòng cần điền. Lọc theo "đã chi
+     hay chưa" là việc của thẻ theo dõi bên tab Phân tích. */
+  const rows = budgetRows(true);
+
+  /* ---- 1. KẾ HOẠCH CÓ CÂN KHÔNG: thu − chi − tiết kiệm ---- */
+  let pIn = 0, pOut = 0, pSave = 0, filled = 0, total = 0;
+  rows.forEach(r => {
+    if (r.block.kind === 'in')        pIn   += r.plan;
+    else if (r.block.kind === 'save') pSave += r.plan;
+    else                              pOut  += r.plan;
+    (r.items || []).forEach(it => { if (it.row) { total++; if (it.plan > 0) filled++; } });
+  });
+  const bal = pIn - pOut - pSave;
+
+  let h = '<div class="dt-sum">'
+    + '<div class="dt-sr"><span>' + esc(t('bud.planIn')) + '</span><b>' + fmt(pIn) + ' đ</b></div>'
+    + '<div class="dt-sr"><span>' + esc(t('bud.planOut')) + '</span><b>' + fmt(pOut) + ' đ</b></div>'
+    + (pSave > 0
+        ? '<div class="dt-sr"><span>' + esc(t('bud.planSave')) + '</span><b>' + fmt(pSave) + ' đ</b></div>'
+        : '')
+    /* Thu trừ chi trừ tiết kiệm: âm là kế hoạch tự mâu thuẫn, phải thấy
+       NGAY lúc lập chứ không phải cuối tháng mới biết là không đủ tiền. */
+    + '<div class="dt-sr tot' + (bal < 0 ? ' neg' : '') + '"><span>'
+    + esc(bal < 0 ? t('bud.planShort') : t('bud.planBal')) + '</span><b>'
+    + fmt(Math.abs(bal)) + ' đ</b></div>'
+    + '</div>';
+
+  if (total > 0) {
+    h += '<div class="dt-hs dim">' + filled + '/' + total + ' ' + esc(t('bud.filledRows')) + '</div>';
+  }
+
+  /* ---- 2. TỪNG KHOẢN MỤC: con số kế hoạch, không có thực chi ---- */
+  h += '<div class="dt-sec">' + esc(t('bud.byGroup')) + '</div>';
+  rows.forEach(r => {
+    const b = r.block;
+    const key = slugVi(b.name);
+    const nFill = (r.items || []).filter(it => it.plan > 0).length;
+    // Đang nhập thì mở hết; chỉ xem thì gập khối đã điền xong cho gọn mắt
+    const open = (S.dtOpen[key] != null) ? S.dtOpen[key] : (S.dtEdit || r.plan <= 0);
+    h += '<div class="dt-blk' + (open ? '' : ' closed') + '">'
+       + '<div class="dt-bh" onclick="toggleDtBlock(\'' + esc(key) + '\')">'
+       + '<div class="dt-bt"><span class="dt-cr">⌄</span>'
+       + '<span class="dt-bn">' + esc(b.name) + '</span>'
+       + ((b.inBudget || b.kind === 'in') ? ''
+            : '<span class="pl-off">' + esc(t('bud.offLimit')) + '</span>') + '</div>'
+       + '<span class="dt-bp">'
+       + (r.plan > 0 ? fmt(r.plan) + ' đ' : '<i class="dt-none">' + esc(t('bud.notSet')) + '</i>')
+       + '</span>'
+       + '</div>'
+       /* ĐÚNG MỘT .fwrap — xem chú thích cùng chỗ ở budgetTrackHtml(). */
+       + '<div class="dt-bb"><div class="fwrap">'
+       + r.items.map(it => dtItemHtml(it)).join('')
+       + (nFill === 0 && !S.dtEdit
+           ? '<div class="dt-warn">' + esc(t('bud.blockEmpty')) + '</div>' : '')
+       + '</div></div></div>';
+  });
+
+  if (S.dtEdit) {
+    h += '<button class="dt-cta" onclick="savePlanEdits()">' + esc(t('bud.savePlan')) + '</button>';
+  } else {
+    /* Lối sang phần theo dõi. Không nhét số thực chi vào đây nữa: lập kế
+       hoạch và soi kết quả là hai việc khác nhau, trộn lại thì màn này dài
+       gấp đôi mà vẫn phải mở màn ẩn mới xem được thứ cần xem hằng ngày. */
+    h += '<button class="dt-link" onclick="goTrack()">' + esc(t('bud.toTrack')) + ' ›</button>';
+  }
+  h += '<div class="dt-intro">' + planWhat() + '</div>';
+  box.innerHTML = h;
+}
+
+/** Đóng màn Ngân sách, sang tab Phân tích và mở thẻ theo dõi. */
+function goTrack(){
+  closePlan();
+  switchTab('tk');
+  if (S.scope !== 'month') setScope('month');
+  const st = foldState();
+  if (!st.trk) toggleFold('trk');          // thẻ đang gập thì mở ra, không thì để yên
+  renderBudgetTrack();
+  setTimeout(() => {
+    const el = document.getElementById('fd-trk');
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 120);
+}
+
+/**
+ * Dựng dữ liệu đối chiếu kế hoạch ↔ thực chi.
+ * Tách riêng vì giờ có HAI nơi dùng: màn Dự toán (chỉ cần phần kế hoạch) và
+ * thẻ Theo dõi trong tab Phân tích (cần cả hai). Để nguyên trong một hàm vẽ
+ * thì nơi thứ hai phải chép lại toàn bộ, và hai bản chép sẽ lệch nhau.
+ *
+ * forEdit = đang ở chế độ nhập → giữ cả dòng chưa có số và cả khối thu nhập.
+ */
+function budgetRows(forEdit){
+  const p = S.plan;
+  if (!p || !p.blocks) return [];
   const A = actualMap();
-  const rows = [];        // gom phẳng để sắp xếp được theo mức độ cấp bách
+  const rows = [];
 
   p.blocks.forEach(b => {
     /* Thu nhập không nằm trong phần so chi tiêu — nhưng KHI ĐANG NHẬP thì
        phải có, vì nó cũng là một dòng của kế hoạch và dòng "tiền mặt còn
        lại" trong sheet phụ thuộc vào nó. */
-    if (b.kind === 'in' && !S.dtEdit) return;
+    if (b.kind === 'in' && !forEdit) return;
     const huSlug = slugVi(b.name);
     const real = A.byHu[huSlug] || 0;
     const plan = b.total || 0;
-    if (!plan && !real && !S.dtEdit) return;
+    if (!plan && !real && !forEdit) return;
 
     const items = [];
     const seen = {};
@@ -4135,7 +4290,7 @@ function renderPlanTab(){
       if (it.item) seen[slugVi(it.item)] = 1;
       /* Chưa chi mà cũng chưa có kế hoạch thì không có gì để nói — ẩn khi
          chỉ xem. Vẫn giữ khi đang nhập, vì đó chính là dòng cần điền. */
-      if (it.amount > 0 || r > 0 || S.dtEdit) {
+      if (it.amount > 0 || r > 0 || forEdit) {
         items.push({ name: it.name, plan: it.amount, real: r, row: it.row });
       }
     });
@@ -4152,7 +4307,30 @@ function renderPlanTab(){
   });
 
   rows.sort((x, y) => pctOf(y) - pctOf(x));
+  return rows;
+}
 
+/**
+ * Phần THEO DÕI: thực chi so với dự toán.
+ * Đã dời khỏi màn Dự toán sang tab Phân tích — màn Dự toán là nơi lập KẾ
+ * HOẠCH, còn theo dõi là việc xem SỐ LIỆU, hai chuyện khác nhau và nhét
+ * chung thì phải mở một màn ẩn mới thấy được thứ cần nhìn thường xuyên.
+ */
+function budgetTrackHtml(){
+  const p = S.plan;
+  if (S.planLoading) return '<span class="empty">' + esc(t('bud.reading')) + '</span>';
+  if (S.planErr)     return '<span class="empty">' + esc(S.planErr) + '</span>';
+  if (!p || p.empty || !p.blocks) return '<span class="empty">' + esc(t('bud.cantRead')) + '</span>';
+  if (!p.has && !p.debt && !p.save) {
+    let e = '<div class="dt-empty">' + esc(t('bud.emptyA')) + ' <b>' + p.month + '</b> '
+      + esc(t('bud.emptyB')) + ' <b>' + esc(p.col || '?') + '</b> ' + esc(t('bud.emptyC'));
+    const ms = p.monthsWithPlan || [];
+    if (ms.length) e += ' ' + esc(t('bud.emptyD')) + ' <b>' + ms.join(', ') + '</b>.';
+    return e + '</div><button class="dt-cta" onclick="openPlan()">'
+             + esc(t('bud.enterFor')) + ' ' + p.month + '</button>';
+  }
+
+  const rows = budgetRows(false);
   let h = '';
 
   /* ---- 1. TỔNG QUAN: một thanh, trả lời ngay "tháng này ổn không" ---- */
@@ -4221,10 +4399,12 @@ function renderPlanTab(){
     const b = r.block;
     const pct = pctOf(r);
     const key = slugVi(b.name);
-    // Mở sẵn khối đang vượt; khối ổn thì gập cho gọn mắt
-    const open = (S.dtOpen[key] != null) ? S.dtOpen[key] : (pct > 100 || S.dtEdit);
+    /* Trạng thái gập của thẻ theo dõi là RIÊNG (S.trkOpen), không dùng chung
+       S.dtOpen với màn Ngân sách. Dùng chung thì chạm vào khối ở đây sẽ vẽ
+       lại màn kia — hai màn giờ là hai nơi khác nhau. */
+    const open = (S.trkOpen[key] != null) ? S.trkOpen[key] : (pct > 100);
     h += '<div class="dt-blk' + (open ? '' : ' closed') + '">'
-       + '<div class="dt-bh" onclick="toggleDtBlock(\'' + esc(key) + '\')">'
+       + '<div class="dt-bh" onclick="toggleTrkBlock(\'' + esc(key) + '\')">'
        + '<div class="dt-bt"><span class="dt-cr">⌄</span>'
        + '<span class="dt-bn">' + esc(b.name) + '</span>'
        /* Nhãn "ngoài hạn mức" chỉ có nghĩa với khoản CHI. Gắn lên khối thu
@@ -4232,34 +4412,64 @@ function renderPlanTab(){
        + ((b.inBudget || b.kind === 'in') ? ''
             : '<span class="pl-off">' + esc(t('bud.offLimit')) + '</span>') + '</div>'
        + '<span class="dt-bp' + barCls(pct, 101) + '">'
-       + (S.dtEdit ? (r.plan > 0 ? fmt(r.plan) + ' đ' : '') : (r.plan > 0 ? pct + '%' : '—'))
+       + (r.plan > 0 ? pct + '%' : '—')
        + '</span>'
        + '</div>'
-       /* Lúc đang NHẬP thì bỏ thanh tiến độ và dòng "đã chi / kế hoạch":
-          người dùng đang điền số, chưa có gì để so, mà để lại thì mỗi khối
-          đẻ thêm hai dòng "0 / 0 đ" vô nghĩa. */
-       + (S.dtEdit ? ''
-           : '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
-             + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
-             + '<div class="dt-bs">' + fmt(r.real) + ' / ' + fmt(r.plan) + ' đ</div>')
+       + '<div class="dt-bar"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
+       + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
+       + '<div class="dt-bs">' + fmt(r.real) + ' / ' + fmt(r.plan) + ' đ</div>'
        /* Bọc nội dung trong ĐÚNG MỘT .fwrap. Mẹo gập bằng grid chỉ co được
           hàng ĐẦU, mà khối này có mỗi khoản mục là một con riêng — những con
           sau rơi vào hàng ngầm, hàng ngầm không nghe grid-template-rows, nên
           gập lại vẫn chừa một mảng trắng cao bằng cả danh sách. Đúng lỗi đã
           gặp ở phần "Tìm & lọc", lần này lặp lại ở đây. */
        + '<div class="dt-bb"><div class="fwrap">'
-       + r.items.map(it => dtItemHtml(it)).join('')
+       + r.items.map(it => trkItemHtml(it)).join('')
        + (r.nameMismatch
            ? '<div class="dt-warn">' + esc(t('bud.nameMismatch')) + '</div>'
            : '')
        + '</div></div></div>';
   });
 
-  if (S.dtEdit) {
-    h += '<button class="dt-cta" onclick="savePlanEdits()">' + esc(t('bud.savePlan')) + '</button>';
+  /* Lối sang màn Ngân sách: thấy số lệch thì việc tiếp theo là sửa kế hoạch,
+     mà đường tới đó không được bắt người dùng tự đi tìm. */
+  h += '<button class="dt-link" onclick="openPlan()">' + esc(t('bud.toPlan')) + ' ›</button>';
+  return h;
+}
+
+/** Một dòng khoản mục trong thẻ theo dõi: chỉ xem, không có ô nhập. */
+function trkItemHtml(it){
+  const pct = pctOf(it);
+  const right = it.plan > 0
+    ? fmt(it.real) + ' / ' + fmt(it.plan)
+    : fmt(it.real) + ' <span class="dt-np">' + esc(t('bud.noPlanTag')) + '</span>';
+  return '<div class="dt-it">'
+    + '<div class="dt-il"><span class="dt-in">' + esc(it.name) + '</span>'
+    + '<span class="dt-iv">' + right + '</span></div>'
+    + (it.plan > 0
+        ? '<div class="dt-bar thin"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
+          + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
+        : '')
+    + '</div>';
+}
+
+/** Vẽ thẻ "Thực chi so với ngân sách" trong tab Phân tích. */
+function renderBudgetTrack(){
+  const box = document.getElementById('trkBody');
+  if (!box) return;
+  box.innerHTML = budgetTrackHtml();
+}
+
+function toggleTrkBlock(key){
+  const cur = S.trkOpen[key];
+  if (cur != null) { S.trkOpen[key] = !cur; }
+  else {
+    // Chưa đụng tới → trạng thái đang là mặc định, phải đảo đúng cái đang thấy
+    const el = [...document.querySelectorAll('#trkBody .dt-bh')]
+      .find(e => slugVi(e.querySelector('.dt-bn').textContent) === key);
+    S.trkOpen[key] = el ? !!el.closest('.dt-blk').classList.contains('closed') : false;
   }
-  h += '<div class="dt-intro">' + planWhat() + '</div>';
-  box.innerHTML = h;
+  renderBudgetTrack();
 }
 
 /** % đã dùng của một dòng hoặc một khối. Không có kế hoạch → -1 để xuống cuối. */
@@ -4386,25 +4596,23 @@ function barCls(pct, pace){
 }
 
 /** Một dòng khoản mục. Ở chế độ nhập thì thành ô nhập số. */
+/**
+ * Một dòng khoản mục trên màn Ngân sách: chỉ con số KẾ HOẠCH.
+ * Không còn cột thực chi — thực chi đã sang thẻ theo dõi ở tab Phân tích.
+ */
 function dtItemHtml(it){
-  const pct = pctOf(it);
   if (S.dtEdit && it.row) {
     return '<div class="dt-ed"><span class="dt-en">' + esc(it.name) + '</span>'
       + '<input class="dt-ei" type="text" inputmode="numeric" data-row="' + it.row + '" '
       + 'value="' + (it.plan > 0 ? fmt(it.plan) : '') + '" placeholder="0" '
       + 'oninput="onDtAmt(this)"></div>';
   }
-  const right = it.plan > 0
-    ? fmt(it.real) + ' / ' + fmt(it.plan)
-    : fmt(it.real) + ' <span class="dt-np">ngoài kế hoạch</span>';
-  return '<div class="dt-it">'
+  return '<div class="dt-it plain">'
     + '<div class="dt-il"><span class="dt-in">' + esc(it.name) + '</span>'
-    + '<span class="dt-iv">' + right + '</span></div>'
-    + (it.plan > 0
-        ? '<div class="dt-bar thin"><div class="dt-fill' + barCls(pct, 101) + '" style="width:'
-          + Math.min(100, Math.max(0, pct)) + '%"></div></div>'
-        : '')
-    + '</div>';
+    + '<span class="dt-iv">'
+    + (it.plan > 0 ? fmt(it.plan) + ' đ'
+                   : '<i class="dt-none">' + esc(t('bud.notSet')) + '</i>')
+    + '</span></div></div>';
 }
 
 function toggleDtBlock(key){
@@ -4942,6 +5150,16 @@ function openEdit(row){
   document.getElementById('edDate').value = r.dateKey || '';
   document.getElementById('edNote').value = pt.clean;
 
+  /* Danh sách tháng ghi sổ. Luôn có sheet hiện tại ngay cả khi vì lý do nào
+     đó nó không nằm trong S.sheets, nếu không ô chọn sẽ trống và mọi thao
+     tác sau đó đều gửi sheet rỗng lên máy chủ. */
+  const months = (S.sheets || []).slice();
+  if (S.sheet && months.indexOf(S.sheet) < 0) months.push(S.sheet);
+  fillSelect('edSheetSel', months.map(m => ({v:m, t:prettySheet(m)})));
+  document.getElementById('edSheetSel').value = S.sheet;
+  document.getElementById('edMoveHint').classList.add('hide');
+  setEdDateRange(S.sheet);
+
   fillSelect('edHu', S.hu);
   document.getElementById('edHu').value = r.hu;
   renderEdItems();
@@ -5001,6 +5219,52 @@ function onEdNoteInput(){
   renderEdTagPick();
 }
 
+/**
+ * Khoá ô NGÀY vào đúng phạm vi tháng ghi sổ đang chọn.
+ * Máy chủ cũng chặn (validateTx_), nhưng để người dùng gõ xong mới báo lỗi là
+ * bắt họ làm lại từ đầu — chặn ngay ở bàn phím ngày thì không bao giờ tới đó.
+ */
+function setEdDateRange(sheetName){
+  const el = document.getElementById('edDate');
+  const p = parseSheet(sheetName);
+  if (!el || !p) { if (el) { el.removeAttribute('min'); el.removeAttribute('max'); } return; }
+  const two = n => String(n).padStart(2, '0');
+  const last = new Date(p.year, p.month, 0).getDate();
+  el.min = p.year + '-' + two(p.month) + '-01';
+  el.max = p.year + '-' + two(p.month) + '-' + two(last);
+}
+
+/**
+ * Đổi tháng ghi sổ → tự kéo ngày vào tháng đó.
+ * Chuyển TỚI tháng sau thì lấy ngày 1, lùi VỀ tháng trước thì lấy ngày cuối
+ * tháng: đó là ngày gần ngày chi thật nhất còn nằm trong tháng đích, nên thứ
+ * tự thời gian của sổ không bị đảo. Giữ nguyên ngày cũ (31/10 trong sheet
+ * T11) thì máy chủ sẽ từ chối.
+ */
+function onEdSheetChange(){
+  const r = S.edit;
+  const to = document.getElementById('edSheetSel').value;
+  const hint = document.getElementById('edMoveHint');
+  setEdDateRange(to);
+  if (!r || to === S.sheet) {
+    if (r) document.getElementById('edDate').value = r.dateKey || '';
+    hint.classList.add('hide');
+    return;
+  }
+  const p = parseSheet(to);
+  const cur = parseSheet(S.sheet);
+  if (p && cur) {
+    const two = n => String(n).padStart(2, '0');
+    const forward = (p.year * 12 + p.month) > (cur.year * 12 + cur.month);
+    const last = new Date(p.year, p.month, 0).getDate();
+    document.getElementById('edDate').value =
+      p.year + '-' + two(p.month) + '-' + two(forward ? 1 : last);
+  }
+  hint.textContent = t('led.moveHint1') + ' ' + prettySheet(to) + '. '
+    + t('led.moveHint2') + ' ' + (r.dateLabel || '') + ' ' + t('led.moveHint3');
+  hint.classList.remove('hide');
+}
+
 function saveEdit(){
   const r = S.edit;
   if (!r) return;
@@ -5020,19 +5284,45 @@ function saveEdit(){
   const btn = document.getElementById('edSave');
   btn.disabled = true; btn.textContent = 'Đang lưu…';
 
-  api('updateExpense', {
+  /* Đổi tháng ghi sổ → sang hàm moveExpense: nó ghi vào sheet đích TRƯỚC rồi
+     mới xoá dòng nguồn. updateExpense không làm được việc này vì theo thiết
+     kế nó khoá ngày vào đúng tháng của sheet đang mở. */
+  const toSheet = document.getElementById('edSheetSel').value || S.sheet;
+  const moving = toSheet !== S.sheet;
+
+  api(moving ? 'moveExpense' : 'updateExpense', {
     pin: S.pin, sheetName: S.sheet, row: r.row,
+    toSheet: moving ? toSheet : undefined,
     expectAmount: r.amount,              // chốt chặn sửa nhầm dòng
     amount: document.getElementById('edAmount').value,
     date: date, hu: document.getElementById('edHu').value, item: item,
     moneyType: document.getElementById('edMoney').value, note: note
   })
     .then(res => {
-      btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+      btn.disabled = false; btn.textContent = t('led.saveTx');
       if (!res.ok) { toast(res.message, 'err'); return; }
 
       S.todayTotal = res.todayTotal; S.monthTotal = res.monthTotal;
       S.txCount = res.txCount; renderHero();
+
+      if (moving) {
+        /* Dòng đã rời khỏi tháng đang xem. Bỏ nó khỏi danh sách tại chỗ —
+           và KHÔNG chèn res.tx vào, vì res.tx thuộc sheet khác.
+           Mọi số của tháng đích cũng phải coi là cũ. */
+        S.all = S.all.filter(x => x.row !== r.row);
+        S.yearData = null; S.cmp = null; S.plan = null;
+        saveTxCache();
+        renderHuFilter(); renderHistory(); renderStats();
+        closeEdit();
+        toast(res.message, '', '', { label: t('led.openMonth'),
+                                     fn: () => jumpSheet(res.toSheet) });
+        /* Các dòng sau giao dịch vừa chuyển đã dồn số lên một bậc trong sheet
+           nguồn; danh sách trong máy còn số cũ nên lần sửa kế tiếp sẽ trỏ
+           nhầm dòng. Đọc lại ngay, ép máy chủ bỏ cache. */
+        loadTx(true);
+        return;
+      }
+
       // Thay dòng cũ bằng dòng mới tại chỗ, khỏi tải lại cả bảng
       const i = S.all.findIndex(x => x.row === r.row);
       if (i >= 0) S.all[i] = res.tx;
@@ -5044,9 +5334,25 @@ function saveEdit(){
       toast(res.message);
     })
     .catch(() => {
-      btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+      btn.disabled = false; btn.textContent = t('led.saveTx');
       toast('Không gọi được máy chủ','err');
     });
+}
+
+/** Nhảy sang một sheet tháng khác (dùng sau khi chuyển giao dịch). */
+function jumpSheet(name){
+  if (!name) return;
+  const sel = document.getElementById('sheetSel');
+  if (sel && [...sel.options].some(o => o.value === name)) {
+    sel.value = name;
+    switchSheet();
+  } else {
+    // Sheet vừa được máy chủ tạo nên chưa có trong ô chọn — nạp lại danh sách
+    S.sheet = name;
+    try { localStorage.setItem(LS.SHEET, name); } catch (e) {}
+    location.reload();
+  }
+  switchTab('su');
 }
 
 
@@ -5061,7 +5367,7 @@ function loadCompare(force){
   S.cmpLoading = true;
   document.getElementById('statCmp').innerHTML =
     '<span class="empty">Đang so sánh…</span>';
-  api('getCompare', {pin:S.pin, sheetName:S.sheet})
+  api('getCompare', {pin:S.pin, sheetName:S.sheet, fresh: force ? 1 : 0})
     .then(res => {
       S.cmpLoading = false;
       if (!res.ok) {
@@ -5573,6 +5879,11 @@ const I18N = {
     "led.use": "Dùng giao dịch này",
     "led.editTx": "Sửa giao dịch",
     "led.saveTx": "Lưu thay đổi",
+    "led.bookMonth": "Tháng ghi sổ",
+    "led.moveHint1": "Giao dịch sẽ chuyển sang",
+    "led.moveHint2": "Ngày chi thật",
+    "led.moveHint3": "được ghi kèm vào diễn giải.",
+    "led.openMonth": "Mở tháng đó",
     "an.thisMonth": "Kỳ này",
     "an.fullYear": "Cả năm",
     "an.overview": "Tổng quan kỳ",
@@ -5599,6 +5910,17 @@ const I18N = {
     "bud.hasUnplan": "có chi ngoài kế hoạch",
     "bud.unplanned": "Chi ngoài kế hoạch",
     "bud.noPlanRow": "Chưa có kế hoạch",
+    "bud.trackTitle": "Thực chi so với ngân sách",
+    "bud.toPlan": "Sửa ngân sách tháng",
+    "bud.toTrack": "Xem thực chi so với ngân sách",
+    "bud.planIn": "Thu nhập dự kiến",
+    "bud.planOut": "Chi dự kiến",
+    "bud.planSave": "Tiết kiệm & đầu tư",
+    "bud.planBal": "Chưa phân bổ",
+    "bud.planShort": "Thiếu hụt kế hoạch",
+    "bud.filledRows": "khoản mục đã có số",
+    "bud.notSet": "chưa đặt",
+    "bud.blockEmpty": "Nhóm này chưa có khoản mục nào được đặt số.",
     "set.title": "Cài đặt",
     "set.limit": "🎯 Hạn mức chi tiêu",
     "set.srcPlan": "📋 Theo sheet DỰ TOÁN 2026",
@@ -5704,6 +6026,11 @@ const I18N = {
     "led.use": "Use this transaction",
     "led.editTx": "Edit transaction",
     "led.saveTx": "Save changes",
+    "led.bookMonth": "Booking month",
+    "led.moveHint1": "This transaction will move to",
+    "led.moveHint2": "The actual spend date",
+    "led.moveHint3": "is kept in the memo.",
+    "led.openMonth": "Open that month",
     "an.thisMonth": "This period",
     "an.fullYear": "Full year",
     "an.overview": "Period overview",
@@ -5730,6 +6057,17 @@ const I18N = {
     "bud.hasUnplan": "unplanned spending",
     "bud.unplanned": "Unplanned spending",
     "bud.noPlanRow": "No budget set",
+    "bud.trackTitle": "Actual vs budget",
+    "bud.toPlan": "Edit this month's budget",
+    "bud.toTrack": "See actual vs budget",
+    "bud.planIn": "Expected income",
+    "bud.planOut": "Planned spending",
+    "bud.planSave": "Savings & investing",
+    "bud.planBal": "Unallocated",
+    "bud.planShort": "Plan shortfall",
+    "bud.filledRows": "categories with a number",
+    "bud.notSet": "not set",
+    "bud.blockEmpty": "No category in this group has a number yet.",
     "set.title": "Settings",
     "set.limit": "🎯 Spending limit",
     "set.srcPlan": "📋 From the BUDGET 2026 sheet",
