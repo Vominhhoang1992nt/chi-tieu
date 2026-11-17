@@ -1,0 +1,12 @@
+# Ảnh chụp màn hình tạm lúc phát triển. Ảnh dùng trong README nằm ở
+# docs/screenshots/, còn icon của PWA nằm ở gốc và PHẢI được theo dõi.
+/*-shot.png
+/tmp-*.png
+
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
